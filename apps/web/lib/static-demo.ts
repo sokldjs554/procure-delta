@@ -488,4 +488,7 @@ export async function staticDemoRequest<T = unknown>(path: string, init: Request
   return (await staticDemoValue(path, init)) as T;
 }
 
-export function staticDocumentUrl(id: string) {\n  void id;\n  return "#synthetic-document";\n}
+export function staticDocumentUrl(id: string) {
+  void id;
+  return "#synthetic-document";
+}
