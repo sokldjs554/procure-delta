@@ -1,0 +1,148 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
+      KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
+      KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}
+      DEMO_OPERATOR_SECRET: ${DEMO_OPERATOR_SECRET:-}
+      DEMO_AUTH_ENABLED: ${DEMO_AUTH_ENABLED:-true}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+      RELEASE_REVISION: ${RELEASE_REVISION:-development}
+      EXTRACTION_MODE: ${EXTRACTION_MODE:-deterministic}
+      EXTRACTION_ENDPOINT: ${EXTRACTION_ENDPOINT:-}
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      EXTRACTION_API_KEY: ${EXTRACTION_API_KEY:-}
+      EXTRACTION_MAX_COMPLETION_TOKENS: ${EXTRACTION_MAX_COMPLETION_TOKENS:-4096}
+    volumes:
+      - attachment_data:/var/lib/procure-delta
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live', timeout=2)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
+      KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
+      KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}
+      EXTRACTION_MODE: ${EXTRACTION_MODE:-deterministic}
+      EXTRACTION_ENDPOINT: ${EXTRACTION_ENDPOINT:-}
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      EXTRACTION_API_KEY: ${EXTRACTION_API_KEY:-}
+      EXTRACTION_MAX_COMPLETION_TOKENS: ${EXTRACTION_MAX_COMPLETION_TOKENS:-4096}
+    volumes:
+      - attachment_data:/var/lib/procure-delta
+    command: ["arq", "app.workers.settings.WorkerSettings"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
+      KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
+      KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}
+      EXTRACTION_MODE: ${EXTRACTION_MODE:-deterministic}
+      EXTRACTION_ENDPOINT: ${EXTRACTION_ENDPOINT:-}
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      EXTRACTION_API_KEY: ${EXTRACTION_API_KEY:-}
+      EXTRACTION_MAX_COMPLETION_TOKENS: ${EXTRACTION_MAX_COMPLETION_TOKENS:-4096}
+    volumes:
+      - attachment_data:/var/lib/procure-delta
+    command: ["arq", "app.workers.settings.SchedulerSettings"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      API_INTERNAL_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-procure_delta}
+      POSTGRES_USER: ${POSTGRES_USER:-procure_delta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-procure_delta}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  attachment_data:

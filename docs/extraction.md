@@ -1,0 +1,35 @@
+# Structured extraction boundary
+
+Local and Docker demo operation defaults to `EXTRACTION_MODE=deterministic`; no hosted credentials are needed. ARQ `reconcile_pending_extractions` discovers suitable stored pages at startup and every five minutes, then enqueues `extract_version` on the worker queue. It also supports direct execution in tests. Rejected proposals are completed, inspectable work. Missing suitable pages remain pending for native parsing/OCR to finish.
+
+`StructuredFields` schema version `1` requires title, buyer, and procurement category. Optional budget needs both a positive finite amount (at most 9,999,999,999,999,999.99, at most two decimal places) and a supported currency (KRW, USD, EUR, JPY). Timestamp claims require timezones, closing cannot precede publication, and contract dates must be ordered. Unknown fields and unsupported categories are rejected.
+
+Every claimed field needs a complete labeled-line quote on a stored page identified by attachment SHA-256 and 1-based page number. The validator independently checks the field-specific label and decoded value, including every list item. It rejects cross-field quotations, changed values, contradictory claims, and negated/qualified requirements. Native text-quality `trusted` is only an input-selection signal; it is not structured-data trust. Successful suitable OCR is preferred over native low-quality text. Legacy completed parses lacking per-page quality are reassessed from saved text using the current page-quality rules; unsuitable pages are excluded without rewriting the stored parse. The selected pages and parser versions are snapshotted with their input fingerprint.
+
+Supported labels include English `Title`, `Buyer`, `Category`, `Budget`, `Published`, `Deadline`, `Region`, `Certifications`, `Capabilities`, `Participation constraints`, and `Contract period`. Korean equivalents include 공고명/사업명, 수요기관/발주기관, 분류/계약구분, 추정가격/예산, 공고일, 마감일/입찰마감일, 지역, 필수인증, 필수역량, 참가자격, 계약기간. Lists use semicolons. Korean budget labels accept explicit `원` amounts as KRW; category aliases 용역/물품/공사 map to services/goods/works. `KST` timestamps map to UTC+09:00. Date-only publication labels use midnight (Korean labels: KST, English labels: UTC); closing timestamps must include a time and timezone. Arbitrary prose, unlabeled tables, unusual date/amount formats, and inferred requirements need later review or a separately versioned grounding implementation. Hosted proposals do not bypass these limits.
+
+Normalized opportunity history is never changed by extraction. `trusted_extraction_view(session, extraction_id)` returns only revalidated, nonconflicting attachment fields and their evidence. It also returns conflict facts containing both upstream and attachment values. Nonempty upstream fields win conflicts; normalized empty lists are treated as unspecified because the normalizer defaults absent lists to empty. Conflicting attachment claims are excluded from the view. Amount and currency form one conflict group: if either conflicts, both fields and both evidence entries are withheld, including when reading older results that recorded only the directly conflicting field. Rejected and legacy unverified rows return no view.
+
+## Optional hosted API
+
+Set `EXTRACTION_MODE=hosted`, `EXTRACTION_ENDPOINT`, `EXTRACTION_PROVIDER`, and `EXTRACTION_MODEL`. The endpoint is the complete OpenAI-compatible Chat Completions URL, for example `https://api.openai.com/v1/chat/completions` with provider `openai`. Choose an explicit model available to your account that supports Chat Completions JSON mode; prefer a pinned model version for reproducibility. Hosted OpenAI requires `EXTRACTION_API_KEY`; a compatible local endpoint may omit authentication. Compose passes these settings to both worker and scheduler; recreate those services after configuration changes. `EXTRACTION_MAX_COMPLETION_TOKENS` defaults to 4096 and accepts 1–32768. No endpoint or paid model is called in deterministic mode.
+
+The adapter POSTs `model`, `max_completion_tokens`, `response_format: {"type":"json_object"}`, and `messages`. Fixed system instructions contain the JSON schema; the separate user message contains only the serialized untrusted document pages. An API key uses a Bearer authorization header. Never put credentials in document text or an endpoint URL. This intentionally uses JSON-object mode for compatibility, not the provider's strict Structured Outputs subset; schema and grounding enforcement occur locally. The wire format and JSON-mode distinction follow the [official Chat Completions reference](https://developers.openai.com/api/reference/python/resources/chat/subresources/completions/methods/create) and [JSON-mode guide](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode).
+
+Successful response shape:
+
+```json
+{
+  "choices": [{
+    "message": {"role": "assistant", "content": "{\"schema_version\":\"1\",\"title\":\"...\",\"buyer_name\":\"...\",\"procurement_type\":\"services\",\"evidence\":{}}"},
+    "finish_reason": "stop"
+  }],
+  "usage": {"prompt_tokens": 123, "completion_tokens": 45}
+}
+```
+
+The sample evidence object must be populated with checksum/page/quote references to pass validation. Token usage comes only from the provider envelope. OpenAI does not return estimated cost in this response; it remains null. An optional compatible-provider `estimated_cost` extension is accepted only when supplied; no cost is calculated from assumed prices. Invalid JSON/envelopes, refusals, truncated completions, and schema/grounding failures persist as rejected proposals. Latency is measured with `perf_counter`, independently of reported usage. No OCR/extraction accuracy claim is made.
+
+Requests have a 5-second connect timeout, 30-second total deadline, and at most three HTTP attempts with bounded exponential backoff for transport failures, 429 and 5xx. Other 4xx responses are terminal. ARQ durable retry policy permits at most three job attempts; each hosted job can make up to three HTTP attempts. Permanent/exhausted failures remain in the DLQ.
+
+An opportunity-version transaction lock and unique extraction identity prevent duplicate results or calls for concurrent/completed replays. Identity includes input fingerprint, extractor, schema, provider and model versions; a changed identity permits new work. The hosted `Idempotency-Key` is stable for the same schema/extractor/provider/model/input. If a process crashes after the provider accepted a request but before the database commit, avoiding a second remote execution requires the gateway/provider to honor this key. Database locking alone does not guarantee exactly-once network execution.

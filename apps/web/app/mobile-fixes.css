@@ -1,0 +1,179 @@
+.match-reasons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.85rem;
+  color: #59675f;
+  font-size: 0.78rem;
+}
+.match-reasons span {
+  background: #eef2ed;
+  border-radius: 999px;
+  padding: 0.3rem 0.5rem;
+}
+.load-more {
+  text-align: center;
+  padding: 1.5rem;
+}
+.score {
+  align-self: flex-start;
+}
+.hero h1 {
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+@media (max-width: 800px) {
+  .topbar > .brand {
+    flex: 1;
+  }
+  .topbar nav {
+    flex: 1 0 100%;
+    order: 4;
+    width: 100%;
+    padding-top: 0.25rem;
+  }
+  .topbar nav a {
+    flex: 0 0 auto;
+  }
+  .topbar button {
+    flex: 0 0 auto;
+  }
+}
+.admin-login {
+  min-height: calc(100vh - 68px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.admin-login form {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 1rem;
+}
+.admin-login h1 {
+  font-family: Georgia, serif;
+  font-size: 2.5rem;
+  margin: 0;
+}
+.admin-login label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+.admin-login input {
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.danger-copy {
+  color: #9b2c22;
+}
+.admin {
+  display: grid;
+  gap: 0.8rem;
+}
+.admin .page-head {
+  margin-bottom: 1rem;
+}
+.admin-panel header h2 {
+  margin: 0 0 1rem;
+}
+.admin-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.7rem;
+}
+.kpi-grid article {
+  background: #e9efe9;
+  padding: 1rem;
+  border-radius: 9px;
+}
+.kpi-grid small,
+.kpi-grid strong {
+  display: block;
+}
+.kpi-grid strong {
+  font-size: 1.8rem;
+  margin-top: 0.3rem;
+}
+.observed {
+  font-size: 0.75rem;
+  color: #64716b;
+}
+.metric-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.metric-list span {
+  background: #f2f0e9;
+  padding: 0.7rem;
+  border-radius: 7px;
+}
+.metric-list b {
+  float: right;
+}
+.metric-list small {
+  color: #64716b;
+}
+.admin-table {
+  display: grid;
+  gap: 0.6rem;
+}
+.admin-table article {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
+}
+.admin-table small {
+  display: block;
+  color: #64716b;
+  margin-top: 0.3rem;
+}
+.admin-table span {
+  text-align: right;
+  font-size: 0.8rem;
+}
+.release-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.7rem;
+}
+.release-grid div {
+  background: #f2f0e9;
+  padding: 0.7rem;
+  border-radius: 7px;
+}
+.release-grid dt {
+  font-size: 0.7rem;
+  color: #64716b;
+}
+.release-grid dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+@media (max-width: 800px) {
+  .admin-columns {
+    grid-template-columns: 1fr;
+  }
+  .kpi-grid,
+  .release-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .admin-table article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .admin-table span {
+    text-align: left;
+  }
+}

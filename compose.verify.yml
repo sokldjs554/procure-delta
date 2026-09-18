@@ -1,0 +1,95 @@
+# Isolated validation stack. No production credentials, services, or volumes are reused.
+x-runtime: &runtime
+  DATABASE_URL: postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta_verify_bench
+  REDIS_URL: redis://redis:6379/0
+  ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+  KONEPS_ENABLED: "false"
+  EXTRACTION_MODE: deterministic
+  NOTIFICATION_EXTERNAL_ENABLED: "false"
+  DEMO_AUTH_ENABLED: "true"
+  DEMO_OPERATOR_SECRET: ${VERIFY_OPERATOR_SECRET:?Run scripts/verify_containers.py to generate a local secret}
+  CORS_ORIGINS: '["http://localhost:13000"]'
+  RELEASE_REVISION: ${VERIFY_REVISION:-task20-local-verification}
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: procure_delta_verify_bench
+      POSTGRES_USER: procure_delta
+      POSTGRES_PASSWORD: procure_delta
+    ports: ["127.0.0.1:15432:5432"]
+    volumes: ["verify_postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U procure_delta -d procure_delta_verify_bench"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:16379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: ./apps/api
+    environment: *runtime
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    build: ./apps/api
+    environment: *runtime
+    ports: ["127.0.0.1:18000:8000"]
+    volumes: ["verify_documents:/var/lib/procure-delta"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+  worker:
+    build: ./apps/api
+    environment: *runtime
+    command: ["arq", "app.workers.settings.WorkerSettings"]
+    volumes: ["verify_documents:/var/lib/procure-delta"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+  scheduler:
+    build: ./apps/api
+    environment: *runtime
+    command: ["arq", "app.workers.settings.SchedulerSettings"]
+    volumes: ["verify_documents:/var/lib/procure-delta"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:18000
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:18000
+    ports: ["127.0.0.1:13000:3000"]
+    depends_on: [api]
+  checks:
+    build:
+      context: .
+      dockerfile: Dockerfile.verify
+    environment:
+      DATABASE_URL: postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta_verify_test
+      TEST_DATABASE_URL: postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta_verify_test
+      TEST_ADMIN_DATABASE_URL: postgresql://procure_delta:procure_delta@postgres:5432/postgres
+      TEST_REDIS_URL: redis://redis:6379/15
+      REDIS_URL: redis://redis:6379/15
+      BENCH_DATABASE_URL: postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta_verify_bench
+      BENCH_REDIS_URL: redis://redis:6379/15
+      DEMO_OPERATOR_SECRET: ${VERIFY_OPERATOR_SECRET:?Run the verification script}
+      RUN_ENVIRONMENT: isolated-docker-verification
+    volumes: ["./artifacts/container:/workspace/artifacts/container"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+volumes:
+  verify_postgres:
+  verify_documents:

@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+WORKDIR /workspace
+COPY . .
+RUN pip install --no-cache-dir -e "./apps/api[dev]"
+ENV PYTHONPATH=/workspace/apps/api
+ENV RUN_ENVIRONMENT=isolated-docker-verification
+CMD ["python", "scripts/container_checks.py"]

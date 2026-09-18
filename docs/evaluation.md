@@ -1,0 +1,51 @@
+# 평가 방법과 재현
+
+## 실행
+
+```sh
+python -m pip install -e "./apps/api[dev]"
+python scripts/run_eval.py --output artifacts/evaluation/new-run.json
+# 실제 인식기 설치된 환경에서만 선택
+python scripts/run_eval.py --with-ocr --output artifacts/evaluation/new-ocr.json
+# 환경 설정과 명시적인 유료 호출 허용 후에만
+python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.json
+```
+
+기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 위험 입력에만 호출하는 gated 경로를 같은 사례로 비교한다.
+사용량/비용이 공급자 응답에 없으면 null이다. 가격을 추정해 채우지 않는다. 로컬 경로를 유료 호출 수에 포함하지 않는다.
+CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
+
+## 데이터와 분모
+
+`data/eval/manifest.json`은 모든 평가 입력의 SHA-256을 고정한다. 입력 파일이 바뀌면 평가를 중단한다.
+`benchmark.json`은 정상 추출 5건·의도적 거절 5건, Delta 8쌍, 연결 5건, 역사 재생 3개 시점으로 구성된다.
+원본 공개 조달 데이터는 0건이다. 시스템 작성자가 만든 회귀셋이므로 독립 테스트셋이나 일반화 벤치마크가 아니다.
+
+필드 정확도는 정상 정답 문서의 필수 정답 필드가 분모다. 추가 필드는 `unexpected`, 문서 exact-match에서 별도로 드러난다.
+거절 탐지는 정상/비정상 전체를 비교하고, 필수 조건은 집합 정밀도/재현율을 기록한다.
+지원 사례가 0이면 정확도/정밀도는 null이다. 결과가 없다는 이유로 100%를 반환하지 않는다.
+
+Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리한다. 무변경 사례의 오경보율도 별도 기록한다.
+연결은 해소된 링크의 정확도와 미해결 수를 함께 본다. 무조건 연결해야 높은 점수를 받는 구조가 아니다.
+랭킹 Recall@K/nDCG@K는 frozen relevance 라벨에 대해 계산한다. 낙찰 사실만으로 기업 참가 자격 정답을 만들지 않는다.
+
+## 과거 시점 재생
+
+버전의 effective_at, observed_at, created_at이 모두 as_of 이하일 때만 사용할 수 있다.
+후속 추출의 available_at과 기업 프로필의 available_at도 같은 조건으로 제한한다.
+늦게 수집된 과거 자료, 최신 프로필, 미래 낙찰 정보를 과거 판단에 주입하지 않는 반례 테스트가 있다.
+정답 라벨·outcome 정보는 ranking 허용 입력 목록에 없다. missing historical profile은 현재 프로필로 대체하지 않고 실패한다.
+
+## 실제 OCR 측정의 한계
+
+`artifacts/evaluation/local.json`은 Tesseract 5.5.0을 한 번의 배치 인식으로 실행한 저장 결과다.
+영어 이미지 3장/18개 필드 중 17개가 맞았다. 저해상도 이미지에서 Region이 잘못 인식되어 지역 필드가 누락됐다.
+한글 실문서·표·복잡한 레이아웃·다양한 스캐너에 대한 결과가 아니다. 서비스의 기본 fake fixture OCR을 이 정확도로 평가하지 않는다.
+반복 측정으로 잘 나온 결과만 고르지 않았다. 입력 이미지와 실패 인식 텍스트를 함께 보존했다.
+
+## provenance
+
+각 실행은 생성 시각, 데이터 SHA, Python 구현+scripts SHA, Git commit/dirty, 설정과 실행환경을 남긴다.
+현재 UI는 저장된 실험을 보여 주며 현재 서버 성능으로 해석하면 안 된다.
+OCR 포함 저장 실행과 이후 새 회귀 실행은 서로 다른 시각/소스 해시의 산출물로 보존한다.
+하드웨어가 다른 실행끼리 지연시간을 직접 우열 비교하지 않는다.

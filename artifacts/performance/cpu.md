@@ -1,0 +1,48 @@
+# ProcureDelta cpu benchmark
+
+기계 판독용 원본: `cpu.json`.
+
+합성 회귀 실험이며 운영 성능/실제 조달 적합도 평가가 아니다. 미실행 지표는 null 또는 not_run이다.
+
+```json
+{
+  "scope": "cpu_only_production_functions",
+  "synthetic": true,
+  "environment": {
+    "python": "3.13.5",
+    "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu_logical_count": 5,
+    "machine": "x86_64",
+    "cpu_model": "not exposed",
+    "shared_sandbox": true
+  },
+  "generated_dataset_sha256": "979f6644b2678bd2414e38538bf391ddbf9bc3fbbcdd37455de4db9fe31c63cd",
+  "normalized_records": 50000,
+  "ranked_records": 50000,
+  "delta_pairs": 5000,
+  "database_calls": 0,
+  "external_api_calls": 0,
+  "api_p95_ms": null,
+  "arq_records_per_second": null,
+  "elapsed_seconds": 6.994830194999963,
+  "cpu_pipeline_records_per_second": 7148.13635300839,
+  "stages_ms": {
+    "normalize": {
+      "samples": 50000,
+      "p50": 0.03900749999274922,
+      "p95": 0.06396449999215295
+    },
+    "eligibility_and_rank": {
+      "samples": 50000,
+      "p50": 0.04357399996024469,
+      "p95": 0.0699430499707887
+    },
+    "delta": {
+      "samples": 5000,
+      "p50": 0.14648599994870892,
+      "p95": 0.20882250003069205
+    }
+  },
+  "limitation": "CPU loop only; not PostgreSQL ingest, Redis throughput or SaaS capacity."
+}
+```

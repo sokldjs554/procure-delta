@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "files": {
+    "benchmark.json": "60915644e3d3d36a7aca72a410d40a3075eb472809ed014e50c77f8ecab78116",
+    "ocr_manifest.json": "a5b51a5a210dea71a7ea75f1261bd4d39b29701457b6c9db0c54f58fce52ba8e",
+    "ocr/low_resolution.png": "ee710328761829a9f72c9fca46b34764b1afea4acff02f91c6533e6a074bc9db",
+    "ocr/blurred.png": "fe85b45a0c0c50117ab4273081deebc711abe8fd26224a35e306641fdb2b3eaf",
+    "ocr/clean.png": "82ad64e627d24760b481406d1c17725a2532b86dc4eae693ccdc42ff624e8c45"
+  },
+  "synthetic": true
+}

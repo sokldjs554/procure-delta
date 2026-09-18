@@ -1,0 +1,53 @@
+{
+  "cases": [
+    {
+      "id": "clean",
+      "path": "ocr/clean.png",
+      "expected_fields": {
+        "title": "Synthetic cloud project",
+        "buyer_name": "Example Agency",
+        "procurement_type": "services",
+        "estimated_amount": "125000000",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ]
+      },
+      "language": "eng",
+      "synthetic": true
+    },
+    {
+      "id": "blurred",
+      "path": "ocr/blurred.png",
+      "expected_fields": {
+        "title": "Synthetic cloud project",
+        "buyer_name": "Example Agency",
+        "procurement_type": "services",
+        "estimated_amount": "125000000",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ]
+      },
+      "language": "eng",
+      "synthetic": true
+    },
+    {
+      "id": "low_resolution",
+      "path": "ocr/low_resolution.png",
+      "expected_fields": {
+        "title": "Synthetic cloud project",
+        "buyer_name": "Example Agency",
+        "procurement_type": "services",
+        "estimated_amount": "125000000",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ]
+      },
+      "language": "eng",
+      "synthetic": true
+    }
+  ],
+  "source_text": "Title: Synthetic cloud project\nBuyer: Example Agency\nCategory: services\nBudget: KRW 125000000\nRegion: Seoul"
+}

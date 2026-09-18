@@ -1,0 +1,793 @@
+{
+  "dataset_version": "synthetic-v1",
+  "origin": "hand-authored synthetic regression labels; not public procurement or measured company outcomes",
+  "public_real_records": 0,
+  "extraction_cases": [
+    {
+      "id": "english-full",
+      "text": "Title: Cloud document service\nBuyer: Synthetic Agency\nCategory: services\nBudget: KRW 125,000,000\nPublished: 2026-09-01T00:00:00Z\nDeadline: 2026-09-30T09:00:00Z\nRegion: Seoul\nCertifications: ISO 27001\nCapabilities: cloud migration; OCR",
+      "expected_valid": true,
+      "expected_fields": {
+        "title": "Cloud document service",
+        "buyer_name": "Synthetic Agency",
+        "procurement_type": "services",
+        "estimated_amount": "125000000",
+        "currency": "KRW",
+        "published_at": "2026-09-01T00:00:00+00:00",
+        "closes_at": "2026-09-30T09:00:00+00:00",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR",
+          "cloud migration"
+        ]
+      }
+    },
+    {
+      "id": "korean-labels",
+      "text": "공고명: 문서 검색 시스템\n수요기관: 합성기관\n분류: 용역\n예산: 210,000,000원\n공고일: 2026-09-01\n마감일: 2026-09-30T18:00:00+09:00\n지역: Seoul\n필수역량: OCR; Python",
+      "expected_valid": true,
+      "expected_fields": {
+        "title": "문서 검색 시스템",
+        "buyer_name": "합성기관",
+        "procurement_type": "services",
+        "estimated_amount": "210000000",
+        "currency": "KRW",
+        "published_at": "2026-08-31T15:00:00+00:00",
+        "closes_at": "2026-09-30T09:00:00+00:00",
+        "regions": [
+          "Seoul"
+        ],
+        "required_capabilities": [
+          "OCR",
+          "Python"
+        ]
+      }
+    },
+    {
+      "id": "optional-absent",
+      "text": "Title: Only explicit claims\nBuyer: Synthetic Buyer\nCategory: goods",
+      "expected_valid": true,
+      "expected_fields": {
+        "title": "Only explicit claims",
+        "buyer_name": "Synthetic Buyer",
+        "procurement_type": "goods"
+      }
+    },
+    {
+      "id": "currency-pair",
+      "text": "Title: Synthetic export\nBuyer: Test Buyer\nCategory: goods\nBudget: USD 1,200.50",
+      "expected_valid": true,
+      "expected_fields": {
+        "title": "Synthetic export",
+        "buyer_name": "Test Buyer",
+        "procurement_type": "goods",
+        "estimated_amount": "1200.5",
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "qualified-omission",
+      "text": "Title: Unknown requirement\nBuyer: Test Buyer\nCategory: services\nCertifications: ISO 27001 optional",
+      "expected_valid": true,
+      "expected_fields": {
+        "title": "Unknown requirement",
+        "buyer_name": "Test Buyer",
+        "procurement_type": "services"
+      }
+    },
+    {
+      "id": "missing-buyer",
+      "text": "Title: Missing mandatory field\nCategory: services",
+      "expected_valid": false,
+      "expected_fields": {}
+    },
+    {
+      "id": "invalid-deadline",
+      "text": "Title: Invalid date order\nBuyer: Synthetic Agency\nCategory: services\nPublished: 2026-09-30T00:00:00Z\nDeadline: 2026-09-01T00:00:00Z",
+      "expected_valid": false,
+      "expected_fields": {}
+    },
+    {
+      "id": "contradictory-money",
+      "text": "Title: Conflict\nBuyer: Synthetic Agency\nCategory: services\nBudget: KRW 100\nBudget: KRW 200",
+      "expected_valid": false,
+      "expected_fields": {}
+    },
+    {
+      "id": "zero-money",
+      "text": "Title: Invalid zero\nBuyer: Synthetic Agency\nCategory: works\nBudget: KRW 0",
+      "expected_valid": false,
+      "expected_fields": {}
+    },
+    {
+      "id": "unstructured-prose",
+      "text": "A synthetic buyer would like a cloud platform. Estimated budget is around three million won.",
+      "expected_valid": false,
+      "expected_fields": {}
+    }
+  ],
+  "delta_cases": [
+    {
+      "id": "no-change",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [],
+      "expected_impact": "low"
+    },
+    {
+      "id": "budget",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "120",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [
+        "budget"
+      ],
+      "expected_impact": "medium"
+    },
+    {
+      "id": "deadline-earlier",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-20T09:00:00Z"
+      },
+      "expected_fields": [
+        "closes_at"
+      ],
+      "expected_impact": "high"
+    },
+    {
+      "id": "region-change",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Busan"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [
+        "regions"
+      ],
+      "expected_impact": "high"
+    },
+    {
+      "id": "cert-added",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001",
+          "ISO 9001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [
+        "required_certifications"
+      ],
+      "expected_impact": "high"
+    },
+    {
+      "id": "format-only",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100.00",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T18:00:00+09:00"
+      },
+      "expected_fields": [],
+      "expected_impact": "low"
+    },
+    {
+      "id": "capability-removed",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [
+        "required_capabilities"
+      ],
+      "expected_impact": "medium"
+    },
+    {
+      "id": "compound",
+      "before": {
+        "estimated_amount": "100",
+        "currency": "KRW",
+        "regions": [
+          "Seoul"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "after": {
+        "estimated_amount": "90",
+        "currency": "KRW",
+        "regions": [
+          "Busan"
+        ],
+        "required_certifications": [
+          "ISO 27001"
+        ],
+        "required_capabilities": [
+          "OCR"
+        ],
+        "closes_at": "2026-09-30T09:00:00+00:00"
+      },
+      "expected_fields": [
+        "budget",
+        "regions"
+      ],
+      "expected_impact": "high"
+    }
+  ],
+  "link_cases": [
+    {
+      "id": "official",
+      "record": {
+        "source_id": 1,
+        "record_id": "tender",
+        "stage": "tender",
+        "title": "Cloud migration",
+        "buyer": "Synthetic Agency",
+        "amount": "100",
+        "published_at": "2026-09-01T00:00:00Z",
+        "id": 3,
+        "references": [
+          [
+            1,
+            "prespec",
+            "pre-specification"
+          ]
+        ]
+      },
+      "candidates": [
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "pre-specification",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 1
+        }
+      ],
+      "expected_parent_id": 1
+    },
+    {
+      "id": "ambiguous",
+      "record": {
+        "source_id": 1,
+        "record_id": "tender",
+        "stage": "tender",
+        "title": "Cloud migration",
+        "buyer": "Synthetic Agency",
+        "amount": "100",
+        "published_at": "2026-09-01T00:00:00Z",
+        "id": 3,
+        "references": [
+          [
+            1,
+            "prespec",
+            "pre-specification"
+          ]
+        ]
+      },
+      "candidates": [
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "pre-specification",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 1
+        },
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "pre-specification",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 2
+        }
+      ],
+      "expected_parent_id": null
+    },
+    {
+      "id": "missing",
+      "record": {
+        "source_id": 1,
+        "record_id": "prespec",
+        "stage": "tender",
+        "title": "Cloud migration",
+        "buyer": "Synthetic Agency",
+        "amount": "100",
+        "published_at": "2026-09-01T00:00:00Z",
+        "id": 3,
+        "references": [
+          [
+            1,
+            "missing",
+            "pre-specification"
+          ]
+        ]
+      },
+      "candidates": [
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "pre-specification",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 1
+        }
+      ],
+      "expected_parent_id": null
+    },
+    {
+      "id": "reverse-stage",
+      "record": {
+        "source_id": 1,
+        "record_id": "prespec",
+        "stage": "pre-specification",
+        "title": "Cloud migration",
+        "buyer": "Synthetic Agency",
+        "amount": "100",
+        "published_at": "2026-09-01T00:00:00Z",
+        "id": 3,
+        "references": [
+          [
+            1,
+            "prespec",
+            "contract"
+          ]
+        ]
+      },
+      "candidates": [
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "contract",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 1
+        }
+      ],
+      "expected_parent_id": null
+    },
+    {
+      "id": "fingerprint",
+      "record": {
+        "source_id": 1,
+        "record_id": "tender",
+        "stage": "tender",
+        "title": "Cloud migration",
+        "buyer": "Synthetic Agency",
+        "amount": "100",
+        "published_at": "2026-09-01T00:00:00Z",
+        "id": 3
+      },
+      "candidates": [
+        {
+          "source_id": 1,
+          "record_id": "prespec",
+          "stage": "pre-specification",
+          "title": "Cloud migration",
+          "buyer": "Synthetic Agency",
+          "amount": "100",
+          "published_at": "2026-09-01T00:00:00Z",
+          "id": 1
+        }
+      ],
+      "expected_parent_id": 1
+    }
+  ],
+  "replay": {
+    "profiles": [
+      {
+        "id": "profile-before",
+        "available_at": "2026-08-01T00:00:00Z",
+        "fields": {
+          "regions": [
+            "Seoul"
+          ],
+          "certifications": [
+            "ISO 27001"
+          ],
+          "industries": [
+            "services"
+          ],
+          "capabilities": [
+            "cloud migration",
+            "OCR"
+          ],
+          "min_contract_amount": "50",
+          "max_contract_amount": "200",
+          "contract_currency": "KRW",
+          "excluded_keywords": [
+            "gambling"
+          ]
+        }
+      },
+      {
+        "id": "profile-future",
+        "available_at": "2026-10-01T00:00:00Z",
+        "fields": {
+          "regions": [
+            "Busan"
+          ],
+          "certifications": [
+            "ISO 27001"
+          ],
+          "industries": [
+            "services"
+          ],
+          "capabilities": [
+            "cloud migration",
+            "OCR"
+          ],
+          "min_contract_amount": "50",
+          "max_contract_amount": "200",
+          "contract_currency": "KRW",
+          "excluded_keywords": [
+            "gambling"
+          ]
+        }
+      }
+    ],
+    "events": [
+      {
+        "record_id": "A",
+        "version_id": "A-1",
+        "effective_at": "2026-09-01T00:00:00Z",
+        "observed_at": "2026-09-02T00:00:00Z",
+        "created_at": "2026-09-02T00:00:00Z",
+        "fields": {
+          "estimated_amount": "100",
+          "currency": "KRW",
+          "regions": [
+            "Seoul"
+          ],
+          "required_certifications": [
+            "ISO 27001"
+          ],
+          "required_capabilities": [
+            "OCR"
+          ],
+          "closes_at": "2026-09-30T09:00:00+00:00",
+          "title": "cloud migration OCR",
+          "buyer_name": "Synthetic Agency",
+          "procurement_type": "services",
+          "published_at": "2026-09-01T00:00:00Z"
+        },
+        "enrichment": {
+          "available_at": "2026-10-01T00:00:00Z",
+          "extraction_id": "future-extraction",
+          "fields": {
+            "required_capabilities": [
+              "future-tool"
+            ]
+          }
+        }
+      },
+      {
+        "record_id": "B",
+        "version_id": "B-1",
+        "effective_at": "2026-09-01T00:00:00Z",
+        "observed_at": "2026-09-02T00:00:00Z",
+        "created_at": "2026-09-02T00:00:00Z",
+        "fields": {
+          "estimated_amount": "100",
+          "currency": "KRW",
+          "regions": [
+            "Seoul"
+          ],
+          "required_certifications": [
+            "ISO 27001"
+          ],
+          "required_capabilities": [
+            "woodworking"
+          ],
+          "closes_at": "2026-09-30T09:00:00+00:00",
+          "title": "office furniture",
+          "buyer_name": "Synthetic Agency",
+          "procurement_type": "services",
+          "published_at": "2026-09-01T00:00:00Z"
+        }
+      },
+      {
+        "record_id": "C",
+        "version_id": "C-1",
+        "effective_at": "2026-09-01T00:00:00Z",
+        "observed_at": "2026-09-02T00:00:00Z",
+        "created_at": "2026-09-02T00:00:00Z",
+        "fields": {
+          "estimated_amount": "100",
+          "currency": "KRW",
+          "regions": [
+            "Busan"
+          ],
+          "required_certifications": [
+            "ISO 27001"
+          ],
+          "required_capabilities": [
+            "OCR"
+          ],
+          "closes_at": "2026-09-30T09:00:00+00:00",
+          "title": "cloud migration OCR",
+          "buyer_name": "Synthetic Agency",
+          "procurement_type": "services",
+          "published_at": "2026-09-01T00:00:00Z"
+        }
+      },
+      {
+        "record_id": "D",
+        "version_id": "D-1",
+        "effective_at": "2026-09-01T00:00:00Z",
+        "observed_at": "2026-09-15T00:00:00Z",
+        "created_at": "2026-09-15T00:00:00Z",
+        "fields": {
+          "estimated_amount": "110",
+          "currency": "KRW",
+          "regions": [
+            "Seoul"
+          ],
+          "required_certifications": [
+            "ISO 27001"
+          ],
+          "required_capabilities": [
+            "OCR"
+          ],
+          "closes_at": "2026-09-30T09:00:00+00:00",
+          "title": "cloud migration OCR",
+          "buyer_name": "Synthetic Agency",
+          "procurement_type": "services",
+          "published_at": "2026-09-01T00:00:00Z"
+        }
+      },
+      {
+        "record_id": "A",
+        "version_id": "A-2",
+        "effective_at": "2026-09-08T00:00:00Z",
+        "observed_at": "2026-09-09T00:00:00Z",
+        "created_at": "2026-09-09T00:00:00Z",
+        "fields": {
+          "estimated_amount": "100",
+          "currency": "KRW",
+          "regions": [
+            "Busan"
+          ],
+          "required_certifications": [
+            "ISO 27001"
+          ],
+          "required_capabilities": [
+            "OCR"
+          ],
+          "closes_at": "2026-09-30T09:00:00+00:00",
+          "title": "cloud migration OCR",
+          "buyer_name": "Synthetic Agency",
+          "procurement_type": "services",
+          "published_at": "2026-09-01T00:00:00Z"
+        }
+      }
+    ],
+    "queries": [
+      {
+        "as_of": "2026-09-03T00:00:00Z",
+        "k": 2,
+        "relevance": {
+          "A": 3,
+          "B": 1,
+          "C": 0
+        },
+        "expected_allowed": [
+          "A",
+          "B"
+        ]
+      },
+      {
+        "as_of": "2026-09-10T00:00:00Z",
+        "k": 2,
+        "relevance": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "expected_allowed": [
+          "B"
+        ]
+      },
+      {
+        "as_of": "2026-09-16T00:00:00Z",
+        "k": 2,
+        "relevance": {
+          "A": 0,
+          "B": 1,
+          "C": 0,
+          "D": 3
+        },
+        "expected_allowed": [
+          "B",
+          "D"
+        ]
+      }
+    ]
+  }
+}
