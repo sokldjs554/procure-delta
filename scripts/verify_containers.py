@@ -120,7 +120,7 @@ def main() -> None:
                         readiness_snapshot = candidate
                 except (ValueError, OSError):
                     pass
-            except (URLError, TimeoutError, ValueError):
+            except (URLError, TimeoutError, ConnectionError, ValueError):
                 pass
             time.sleep(2)
         report['readiness_snapshot'] = readiness_snapshot
