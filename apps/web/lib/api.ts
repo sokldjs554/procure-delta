@@ -1,3 +1,4 @@
+import { staticDemoRequest, staticDocumentUrl } from "./static-demo";
 export type JsonValue =
   | string
   | number
@@ -229,6 +230,7 @@ export interface Release {
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
 let csrfToken = "";
 let bootstrapPromise: Promise<Actor> | null = null;
 export class ApiError extends Error {
@@ -240,6 +242,7 @@ export class ApiError extends Error {
   }
 }
 async function request<T>(path: string, init: RequestInit = {}) {
+  if (STATIC_DEMO) return (await staticDemoRequest(path, init)) as T;
   const headers = new Headers(init.headers);
   if (init.body) headers.set("Content-Type", "application/json");
   if (csrfToken && init.method && init.method !== "GET")
@@ -342,7 +345,7 @@ export function setPreferences(body: Preferences) {
   });
 }
 export const documentUrl = (id: string) =>
-  `${API}/api/v1/documents/${id}/original`;
+  STATIC_DEMO ? staticDocumentUrl(id) : `${API}/api/v1/documents/${id}/original`;
 export function getAdminPipeline() {
   return request<AdminPipeline>("/admin/pipeline");
 }
