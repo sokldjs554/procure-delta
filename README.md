@@ -5,6 +5,12 @@
 FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개인 개발 프로젝트입니다.
 현재 전체 5단계 생애주기 데모는 **합성 데이터**이며, 실제 공개 API 어댑터는 **나라장터 용역 입찰공고와 관측 변경 상태**까지 구현되어 있습니다. 실제 고객·기업 내부 자료·결제 정보는 사용하지 않습니다.
 
+## Live Demo
+
+**https://procure-delta-demo.onrender.com**
+
+공개 웹 데모는 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **읽기전용 합성 데이터 모드**로 배포합니다. 실제 FastAPI · PostgreSQL · Redis/ARQ 전체 경로는 아래 Docker release gate와 GitHub CI에서 별도로 검증하며, 공개 웹이 실제 나라장터·외부 LLM·실제 알림을 호출하는 것처럼 표시하지 않습니다.
+
 ![ProcureDelta landing](docs/images/landing.png)
 
 ## 문제 정의
