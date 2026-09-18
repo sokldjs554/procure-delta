@@ -369,7 +369,7 @@ function method(init: RequestInit) {
   return (init.method ?? "GET").toUpperCase();
 }
 
-export async function staticDemoRequest(path: string, init: RequestInit = {}): Promise<unknown> {
+async function staticDemoValue(path: string, init: RequestInit = {}): Promise<unknown> {
   const url = new URL(path, "https://static-demo.invalid");
   const pathname = url.pathname;
   const requestMethod = method(init);
@@ -482,6 +482,10 @@ export async function staticDemoRequest(path: string, init: RequestInit = {}): P
   }
 
   throw new Error(`정적 데모에서 지원하지 않는 경로입니다: ${pathname}`);
+}
+
+export async function staticDemoRequest<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+  return (await staticDemoValue(path, init)) as T;
 }
 
 export function staticDocumentUrl(_id: string) {

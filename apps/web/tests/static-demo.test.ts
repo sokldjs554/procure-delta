@@ -1,31 +1,32 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { staticDemoRequest, staticDocumentUrl } from "../lib/static-demo.ts";
+import type { Actor, EvaluationSummary, NotificationItem, Opportunity, OpportunityDetail, Profile } from "../lib/api.ts";
 
 test("static demo serves the core product journey without an API", async () => {
-  const actor = await staticDemoRequest("/auth/demo-login", { method: "POST" });
+  const actor = await staticDemoRequest<Actor>("/auth/demo-login", { method: "POST" });
   assert.equal(actor.role, "user");
 
-  const page = await staticDemoRequest("/opportunities?q=AI");
+  const page = await staticDemoRequest<{ items: Opportunity[]; next_cursor: string | null }>("/opportunities?q=AI");
   assert.ok(page.items.length >= 2);
   assert.equal(page.next_cursor, null);
 
-  const detail = await staticDemoRequest(`/opportunities/${page.items[0].id}`);
+  const detail = await staticDemoRequest<OpportunityDetail>(`/opportunities/${page.items[0].id}`);
   assert.equal(detail.id, page.items[0].id);
   assert.ok(detail.versions.length >= 2);
   assert.ok(detail.deltas.items.length >= 1);
 
   await staticDemoRequest(`/opportunities/${detail.id}/watch`, { method: "POST" });
-  const watchlist = await staticDemoRequest("/watchlist");
+  const watchlist = await staticDemoRequest<{ items: Opportunity[]; next_cursor: string | null }>("/watchlist");
   assert.ok(watchlist.items.some((item: { id: string }) => item.id === detail.id));
 
-  const profile = await staticDemoRequest("/company-profile");
+  const profile = await staticDemoRequest<Profile>("/company-profile");
   assert.equal(profile.synthetic_demo, true);
 
-  const notifications = await staticDemoRequest("/notifications");
+  const notifications = await staticDemoRequest<{ items: NotificationItem[]; next_cursor: string | null }>("/notifications");
   assert.ok(notifications.items.length >= 1);
 
-  const evaluation = await staticDemoRequest("/evaluation/summary");
+  const evaluation = await staticDemoRequest<EvaluationSummary>("/evaluation/summary");
   assert.equal(evaluation.status, "measured");
   assert.equal(evaluation.synthetic, true);
 

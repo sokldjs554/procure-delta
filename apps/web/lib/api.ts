@@ -242,7 +242,7 @@ export class ApiError extends Error {
   }
 }
 async function request<T>(path: string, init: RequestInit = {}) {
-  if (STATIC_DEMO) return (await staticDemoRequest(path, init)) as T;
+  if (STATIC_DEMO) return staticDemoRequest<T>(path, init);
   const headers = new Headers(init.headers);
   if (init.body) headers.set("Content-Type", "application/json");
   if (csrfToken && init.method && init.method !== "GET")
