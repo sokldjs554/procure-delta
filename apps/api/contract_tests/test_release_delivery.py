@@ -80,6 +80,8 @@ class ReleaseDeliveryTests(unittest.TestCase):
         runner = (ROOT / 'scripts/verify_containers.py').read_text(encoding='utf-8')
         self.assertIn("'product-browser-regression'", runner)
         self.assertIn("'tests/product.browser.mjs'", runner)
+        self.assertIn("'E2E_WEB_URL': 'http://127.0.0.1:13000'", runner)
+        self.assertIn("'E2E_API_URL': 'http://127.0.0.1:18000'", runner)
 
     def test_pipeline_demo_is_part_of_release_gate_and_public_measurement_contract(self) -> None:
         runner = (ROOT / 'scripts/verify_containers.py').read_text(encoding='utf-8')
