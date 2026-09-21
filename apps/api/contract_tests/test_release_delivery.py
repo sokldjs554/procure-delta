@@ -33,6 +33,15 @@ class ReleaseDeliveryTests(unittest.TestCase):
         self.assertIsNone(result['api_p95_ms'])
         self.assertIsNone(result['arq_records_per_second'])
 
+    def test_default_compose_uses_loopback_ports_and_notification_config(self) -> None:
+        text = (ROOT / 'docker-compose.yml').read_text(encoding='utf-8')
+        for port in (3000, 8000, 5432, 6379):
+            self.assertIn(f'127.0.0.1:{port}:{port}', text)
+        self.assertIn('NOTIFICATION_EXTERNAL_ENABLED', text)
+        self.assertIn('NOTIFICATION_WEBHOOK_DESTINATIONS', text)
+        env = (ROOT / '.env.example').read_text(encoding='utf-8')
+        self.assertIn('NOTIFICATION_WEBHOOK_DESTINATIONS={}', env)
+
     def test_verification_stack_uses_private_ports_and_distinct_databases(self) -> None:
         text = (ROOT / 'compose.verify.yml').read_text()
         for port in (13000, 18000, 15432, 16379):
