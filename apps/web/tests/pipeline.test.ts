@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextReplayIndex } from "../components/pipeline/pipeline-control-room.tsx";
+import { nextReplayIndex } from "../lib/pipeline.ts";
 import {
   staticPipelineScenario,
   staticPipelineScenarios,
