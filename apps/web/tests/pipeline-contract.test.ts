@@ -66,3 +66,15 @@ test("pipeline mobile styles include vertical rail and reduced motion safeguards
   assert.match(mobile, /prefers-reduced-motion:\s*reduce/);
   assert.match(mobile, /\.stage-inspector/);
 });
+
+
+const pipelineE2E = readFileSync(
+  new URL("../e2e/pipeline.mjs", import.meta.url),
+  "utf8",
+);
+
+test("pipeline E2E uses the shared stage selector helper in every viewport", () => {
+  assert.doesNotMatch(pipelineE2E, /mobileView\.stageButton|reducedView\.stageButton/);
+  assert.match(pipelineE2E, /stageButton\(mobileView\.page, "delta"\)/);
+  assert.match(pipelineE2E, /stageButton\(reducedView\.page, "delta"\)/);
+});
