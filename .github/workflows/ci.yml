@@ -67,6 +67,46 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  public-demo:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Build the exact public static-demo mode
+        run: NEXT_PUBLIC_STATIC_DEMO=true npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Public static-demo browser E2E
+        run: |
+          PORT=3100 npm start > /tmp/procure-delta-static-demo.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3100/ >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/procure-delta-static-demo.log
+            exit 1
+          fi
+          E2E_WEB_URL=http://127.0.0.1:3100 node e2e/static-demo.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: procure-delta-public-demo-evidence
+          path: artifacts/e2e/static-public
+
   release-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 45
