@@ -10,36 +10,36 @@
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 1107.961,
-      "p95_ms": 1164.307,
-      "requests_per_second": 4.47
+      "p50_ms": 1159.5945154999754,
+      "p95_ms": 1219.162342549987,
+      "requests_per_second": 4.27610158052812
     },
     "search": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 1117.402,
-      "p95_ms": 1174.711,
-      "requests_per_second": 4.46
+      "p50_ms": 1154.90500049998,
+      "p95_ms": 1210.3923193499668,
+      "requests_per_second": 4.322374359850543
     },
     "detail": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 158.857,
-      "p95_ms": 168.091,
-      "requests_per_second": 31.1
+      "p50_ms": 165.51361700004463,
+      "p95_ms": 195.71727990001762,
+      "requests_per_second": 29.249808926793392
     },
     "admin": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 24.301,
-      "p95_ms": 72.237,
-      "requests_per_second": 167.71
+      "p50_ms": 25.335382500003334,
+      "p95_ms": 71.60217759999625,
+      "requests_per_second": 164.72935934867678
     }
   },
   "client_observed_only": true,
