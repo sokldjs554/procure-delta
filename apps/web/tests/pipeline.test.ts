@@ -6,7 +6,9 @@ import {
   displayMetric,
   nextReplayIndex,
 } from "../lib/pipeline.ts";
+import type { EngineeringEvidence } from "../lib/api.ts";
 import {
+  staticDemoRequest,
   staticPipelineScenario,
   staticPipelineScenarios,
 } from "../lib/static-demo.ts";
@@ -60,4 +62,23 @@ test("missing hosted metrics render as unmeasured instead of zero", () => {
   assert.equal(displayMetric(null), "미측정");
   assert.equal(displayMetric(undefined), "미측정");
   assert.equal(displayMetric(0), "0");
+});
+
+
+test("static engineering evidence mirrors committed isolated measurements", async () => {
+  const evidence = await staticDemoRequest<EngineeringEvidence>(
+    "/evaluation/engineering-evidence",
+  );
+
+  assert.equal(evidence.queue.status, "measured");
+  assert.equal(evidence.queue.metrics.records, 1000);
+  assert.equal(evidence.queue.metrics.completed_records, 1000);
+
+  assert.equal(evidence.http.status, "measured");
+  assert.equal(evidence.http.metrics.requests, 200);
+  assert.equal(evidence.http.metrics.failed_requests, 0);
+
+  assert.equal(evidence.query_plans.status, "measured");
+  assert.equal(evidence.query_plans.metrics.candidate_adopted, false);
+  assert.equal(evidence.query_plans.metrics.candidate_rolled_back, true);
 });
