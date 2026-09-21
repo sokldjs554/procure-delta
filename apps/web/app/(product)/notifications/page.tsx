@@ -15,6 +15,19 @@ const labels = {
   eligibility_changed: "참여 조건 변경",
   outcome_published: "낙찰·계약 결과",
 } as const;
+const deliveredStatuses = new Set(["sent", "delivered"]);
+const statusLabel = (status: string) =>
+  deliveredStatuses.has(status)
+    ? "전달 완료"
+    : status === "pending"
+      ? "대기"
+      : status === "sending"
+        ? "전송 중"
+        : status === "dead_lettered"
+          ? "전달 실패"
+          : status === "cancelled"
+            ? "취소"
+            : status;
 export default function Notifications() {
   const [items, setItems] = useState<NotificationItem[] | null>(null),
     [cursor, setCursor] = useState<string | null>(null),
@@ -116,10 +129,10 @@ export default function Notifications() {
                   </div>
                   <span
                     className={
-                      item.status === "delivered" ? "success" : "pending"
+                      deliveredStatuses.has(item.status) ? "success" : "pending"
                     }
                   >
-                    {item.status}
+                    {statusLabel(item.status)}
                   </span>
                   <p>
                     채널 {item.channel} · 시도 {item.attempt_count}회
