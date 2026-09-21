@@ -48,7 +48,10 @@ try {
   await view.page.getByRole("button", { name: "변경 저장", exact: true }).click();
   await view.page.getByText(/필수 조건 게이트를 현재 프로필로 다시 계산/).waitFor();
 
-  await view.page.goto(`${web}/opportunities/opp-ai-contact-center`);
+  await view.page.getByRole("link", { name: "공고함", exact: true }).click();
+  await view.page
+    .getByRole("link", { name: "AI 기반 민원상담 시스템 구축", exact: true })
+    .click();
   await view.page.getByText("필수 조건 불일치", { exact: true }).first().waitFor();
   await view.page.getByText("추천 기준 미충족", { exact: true }).waitFor();
   assert.equal(
