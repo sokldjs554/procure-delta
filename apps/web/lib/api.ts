@@ -228,6 +228,42 @@ export interface Release {
   authentication: string;
   extraction_mode: string;
 }
+export type PipelineStageKind =
+  | "system"
+  | "deterministic"
+  | "ocr"
+  | "llm"
+  | "notification";
+export type PipelineStageStatus =
+  | "passed"
+  | "warning"
+  | "blocked"
+  | "not_run";
+export interface PipelineStage {
+  id: string;
+  label: string;
+  kind: PipelineStageKind;
+  status: PipelineStageStatus;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  evidence: Array<Record<string, unknown>>;
+  decision: Record<string, unknown>;
+  measured_duration_ms: number | null;
+  notice: string | null;
+}
+export interface PipelineScenarioSummary {
+  id: string;
+  title: string;
+  description: string;
+}
+export interface PipelineScenario {
+  scenario_id: string;
+  title: string;
+  description: string;
+  synthetic: true;
+  source_scope: "packaged_fixture" | "committed_verification_artifact";
+  stages: PipelineStage[];
+}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
