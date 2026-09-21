@@ -428,3 +428,7 @@ footer{border-top:1px solid rgba(11,59,44,.1);background:rgba(250,248,241,.72)}
 .json dd,.json li,.json span{overflow-wrap:anywhere;word-break:break-word}
 .detail-grid aside .json>div{grid-template-columns:1fr;gap:.35rem}
 .detail-grid aside .json .json>div{padding-left:.55rem;border-left:2px solid #e5e3db}
+
+/* Grid children with nested provenance must be allowed to shrink inside the viewport. */
+.detail-grid>div,.detail-grid>aside,.detail-grid .panel,.timeline,.document{min-width:0}
+.detail-grid .timeline,.detail-grid .document,.detail-grid .panel{overflow-wrap:anywhere;word-break:break-word}
