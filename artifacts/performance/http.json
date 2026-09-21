@@ -1,0 +1,47 @@
+{
+  "scope": "real_local_http",
+  "synthetic": true,
+  "requests": 200,
+  "successful_requests": 200,
+  "failed_requests": 0,
+  "endpoints": {
+    "inbox": {
+      "status": "measured",
+      "requests": 50,
+      "concurrency": 5,
+      "error_count": 0,
+      "p50_ms": 1219.4384035000212,
+      "p95_ms": 1314.0773957499616,
+      "requests_per_second": 4.042619376875352
+    },
+    "search": {
+      "status": "measured",
+      "requests": 50,
+      "concurrency": 5,
+      "error_count": 0,
+      "p50_ms": 1247.448858499979,
+      "p95_ms": 1289.842576100034,
+      "requests_per_second": 3.996695412971136
+    },
+    "detail": {
+      "status": "measured",
+      "requests": 50,
+      "concurrency": 5,
+      "error_count": 0,
+      "p50_ms": 184.957524500021,
+      "p95_ms": 199.57293119999235,
+      "requests_per_second": 26.838897209208998
+    },
+    "admin": {
+      "status": "measured",
+      "requests": 50,
+      "concurrency": 5,
+      "error_count": 0,
+      "p50_ms": 29.954216000078304,
+      "p95_ms": 34.685365750010526,
+      "requests_per_second": 162.6229542149941
+    }
+  },
+  "client_observed_only": true,
+  "successful": true
+}
