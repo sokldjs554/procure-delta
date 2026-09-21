@@ -17,8 +17,8 @@ const browser = await chromium.launch({
   ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
 });
 
-function stageButton(page, name) {
-  return page.locator(".pipeline-stage-map").getByRole("button", { name });
+function stageButton(page, id) {
+  return page.locator(`button[data-stage-id="${id}"]`);
 }
 
 async function openPipeline(context) {
@@ -38,14 +38,14 @@ try {
   const { page, errors } = await openPipeline(desktop);
 
   await page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
-  await stageButton(page, /^Delta\b/).waitFor();
+  await stageButton(page, "delta").waitFor();
   await page.getByRole("button", { name: "재생", exact: true }).click();
   await page
     .locator("button.pipeline-stage.current")
     .filter({ hasText: "Delta" })
     .waitFor({ timeout: 15000 });
 
-  await stageButton(page, /^Delta\b/).click();
+  await stageButton(page, "delta").click();
   await page.getByText("high 영향", { exact: true }).waitFor();
   await page.getByText(/region_restriction_changed/).waitFor();
   await page.screenshot({
@@ -53,14 +53,14 @@ try {
     fullPage: true,
   });
 
-  await stageButton(page, /^참여 조건\b/).click();
+  await stageButton(page, "eligibility").click();
   await page.getByText("참여 불가 · 관련도와 별개", { exact: true }).waitFor();
   await page
     .getByText("필수 조건 불일치는 관련도 점수로 뒤집지 않습니다.", { exact: true })
     .waitFor();
 
   await page.getByRole("button", { name: /장애와 복구/ }).click();
-  await stageButton(page, /^수집\b/).waitFor();
+  await stageButton(page, "collect").waitFor();
   await page.getByText(/timeout-recovery/).waitFor();
   await page.getByText(/rate-limit-recovery/).waitFor();
   await page.getByText(/server-error-terminal/).waitFor();
@@ -80,8 +80,8 @@ try {
     false,
   );
   await mobileView.page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
-  await mobileView.stageButton(page, /^Delta\b/).waitFor();
-  await mobileView.stageButton(page, /^Delta\b/).click();
+  await mobileView.stageButton(page, "delta").waitFor();
+  await mobileView.stageButton(page, "delta").click();
   await mobileView.page.locator(".stage-inspector").waitFor();
   assert.equal(
     await mobileView.page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
@@ -96,7 +96,7 @@ try {
   });
   const reducedView = await openPipeline(reduced);
   await reducedView.page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
-  await reducedView.stageButton(page, /^Delta\b/).waitFor();
+  await reducedView.stageButton(page, "delta").waitFor();
   await reducedView.page.getByRole("button", { name: "재생", exact: true }).click();
   await reducedView.page.waitForTimeout(1200);
   assert.equal(await reducedView.page.locator(".pipeline-stage.current").count(), 1);
