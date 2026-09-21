@@ -247,6 +247,19 @@ export function AdminConsole() {
           </p>
         </div>
       </header>
+      <section className="operator-pipeline-strip" aria-label="운영 파이프라인 개요">
+        <div>
+          <p className="eyebrow">CURRENT PIPELINE</p>
+          <strong>collect → parse → extract → delta → eligibility → rank → notify</strong>
+        </div>
+        <span className={pipeline.status === "ready" && pipeline.data?.worker_heartbeat && pipeline.data?.scheduler_heartbeat ? "success" : "pending"}>
+          {pipeline.status === "ready"
+            ? pipeline.data?.worker_heartbeat && pipeline.data?.scheduler_heartbeat
+              ? "현재 지표 연결"
+              : "현재 지표 경고"
+            : "현재 지표 미확인"}
+        </span>
+      </section>
       <Panel title="오늘의 수집 · UTC" state={pipeline} reload={loadPipeline}>
         {(p) => (
           <>
