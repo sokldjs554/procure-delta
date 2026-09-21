@@ -59,3 +59,16 @@ test("static demo honors full inbox filters and recomputes the eligibility gate 
     });
   }
 });
+
+
+test("static operator snapshot does not invent live worker activity", async () => {
+  const pipeline = await staticDemoRequest<import("../lib/api.ts").AdminPipeline>(
+    "/admin/pipeline",
+  );
+  assert.equal(pipeline.records_fetched_today, 3);
+  assert.equal(pipeline.changed_versions_today, 1);
+  assert.equal(pipeline.worker_heartbeat, false);
+  assert.equal(pipeline.scheduler_heartbeat, false);
+  assert.equal(pipeline.worker_activity, null);
+  assert.equal(pipeline.scheduler_activity, null);
+});
