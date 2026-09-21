@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { PipelineStage } from "../../lib/api";
+import { AmendmentImpact } from "./amendment-impact";
 
 type Tab = "input" | "output" | "evidence" | "decision";
 
@@ -60,6 +61,9 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
           : `${stage.measured_duration_ms.toFixed(2)} ms`}
       </p>
       {stage.notice && <p className="honesty">{stage.notice}</p>}
+      {["delta", "eligibility", "ranking", "notification"].includes(stage.id) && (
+        <AmendmentImpact stage={stage} />
+      )}
       <div className="inspector-tabs" role="tablist" aria-label="단계 세부 정보">
         {labels.map(([id, label]) => (
           <button
