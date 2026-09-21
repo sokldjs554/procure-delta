@@ -80,8 +80,8 @@ try {
     false,
   );
   await mobileView.page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
-  await mobileView.stageButton(page, "delta").waitFor();
-  await mobileView.stageButton(page, "delta").click();
+  await stageButton(mobileView.page, "delta").waitFor();
+  await stageButton(mobileView.page, "delta").click();
   await mobileView.page.locator(".stage-inspector").waitFor();
   assert.equal(
     await mobileView.page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
@@ -96,7 +96,7 @@ try {
   });
   const reducedView = await openPipeline(reduced);
   await reducedView.page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
-  await reducedView.stageButton(page, "delta").waitFor();
+  await stageButton(reducedView.page, "delta").waitFor();
   await reducedView.page.getByRole("button", { name: "재생", exact: true }).click();
   await reducedView.page.waitForTimeout(1200);
   assert.equal(await reducedView.page.locator(".pipeline-stage.current").count(), 1);
