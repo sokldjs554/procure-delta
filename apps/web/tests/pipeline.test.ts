@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -81,4 +82,34 @@ test("static engineering evidence mirrors committed isolated measurements", asyn
   assert.equal(evidence.query_plans.status, "measured");
   assert.equal(evidence.query_plans.metrics.candidate_adopted, false);
   assert.equal(evidence.query_plans.metrics.candidate_rolled_back, true);
+});
+
+
+test("static engineering evidence stays aligned with packaged API snapshot", async () => {
+  const packaged = JSON.parse(
+    readFileSync(
+      new URL("../../api/app/evaluation/results/engineering.json", import.meta.url),
+      "utf8",
+    ),
+  ) as EngineeringEvidence;
+  const staticEvidence = await staticDemoRequest<EngineeringEvidence>(
+    "/evaluation/engineering-evidence",
+  );
+
+  assert.equal(
+    staticEvidence.queue.metrics.records_per_second,
+    packaged.queue.metrics.records_per_second,
+  );
+  assert.equal(
+    (staticEvidence.http.metrics.endpoints as Record<string, { p95_ms: number }>).inbox.p95_ms,
+    (packaged.http.metrics.endpoints as Record<string, { p95_ms: number }>).inbox.p95_ms,
+  );
+  assert.equal(
+    staticEvidence.query_plans.metrics.improvement_ratio,
+    packaged.query_plans.metrics.improvement_ratio,
+  );
+  assert.equal(
+    staticEvidence.release.gates.some((gate) => gate.gate === "pipeline-demo-e2e"),
+    true,
+  );
 });
