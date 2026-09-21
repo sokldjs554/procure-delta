@@ -10,9 +10,10 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 
 **https://procure-delta-demo.onrender.com**
 
-공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **읽기전용 합성 데이터 모드**로 배포합니다.
+공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **client-only 합성 snapshot 모드**로 배포합니다. 서버/API/DB에는 쓰지 않으며, 프로필·관심 공고·알림 설정 변경은 현재 브라우저 런타임에서만 유지되고 새로고침 또는 데모 종료 시 초기화됩니다.
 
-- Pipeline Control Room의 시나리오와 contract는 실제 backend 구현과 맞춰 둡니다.
+- Pipeline Control Room은 backend와 같은 stage ID와 핵심 판단 경계를 사용하며 별도 browser contract로 검증합니다.
+- 공개 프로필 편집은 필수 조건 gate만 현재 입력으로 다시 계산하고, 관련도 점수 자체는 저장된 합성 snapshot을 유지합니다.
 - 화면에 보이는 performance 값은 저장된 격리 검증 snapshot입니다.
 - 공개 웹이 현재 나라장터를 polling하거나 hosted LLM/OCR/Redis worker/외부 알림을 실시간 실행하는 것처럼 표시하지 않습니다.
 - 실제 FastAPI · PostgreSQL · Redis/ARQ 경로는 Docker release gate와 GitHub Actions에서 별도로 검증합니다.
@@ -163,7 +164,7 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 
 ## Release gate
 
-현재 저장된 `artifacts/verification/release-gate.json`은 **2026-09-21 GitHub Actions run 35568528869**의 격리 통합 검증 결과이며 `passed=true`입니다.
+커밋된 `artifacts/verification/release-gate.json`은 **2026-09-21 성공한 격리 통합 검증의 reference artifact**이며 `passed=true`입니다. GitHub Actions의 `release-contract`는 push와 pull request마다 같은 검증 runner를 새로 실행합니다.
 
 통과 범위:
 
@@ -175,6 +176,7 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 - frontend test / typecheck / lint
 - 실제 browser lifecycle E2E
 - **Pipeline Control Room desktop/mobile/reduced-motion E2E**
+- **공개 static demo 전용 browser E2E** — 필터, 임시 프로필 gate 재계산, 상세, Pipeline, 상태 초기화, mobile overflow
 - Redis/ARQ queue scale
 - PostgreSQL query-plan experiment
 - local HTTP load
@@ -253,7 +255,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - hosted LLM은 현재 평가하지 않았으므로 정확도·비용·token 수치를 주장하지 않습니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
-- 공개 Render web은 static/read-only synthetic demo이며 full cloud backend 운영 증거가 아닙니다.
+- 공개 Render web은 client-only synthetic snapshot demo이며 full cloud backend 운영 증거가 아닙니다.
 - 결제·구독, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
 
 자세한 내용: [Limitations](docs/limitations.md)
