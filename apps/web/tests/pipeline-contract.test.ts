@@ -99,3 +99,16 @@ test("measured service evidence has dedicated compact list styling", () => {
   assert.match(styles, /\.http-endpoint-list/);
   assert.match(styles, /\.query-evidence/);
 });
+
+
+const staticDemoE2E = readFileSync(
+  new URL("../e2e/static-demo.mjs", import.meta.url),
+  "utf8",
+);
+
+test("static demo E2E verifies public-mode behavior without API traffic", () => {
+  assert.match(staticDemoE2E, /Static demo E2E targets local verification only/);
+  assert.match(staticDemoE2E, /apiRequests/);
+  assert.match(staticDemoE2E, /필수 조건 게이트/);
+  assert.match(staticDemoE2E, /static 데모에서는 원문 파일 다운로드/);
+});
