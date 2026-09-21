@@ -26,6 +26,7 @@ export function PipelineStageMap({
           <li key={stage.id}>
             <button
               className={`pipeline-stage ${progress} status-${stage.status}`}
+              data-stage-id={stage.id}
               aria-pressed={selectedStageId === stage.id}
               onClick={() => onSelect(stage.id)}
             >
