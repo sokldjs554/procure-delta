@@ -9,7 +9,7 @@ x-runtime: &runtime
   DEMO_AUTH_ENABLED: "true"
   DEMO_OPERATOR_SECRET: ${VERIFY_OPERATOR_SECRET:?Run scripts/verify_containers.py to generate a local secret}
   CORS_ORIGINS: '["http://localhost:13000"]'
-  RELEASE_REVISION: ${VERIFY_REVISION:-task20-local-verification}
+  RELEASE_REVISION: ${VERIFY_REVISION:-isolated-docker-verification}
 services:
   postgres:
     image: postgres:16-alpine
