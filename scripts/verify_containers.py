@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import time
+from statistics import median
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -19,6 +20,115 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'artifacts/container'
+PUBLIC_PERFORMANCE = ROOT / 'artifacts/performance'
+FORBIDDEN_PUBLIC_KEYS = ('secret', 'password', 'cookie', 'authorization', 'token')
+
+
+def _contains_forbidden_key(value: object) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            lowered = str(key).lower()
+            if any(part in lowered for part in FORBIDDEN_PUBLIC_KEYS):
+                return True
+            if _contains_forbidden_key(item):
+                return True
+    elif isinstance(value, list):
+        return any(_contains_forbidden_key(item) for item in value)
+    return False
+
+
+def _write_public_summary(destination: Path, payload: dict[str, object]) -> None:
+    if _contains_forbidden_key(payload):
+        raise RuntimeError(f'public summary contains a forbidden key: {destination.name}')
+    PUBLIC_PERFORMANCE.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+
+
+# Public destinations: artifacts/performance/queue.json, artifacts/performance/http.json,
+# artifacts/performance/query-plans.json
+def publish_public_measurements() -> None:
+    queue_raw = json.loads((OUTPUT / 'queue-load.json').read_text(encoding='utf-8'))
+    http_raw = json.loads((OUTPUT / 'http-load.json').read_text(encoding='utf-8'))
+    query_raw = json.loads((OUTPUT / 'query-plans.json').read_text(encoding='utf-8'))
+
+    queue_summary: dict[str, object] = {
+        'scope': queue_raw['scope'],
+        'synthetic': queue_raw['synthetic'],
+        'records': queue_raw['records'],
+        'completed_records': queue_raw['normalized_records'],
+        'elapsed_seconds': queue_raw['worker_seconds'],
+        'records_per_second': queue_raw['arq_records_per_second'],
+        'successful': queue_raw['successful'],
+        'limitation': queue_raw['limitation'],
+    }
+
+    endpoints: dict[str, object] = {}
+    total_requests = 0
+    successful_requests = 0
+    failed_requests = 0
+    for name, raw in http_raw.get('endpoints', {}).items():
+        if not isinstance(name, str) or not isinstance(raw, dict):
+            continue
+        requests = raw.get('requests')
+        errors = raw.get('error_count')
+        if not isinstance(requests, int) or not isinstance(errors, int):
+            continue
+        total_requests += requests
+        failed_requests += errors
+        successful_requests += requests - errors
+        endpoints[name] = {
+            'status': raw.get('status'),
+            'requests': requests,
+            'concurrency': raw.get('concurrency'),
+            'error_count': errors,
+            'p50_ms': raw.get('p50_ms'),
+            'p95_ms': raw.get('p95_ms'),
+            'requests_per_second': raw.get('requests_per_second'),
+        }
+    http_summary: dict[str, object] = {
+        'scope': http_raw['scope'],
+        'synthetic': True,
+        'requests': total_requests,
+        'successful_requests': successful_requests,
+        'failed_requests': failed_requests,
+        'endpoints': endpoints,
+        'client_observed_only': http_raw.get('client_observed_only') is True,
+        'successful': http_raw.get('successful') is True,
+    }
+
+    def execution_times(rows: object) -> list[float]:
+        values: list[float] = []
+        if not isinstance(rows, list):
+            return values
+        for entry in rows:
+            if not isinstance(entry, list) or not entry or not isinstance(entry[0], dict):
+                continue
+            value = entry[0].get('Execution Time')
+            if isinstance(value, (int, float)):
+                values.append(float(value))
+        return values
+
+    before = execution_times(query_raw.get('before'))
+    after = execution_times(query_raw.get('after'))
+    if not before or not after:
+        raise RuntimeError('query-plan summary lacks measured execution times')
+    before_ms, after_ms = median(before), median(after)
+    query_summary: dict[str, object] = {
+        'scope': query_raw['scope'],
+        'synthetic': True,
+        'records': query_raw['rows'],
+        'before': before_ms,
+        'after': after_ms,
+        'improvement_ratio': before_ms / after_ms if after_ms else None,
+        'candidate_adopted': query_raw.get('candidate_adopted') is True,
+        'candidate_rolled_back': query_raw.get('candidate_rolled_back') is True,
+        'caution': query_raw.get('caution'),
+    }
+
+    _write_public_summary(PUBLIC_PERFORMANCE / 'queue.json', queue_summary)
+    _write_public_summary(PUBLIC_PERFORMANCE / 'http.json', http_summary)
+    _write_public_summary(PUBLIC_PERFORMANCE / 'query-plans.json', query_summary)
+
 
 
 def main() -> None:
@@ -139,6 +249,7 @@ def main() -> None:
             browser_args.append('--with-deps')
         execute('browser-install', browser_args + ['chromium'], ROOT / 'apps/web')
         execute('real-lifecycle-e2e', ['node', 'e2e/lifecycle.mjs'], ROOT / 'apps/web')
+        execute('pipeline-demo-e2e', ['node', 'e2e/pipeline.mjs'], ROOT / 'apps/web')
         # Stop cron before isolated ingestion load; only the benchmark's ARQ worker runs.
         execute('pause-background-jobs', compose + ['stop', 'worker', 'scheduler'])
         execute('queue-scale', compose + ['run', '--rm', 'checks', 'python',
@@ -151,6 +262,7 @@ def main() -> None:
         execute('http-load', compose + ['run', '--rm', 'checks', 'python', 'scripts/load_test.py',
                 '--mode', 'service', '--requests', '50', '--concurrency', '5', '--base-url',
                 'http://api:8000', '--output', '/workspace/artifacts/container/http-load.json'])
+        publish_public_measurements()
         execute('resume-background-jobs', compose + ['start', 'worker', 'scheduler'])
         report.update(status='passed', passed=True, finished_at=datetime.now(UTC).isoformat())
         save()

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { logout } from "../lib/api";
 const links = [
   ["/inbox", "공고함"],
+  ["/pipeline", "파이프라인"],
   ["/watchlist", "관심 공고"],
   ["/notifications", "알림"],
   ["/profile", "기업 프로필"],

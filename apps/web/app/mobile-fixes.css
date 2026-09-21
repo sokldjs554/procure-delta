@@ -177,3 +177,92 @@
     text-align: left;
   }
 }
+
+
+@media (max-width: 800px) {
+  .topbar,
+  .topbar > *,
+  .topbar nav,
+  .product,
+  .pipeline-page,
+  .pipeline-control-room,
+  .pipeline-workspace,
+  .scenario-switcher,
+  .evidence-section,
+  .evidence-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .topbar nav {
+    flex-basis: 100%;
+  }
+  .product {
+    width: 100%;
+  }
+  .product::after {
+    right: 0;
+    width: 42vw;
+  }
+  .pipeline-stage-map {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    width: 100%;
+  }
+  .pipeline-stage-map li {
+    min-width: 0;
+  }
+  .pipeline-stage {
+    grid-template-columns: 36px minmax(0, 1fr);
+    width: 100%;
+  }
+  .pipeline-stage span:last-child,
+  .stage-inspector,
+  .stage-inspector * {
+    min-width: 0;
+  }
+  .stage-inspector {
+    width: 100%;
+    overflow: hidden;
+  }
+  .pipeline-json {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .impact-change-list article,
+  .evaluation-route-table,
+  .evaluation-route-row {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pipeline-stage {
+    padding: 0.65rem;
+  }
+  .pipeline-stage-index {
+    width: 30px;
+    height: 30px;
+  }
+  .scenario-switcher button {
+    width: 100%;
+  }
+  .stage-inspector {
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline-stage,
+  .pipeline-control-room *,
+  .evidence-card,
+  .scenario-switcher button {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+}

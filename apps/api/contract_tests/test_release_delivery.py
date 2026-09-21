@@ -67,6 +67,18 @@ class ReleaseDeliveryTests(unittest.TestCase):
         for gate in ('"amendment"', '"outcome"', 'watched_material_change', 'receipt_id'):
             self.assertIn(gate, text)
 
+    def test_pipeline_demo_is_part_of_release_gate_and_public_measurement_contract(self) -> None:
+        runner = (ROOT / 'scripts/verify_containers.py').read_text(encoding='utf-8')
+        self.assertIn("'pipeline-demo-e2e'", runner)
+        for path in (
+            'artifacts/performance/queue.json',
+            'artifacts/performance/http.json',
+            'artifacts/performance/query-plans.json',
+        ):
+            self.assertIn(path, runner)
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text(encoding='utf-8')
+        self.assertIn('artifacts/performance', workflow)
+
     def test_required_documentation_and_scripts_exist(self) -> None:
         for path in (
             'docs/architecture.md', 'docs/data-pipeline.md', 'docs/operations.md',

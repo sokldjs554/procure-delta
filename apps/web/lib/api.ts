@@ -228,6 +228,42 @@ export interface Release {
   authentication: string;
   extraction_mode: string;
 }
+export type PipelineStageKind =
+  | "system"
+  | "deterministic"
+  | "ocr"
+  | "llm"
+  | "notification";
+export type PipelineStageStatus =
+  | "passed"
+  | "warning"
+  | "blocked"
+  | "not_run";
+export interface PipelineStage {
+  id: string;
+  label: string;
+  kind: PipelineStageKind;
+  status: PipelineStageStatus;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  evidence: Array<Record<string, unknown>>;
+  decision: Record<string, unknown>;
+  measured_duration_ms: number | null;
+  notice: string | null;
+}
+export interface PipelineScenarioSummary {
+  id: string;
+  title: string;
+  description: string;
+}
+export interface PipelineScenario {
+  scenario_id: string;
+  title: string;
+  description: string;
+  synthetic: true;
+  source_scope: "packaged_fixture" | "committed_verification_artifact";
+  stages: PipelineStage[];
+}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
@@ -368,6 +404,72 @@ export function retryAdminFailure(id: string) {
   }>(`/admin/failures/${id}/retry`, { method: "POST" });
 }
 
+export interface EngineeringEvidence {
+  cpu: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    synthetic: boolean | null;
+    normalized_records: number | null;
+    ranked_records: number | null;
+    delta_pairs: number | null;
+    elapsed_seconds: number | null;
+    records_per_second: number | null;
+    limitation: string | null;
+  };
+  failure_drill: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    cases: Array<{
+      name: string;
+      attempts: number;
+      succeeded: boolean;
+      passed: boolean;
+    }>;
+    limitation: string | null;
+  };
+  release: {
+    status: "measured" | "not_run";
+    passed: boolean | null;
+    readiness: string | null;
+    gates: Array<{
+      gate: string;
+      passed: boolean;
+      elapsed_seconds: number | null;
+    }>;
+    dependencies: Record<string, boolean>;
+  };
+  queue: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+  http: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+  query_plans: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+}
+
+export interface EvaluationRouteSummary {
+  status: "measured" | "not_run";
+  support: number;
+  field_accuracy: number | null;
+  schema_failures: number | null;
+  grounded_acceptance_rate: number | null;
+  p50_latency_ms: number | null;
+  p95_latency_ms: number | null;
+  hosted_calls: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  reported_cost: number | null;
+  language: string | null;
+  notice: string | null;
+}
 export interface EvaluationSummary {
   status: "measured" | "not_run";
   synthetic: boolean;
@@ -391,8 +493,24 @@ export interface EvaluationSummary {
   ocr_support: number;
   ocr_language: string | null;
   hosted_evaluated: boolean;
+  routes: Record<
+    "deterministic" | "hosted_all" | "hosted_gated" | "ocr",
+    EvaluationRouteSummary
+  >;
   notice: string;
 }
 export function getEvaluationSummary() {
   return request<EvaluationSummary>("/evaluation/summary");
+}
+export function getPipelineScenarios() {
+  return request<PipelineScenarioSummary[]>("/demo/pipeline/scenarios");
+}
+export function getPipelineScenario(id: string) {
+  return request<PipelineScenario>(
+    `/demo/pipeline/scenarios/${encodeURIComponent(id)}`,
+  );
+}
+
+export function getEngineeringEvidence() {
+  return request<EngineeringEvidence>("/evaluation/engineering-evidence");
 }

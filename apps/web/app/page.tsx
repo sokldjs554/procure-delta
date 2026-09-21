@@ -9,6 +9,7 @@ export default function Home() {
         </Link>
         <div className="landing-nav-links" aria-label="제품 메뉴">
           <Link href="/inbox">공고함</Link>
+          <Link href="/pipeline">파이프라인</Link>
           <Link href="/watchlist">관심 공고</Link>
           <Link href="/notifications">알림</Link>
           <Link href="/about">평가·한계</Link>
@@ -33,6 +34,9 @@ export default function Home() {
           <div className="hero-actions">
             <Link className="button primary" href="/inbox">
               제품 둘러보기 <span aria-hidden="true">→</span>
+            </Link>
+            <Link className="button ghost" href="/pipeline">
+              파이프라인 데모 보기
             </Link>
             <Link className="button ghost" href="/about">
               평가와 한계 보기
@@ -93,6 +97,9 @@ export default function Home() {
                 </li>
               </ol>
               <div className="console-panel">
+                <div className="hero-pipeline-strip" aria-label="데이터 처리 파이프라인">
+                  <span>수집</span><b>→</b><span>문서</span><b>→</b><span>추출</span><b>→</b><span>Delta</span><b>→</b><span>판단</span>
+                </div>
                 <div className="console-toolbar">
                   <div>
                     <small>현재 기업 프로필 기준</small>

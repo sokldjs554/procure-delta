@@ -3,10 +3,14 @@ import type {
   AdminFailure,
   AdminPipeline,
   AdminSource,
+  EngineeringEvidence,
   EvaluationSummary,
   NotificationItem,
   Opportunity,
   OpportunityDetail,
+  PipelineScenario,
+  PipelineScenarioSummary,
+  PipelineStage,
   Preferences,
   Profile,
   ProfileWrite,
@@ -358,12 +362,431 @@ const evaluation: EvaluationSummary = {
   ocr_support: 18,
   ocr_language: "English synthetic images",
   hosted_evaluated: false,
+  routes: {
+    deterministic: {
+      status: "measured",
+      support: 30,
+      field_accuracy: 1,
+      schema_failures: 4,
+      grounded_acceptance_rate: 0.5,
+      p50_latency_ms: 0.08165599996345918,
+      p95_latency_ms: 0.5829165499676494,
+      hosted_calls: 0,
+      prompt_tokens: null,
+      completion_tokens: null,
+      reported_cost: null,
+      language: null,
+      notice: "로컬 deterministic extractor · 합성 회귀셋",
+    },
+    hosted_all: {
+      status: "not_run",
+      support: 0,
+      field_accuracy: null,
+      schema_failures: null,
+      grounded_acceptance_rate: null,
+      p50_latency_ms: null,
+      p95_latency_ms: null,
+      hosted_calls: null,
+      prompt_tokens: null,
+      completion_tokens: null,
+      reported_cost: null,
+      language: null,
+      notice: "explicit hosted opt-in not supplied",
+    },
+    hosted_gated: {
+      status: "not_run",
+      support: 0,
+      field_accuracy: null,
+      schema_failures: null,
+      grounded_acceptance_rate: null,
+      p50_latency_ms: null,
+      p95_latency_ms: null,
+      hosted_calls: null,
+      prompt_tokens: null,
+      completion_tokens: null,
+      reported_cost: null,
+      language: null,
+      notice: "explicit hosted opt-in not supplied",
+    },
+    ocr: {
+      status: "measured",
+      support: 18,
+      field_accuracy: 17 / 18,
+      schema_failures: null,
+      grounded_acceptance_rate: null,
+      p50_latency_ms: null,
+      p95_latency_ms: null,
+      hosted_calls: 1,
+      prompt_tokens: null,
+      completion_tokens: null,
+      reported_cost: null,
+      language: "eng",
+      notice: "English rendered images only; not Korean scans, layouts or production OCR.",
+    },
+  },
   notice: "작은 합성 회귀셋의 저장된 측정값입니다. 실제 조달 성능을 의미하지 않습니다.",
 };
 
 function opportunityView(item: Opportunity): Opportunity {
   return { ...item, watched: watchedIds.has(item.id) };
 }
+
+const pipelineCatalog: PipelineScenarioSummary[] = [
+  {
+    id: "new-opportunity",
+    title: "신규 공고",
+    description: "수집부터 추천·알림 판단까지",
+  },
+  {
+    id: "amendment-eligibility-change",
+    title: "정정으로 조건 변경",
+    description: "버전 변경이 Delta와 참여 가능 여부에 미치는 영향",
+  },
+  {
+    id: "failure-recovery",
+    title: "장애와 복구",
+    description: "재시도·비재시도·종료 실패 경계를 확인",
+  },
+];
+
+const pipelineOrder: Array<
+  [string, string, PipelineStage["kind"]]
+> = [
+  ["collect", "수집", "system"],
+  ["dedupe", "중복 제거", "system"],
+  ["normalize", "정규화", "deterministic"],
+  ["documents", "문서 파싱", "system"],
+  ["ocr-route", "OCR 라우팅", "ocr"],
+  ["extract", "구조화 추출", "deterministic"],
+  ["validate", "스키마·근거 검증", "deterministic"],
+  ["lifecycle", "생애주기 연결", "deterministic"],
+  ["delta", "Delta", "deterministic"],
+  ["eligibility", "참여 조건", "deterministic"],
+  ["ranking", "관련도 순위", "deterministic"],
+  ["notification", "알림 판단", "notification"],
+];
+
+function pipelineStage(
+  id: string,
+  label: string,
+  kind: PipelineStage["kind"],
+  status: PipelineStage["status"] = "passed",
+  patch: Partial<PipelineStage> = {},
+): PipelineStage {
+  return {
+    id,
+    label,
+    kind,
+    status,
+    input: {},
+    output: {},
+    evidence: [],
+    decision: {},
+    measured_duration_ms: null,
+    notice: null,
+    ...patch,
+  };
+}
+
+function newOpportunityScenario(): PipelineScenario {
+  const stages = pipelineOrder.map(([id, label, kind]) =>
+    pipelineStage(id, label, kind),
+  );
+  const byId = new Map(stages.map((stage) => [stage.id, stage]));
+  Object.assign(byId.get("collect")!, {
+    output: { source_record_id: "control-room-tender" },
+    notice: "합성 시나리오 · 외부 네트워크 호출 없음",
+  });
+  Object.assign(byId.get("ocr-route")!, {
+    status: "not_run",
+    decision: { route_to_ocr: false },
+    notice: "HTML native parsing 품질이 충분해 OCR을 실행하지 않았습니다.",
+  });
+  Object.assign(byId.get("extract")!, {
+    output: { extractor: "deterministic-labels-v1", hosted_llm: false },
+    notice: "로컬 deterministic extractor · hosted LLM 호출 없음",
+  });
+  Object.assign(byId.get("delta")!, {
+    status: "not_run",
+    notice: "최초 관측 버전에는 비교 대상이 없습니다.",
+  });
+  Object.assign(byId.get("eligibility")!, {
+    output: {
+      eligible: true,
+      allows_recommendation: true,
+      hard_failure_codes: [],
+      warning_codes: [],
+    },
+    decision: { hard_gate: "allowed" },
+  });
+  Object.assign(byId.get("ranking")!, {
+    output: { score: 0.88, recommended: true },
+    decision: { eligibility_overrides_rank: true },
+  });
+  Object.assign(byId.get("notification")!, {
+    output: { trigger: "new_high_relevance" },
+    decision: { external_delivery: false },
+    notice: "알림 트리거 판단만 재생하며 외부 메시지를 보내지 않습니다.",
+  });
+  return {
+    scenario_id: "new-opportunity",
+    title: "신규 공고",
+    description: "수집부터 추천·알림 판단까지",
+    synthetic: true,
+    source_scope: "packaged_fixture",
+    stages,
+  };
+}
+
+function amendmentScenario(): PipelineScenario {
+  const stages = pipelineOrder.map(([id, label, kind]) =>
+    pipelineStage(id, label, kind),
+  );
+  const byId = new Map(stages.map((stage) => [stage.id, stage]));
+  Object.assign(byId.get("collect")!, {
+    output: { observed_revision: "control-room-tender", amendment: true },
+    notice: "합성 정정 시나리오 · 외부 네트워크 호출 없음",
+  });
+  Object.assign(byId.get("ocr-route")!, {
+    status: "not_run",
+    decision: { route_to_ocr: false },
+    notice: "HTML native parsing 경로이므로 OCR은 실행하지 않았습니다.",
+  });
+  Object.assign(byId.get("extract")!, {
+    output: { extractor: "deterministic-labels-v1", hosted_llm: false },
+    notice: "hosted LLM이 아닌 재현 가능한 로컬 추출 경로입니다.",
+  });
+  Object.assign(byId.get("delta")!, {
+    output: {
+      changed_fields: {
+        budget: {
+          before: { estimated_amount: "320000000", currency: "KRW" },
+          after: { estimated_amount: "280000000", currency: "KRW" },
+        },
+        regions: { before: ["Seoul"], after: ["Busan"] },
+      },
+    },
+    decision: {
+      impact: "high",
+      reason_codes: ["budget_decreased", "region_restriction_changed"],
+    },
+  });
+  Object.assign(byId.get("eligibility")!, {
+    output: {
+      before: {
+        eligible: true,
+        allows_recommendation: true,
+        hard_failure_codes: [],
+        warning_codes: [],
+      },
+      after: {
+        eligible: false,
+        allows_recommendation: false,
+        hard_failure_codes: ["region_not_served"],
+        warning_codes: [],
+      },
+    },
+    decision: {
+      changed: true,
+      rule: "hard eligibility precedes relevance",
+    },
+  });
+  Object.assign(byId.get("ranking")!, {
+    output: {
+      before: { score: 0.9, recommended: true },
+      after: { score: 0.89, recommended: false },
+    },
+    decision: {
+      eligibility_overrides_rank: true,
+      after_score_still_visible: 0.89,
+    },
+  });
+  Object.assign(byId.get("notification")!, {
+    input: { watched: true, material_change: true },
+    output: { trigger: "watched_material_change" },
+    decision: { should_enqueue: true, external_delivery: false },
+    notice:
+      "관심 공고의 material change 알림 판단을 재생합니다. 외부 메시지는 보내지 않습니다.",
+  });
+  return {
+    scenario_id: "amendment-eligibility-change",
+    title: "정정으로 조건 변경",
+    description: "버전 변경이 Delta와 참여 가능 여부에 미치는 영향",
+    synthetic: true,
+    source_scope: "packaged_fixture",
+    stages,
+  };
+}
+
+function failureScenario(): PipelineScenario {
+  const stages = pipelineOrder.map(([id, label, kind]) =>
+    pipelineStage(id, label, kind, id === "collect" ? "warning" : "blocked", {
+      notice:
+        id === "collect"
+          ? "합성 HTTP transport 주입 결과"
+          : "수집 실패 경계를 설명하는 시나리오이므로 후속 처리를 실행하지 않습니다.",
+    }),
+  );
+  stages[0].input = { scope: "http_transport_injection" };
+  stages[0].output = {
+    transport_cases: [
+      { name: "timeout-recovery", attempts: 3, succeeded: true },
+      { name: "rate-limit-recovery", attempts: 2, succeeded: true },
+      { name: "server-error-terminal", attempts: 3, succeeded: false },
+      { name: "forbidden-not-retried", attempts: 1, succeeded: false },
+    ],
+  };
+  stages[0].decision = {
+    retryable: ["timeout", "429", "5xx"],
+    non_retryable: ["403"],
+    terminal_after_bounded_attempts: true,
+  };
+  return {
+    scenario_id: "failure-recovery",
+    title: "장애와 복구",
+    description: "재시도·비재시도·종료 실패 경계를 확인",
+    synthetic: true,
+    source_scope: "committed_verification_artifact",
+    stages,
+  };
+}
+
+export function staticPipelineScenarios(): PipelineScenarioSummary[] {
+  return pipelineCatalog.map((row) => ({ ...row }));
+}
+
+export function staticPipelineScenario(id: string): PipelineScenario {
+  if (id === "new-opportunity") return newOpportunityScenario();
+  if (id === "amendment-eligibility-change") return amendmentScenario();
+  if (id === "failure-recovery") return failureScenario();
+  throw new Error("정적 데모 파이프라인 시나리오를 찾을 수 없습니다.");
+}
+
+
+const engineeringEvidence: EngineeringEvidence = {
+  cpu: {
+    status: "measured",
+    scope: "cpu_only_production_functions",
+    synthetic: true,
+    normalized_records: 50000,
+    ranked_records: 50000,
+    delta_pairs: 5000,
+    elapsed_seconds: 6.994830194999963,
+    records_per_second: 7148.13635300839,
+    limitation:
+      "CPU loop only; not PostgreSQL ingest, Redis throughput or SaaS capacity.",
+  },
+  failure_drill: {
+    status: "measured",
+    scope: "http_transport_injection",
+    cases: [
+      { name: "timeout-recovery", attempts: 3, succeeded: true, passed: true },
+      { name: "rate-limit-recovery", attempts: 2, succeeded: true, passed: true },
+      { name: "server-error-terminal", attempts: 3, succeeded: false, passed: true },
+      { name: "forbidden-not-retried", attempts: 1, succeeded: false, passed: true },
+    ],
+    limitation:
+      "Synthetic HTTP failures; sleepers recorded, not actual network/DB outages.",
+  },
+  release: {
+    status: "measured",
+    passed: true,
+    readiness: "ready",
+    gates: [
+      { gate: "database-and-redis", passed: true, elapsed_seconds: 9.128632955 },
+      { gate: "backend-integration", passed: true, elapsed_seconds: 134.80993098599998 },
+      { gate: "full-readiness", passed: true, elapsed_seconds: 2.1315207579999935 },
+      { gate: "real-lifecycle-e2e", passed: true, elapsed_seconds: 13.098819434000006 },
+      { gate: "pipeline-demo-e2e", passed: true, elapsed_seconds: 9.468859132000034 },
+      { gate: "queue-scale", passed: true, elapsed_seconds: 50.98416539200002 },
+      { gate: "query-plans", passed: true, elapsed_seconds: 1.6847892979999983 },
+      { gate: "http-load", passed: true, elapsed_seconds: 27.555093554999985 },
+    ],
+    dependencies: {
+      database: true,
+      schema: true,
+      redis: true,
+      worker: true,
+      scheduler: true,
+      storage: true,
+      extraction_config: true,
+    },
+  },
+  queue: {
+    status: "measured",
+    scope: "real_redis_arq_postgresql",
+    metrics: {
+      records: 1000,
+      completed_records: 1000,
+      elapsed_seconds: 46.592474568,
+      records_per_second: 21.462693477259656,
+      successful: true,
+      limitation: "Local ingestion only; OCR/external LLM and attachments excluded.",
+    },
+  },
+  http: {
+    status: "measured",
+    scope: "real_local_http",
+    metrics: {
+      requests: 200,
+      successful_requests: 200,
+      failed_requests: 0,
+      client_observed_only: true,
+      successful: true,
+      endpoints: {
+        inbox: {
+          status: "measured",
+          requests: 50,
+          concurrency: 5,
+          error_count: 0,
+          p50_ms: 1159.5945154999754,
+          p95_ms: 1219.162342549987,
+          requests_per_second: 4.27610158052812,
+        },
+        search: {
+          status: "measured",
+          requests: 50,
+          concurrency: 5,
+          error_count: 0,
+          p50_ms: 1154.90500049998,
+          p95_ms: 1210.3923193499668,
+          requests_per_second: 4.322374359850543,
+        },
+        detail: {
+          status: "measured",
+          requests: 50,
+          concurrency: 5,
+          error_count: 0,
+          p50_ms: 165.51361700004463,
+          p95_ms: 195.71727990001762,
+          requests_per_second: 29.249808926793392,
+        },
+        admin: {
+          status: "measured",
+          requests: 50,
+          concurrency: 5,
+          error_count: 0,
+          p50_ms: 25.335382500003334,
+          p95_ms: 71.60217759999625,
+          requests_per_second: 164.72935934867678,
+        },
+      },
+    },
+  },
+  query_plans: {
+    status: "measured",
+    scope: "real_postgresql_explain",
+    metrics: {
+      records: 1007,
+      before: 0.331,
+      after: 0.041,
+      improvement_ratio: 8.073170731707316,
+      candidate_adopted: false,
+      candidate_rolled_back: true,
+      caution: "Fixed order and warmed caches; repeat across fresh runs before adopting.",
+    },
+  },
+};
 
 function method(init: RequestInit) {
   return (init.method ?? "GET").toUpperCase();
@@ -424,6 +847,16 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   }
 
   if (pathname === "/evaluation/summary") return evaluation;
+
+  if (pathname === "/evaluation/engineering-evidence") return engineeringEvidence;
+
+  if (pathname === "/demo/pipeline/scenarios") return staticPipelineScenarios();
+
+  const pipelineScenarioMatch = pathname.match(
+    /^\/demo\/pipeline\/scenarios\/([^/]+)$/,
+  );
+  if (pipelineScenarioMatch)
+    return staticPipelineScenario(decodeURIComponent(pipelineScenarioMatch[1]));
 
   if (pathname === "/admin/pipeline") {
     const pipeline: AdminPipeline = {

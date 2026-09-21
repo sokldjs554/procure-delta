@@ -1,0 +1,11 @@
+{
+  "scope": "real_postgresql_explain",
+  "synthetic": true,
+  "records": 1007,
+  "before": 0.331,
+  "after": 0.041,
+  "improvement_ratio": 8.073170731707316,
+  "candidate_adopted": false,
+  "candidate_rolled_back": true,
+  "caution": "Fixed order and warmed caches; repeat across fresh runs before adopting."
+}
