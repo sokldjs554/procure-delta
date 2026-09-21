@@ -515,6 +515,14 @@ function opportunityView(item: Opportunity): Opportunity {
           ...item.ranking,
           recommended:
             allowsRecommendation && Number(item.ranking.final_score) >= 0.6,
+          explanation: {
+            summary: allowsRecommendation
+              ? "저장된 시나리오 관련도 점수와 eligibility gate를 함께 표시합니다."
+              : "필수 조건 또는 확인 필요 항목 때문에 관련도 점수와 별개로 추천을 차단했습니다.",
+            eligibility_gate: allowsRecommendation ? "allowed" : "blocked",
+            hard_failure_codes: hardFailures.map((reason) => reason.code),
+            warning_codes: warnings.map((reason) => reason.code),
+          },
           ranking_version: "deterministic-baseline-v1",
         }
       : null,
