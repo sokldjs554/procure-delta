@@ -88,7 +88,13 @@ try {
   await page.locator('button[data-stage-id="delta"]').click();
   await page.getByText("high 영향", { exact: true }).waitFor();
   await page.getByText(/region_restriction_changed/).waitFor();
-  await page.getByText("HTTP 부하", { exact: true }).waitFor();
+  const httpEvidence = page.getByRole("heading", {
+    name: "실제 로컬 HTTP 부하",
+    exact: true,
+  });
+  await httpEvidence.waitFor({ state: "attached" });
+  await httpEvidence.scrollIntoViewIfNeeded();
+  await httpEvidence.waitFor({ state: "visible" });
   await page.screenshot({ path: resolve(output, "03-pipeline.png"), fullPage: true });
 
   await page.getByRole("link", { name: "알림" }).click();
