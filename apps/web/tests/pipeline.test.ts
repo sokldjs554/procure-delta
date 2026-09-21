@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextReplayIndex } from "../lib/pipeline.ts";
+import { decisionHeadline, nextReplayIndex } from "../lib/pipeline.ts";
 import {
   staticPipelineScenario,
   staticPipelineScenarios,
@@ -36,4 +36,17 @@ test("replay helper advances once and clamps at the final stage", () => {
   assert.equal(nextReplayIndex(0, 3), 1);
   assert.equal(nextReplayIndex(2, 3), 2);
   assert.equal(nextReplayIndex(0, 0), -1);
+});
+
+
+test("eligibility decision headline does not call a blocked item recommended", () => {
+  assert.equal(
+    decisionHeadline({
+      allows_recommendation: false,
+      hard_failure_codes: ["region_not_served"],
+      score: 0.88,
+      recommended: false,
+    }),
+    "참여 불가 · 관련도와 별개",
+  );
 });
