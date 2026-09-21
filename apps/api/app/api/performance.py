@@ -23,7 +23,9 @@ def resolve_artifact_root(module_path: Path) -> Path:
 
 
 ARTIFACT_ROOT = resolve_artifact_root(Path(__file__))
-PUBLIC_SNAPSHOT = Path(__file__).resolve().parents[1] / "evaluation" / "results" / "engineering.json"
+PUBLIC_SNAPSHOT = (
+    Path(__file__).resolve().parents[1] / "evaluation" / "results" / "engineering.json"
+)
 
 
 class DTO(BaseModel):
