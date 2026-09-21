@@ -219,6 +219,13 @@ _OPTIONAL_KEYS = {
     "before",
     "after",
     "improvement_ratio",
+    "successful",
+    "limitation",
+    "endpoints",
+    "client_observed_only",
+    "candidate_adopted",
+    "candidate_rolled_back",
+    "caution",
 }
 
 
