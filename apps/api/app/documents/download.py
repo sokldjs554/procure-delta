@@ -132,7 +132,9 @@ async def download_attachment(
         url = ref.source_url
         owned_client = client is None
         active_client = client or httpx.AsyncClient(
-            timeout=httpx.Timeout(15.0, connect=5.0), follow_redirects=False
+            timeout=httpx.Timeout(15.0, connect=5.0),
+            follow_redirects=False,
+            trust_env=False,
         )
         try:
             async with asyncio.timeout(30.0):
