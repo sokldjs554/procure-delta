@@ -196,6 +196,11 @@ def main() -> None:
             raise RuntimeError(f'{name} failed; see artifacts/container/{name}.log')
 
     try:
+        execute(
+            'default-compose-contract',
+            ['docker', 'compose', '--env-file', str(ROOT / '.env.example'),
+             '-f', 'docker-compose.yml', 'config', '--quiet'],
+        )
         execute('compose-contract', compose + ['config', '--quiet'])
         execute('image-build', compose + ['build'])
         execute('database-and-redis', compose + ['up', '-d', '--wait', 'postgres', 'redis'])
