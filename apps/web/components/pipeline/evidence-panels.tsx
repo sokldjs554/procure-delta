@@ -13,6 +13,7 @@ const importantGates = new Set([
   "backend-integration",
   "full-readiness",
   "real-lifecycle-e2e",
+  "pipeline-demo-e2e",
   "queue-scale",
   "query-plans",
   "http-load",
@@ -20,6 +21,28 @@ const importantGates = new Set([
 
 function statusLabel(status: "measured" | "not_run") {
   return status === "measured" ? "측정됨" : "미측정";
+}
+
+function numberMetric(metrics: Record<string, unknown>, key: string) {
+  const value = metrics[key];
+  return typeof value === "number" ? value : null;
+}
+
+function booleanMetric(metrics: Record<string, unknown>, key: string) {
+  const value = metrics[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+function textMetric(metrics: Record<string, unknown>, key: string) {
+  const value = metrics[key];
+  return typeof value === "string" ? value : null;
+}
+
+function recordMetric(metrics: Record<string, unknown>, key: string) {
+  const value = metrics[key];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 export function EvidencePanels() {
@@ -100,6 +123,52 @@ export function EvidencePanels() {
             <p>{data.cpu.limitation ?? "측정 범위 미확인"}</p>
           </article>
 
+          <article className="evidence-card queue-evidence">
+            <header>
+              <span>Queue</span>
+              <b>{statusLabel(data.queue.status)}</b>
+            </header>
+            <h3>실제 Redis · ARQ · PostgreSQL 큐 처리</h3>
+            {data.queue.status === "measured" ? (
+              <>
+                <div className="evidence-metrics">
+                  <span>
+                    <strong>{displayMetric(numberMetric(data.queue.metrics, "records"))}</strong>
+                    투입
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.queue.metrics, "completed_records"))}
+                    </strong>
+                    정규화 완료
+                  </span>
+                  <span>
+                    <strong>
+                      {numberMetric(data.queue.metrics, "records_per_second") === null
+                        ? "미측정"
+                        : numberMetric(data.queue.metrics, "records_per_second")!.toFixed(2)}
+                    </strong>
+                    건/초
+                  </span>
+                  <span>
+                    <strong>
+                      {numberMetric(data.queue.metrics, "elapsed_seconds") === null
+                        ? "미측정"
+                        : `${numberMetric(data.queue.metrics, "elapsed_seconds")!.toFixed(2)}s`}
+                    </strong>
+                    worker
+                  </span>
+                </div>
+                <p>
+                  {textMetric(data.queue.metrics, "limitation") ??
+                    "측정 범위를 확인할 수 없습니다."}
+                </p>
+              </>
+            ) : (
+              <p>별도 공개 queue 측정 artifact가 없어 미측정으로 남깁니다.</p>
+            )}
+          </article>
+
           <article className="evidence-card failure-evidence">
             <header>
               <span>Failure</span>
@@ -115,6 +184,120 @@ export function EvidencePanels() {
               ))}
             </div>
             <p>{data.failure_drill.limitation ?? "측정 범위 미확인"}</p>
+          </article>
+
+          <article className="evidence-card http-evidence">
+            <header>
+              <span>HTTP</span>
+              <b>{statusLabel(data.http.status)}</b>
+            </header>
+            <h3>실제 로컬 HTTP 부하</h3>
+            {data.http.status === "measured" ? (
+              <>
+                <div className="evidence-metrics">
+                  <span>
+                    <strong>{displayMetric(numberMetric(data.http.metrics, "requests"))}</strong>
+                    요청
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.http.metrics, "successful_requests"))}
+                    </strong>
+                    성공
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.http.metrics, "failed_requests"))}
+                    </strong>
+                    실패
+                  </span>
+                  <span>
+                    <strong>
+                      {booleanMetric(data.http.metrics, "client_observed_only") === true
+                        ? "client"
+                        : "미확인"}
+                    </strong>
+                    관측 기준
+                  </span>
+                </div>
+                <div className="http-endpoint-list">
+                  {Object.entries(recordMetric(data.http.metrics, "endpoints")).map(
+                    ([name, value]) => {
+                      const row =
+                        value && typeof value === "object" && !Array.isArray(value)
+                          ? (value as Record<string, unknown>)
+                          : {};
+                      const p95 = numberMetric(row, "p95_ms");
+                      return (
+                        <span key={name}>
+                          <b>{name}</b>
+                          p95 {p95 === null ? "미측정" : `${p95.toFixed(1)} ms`}
+                        </span>
+                      );
+                    },
+                  )}
+                </div>
+                <p>격리된 로컬 API · 합성 데이터 · 동시성 5의 client-observed 측정입니다.</p>
+              </>
+            ) : (
+              <p>별도 공개 HTTP 측정 artifact가 없어 미측정으로 남깁니다.</p>
+            )}
+          </article>
+
+          <article className="evidence-card query-evidence">
+            <header>
+              <span>Query plan</span>
+              <b>{statusLabel(data.query_plans.status)}</b>
+            </header>
+            <h3>PostgreSQL EXPLAIN 후보 인덱스 실험</h3>
+            {data.query_plans.status === "measured" ? (
+              <>
+                <div className="evidence-metrics">
+                  <span>
+                    <strong>
+                      {numberMetric(data.query_plans.metrics, "before") === null
+                        ? "미측정"
+                        : `${numberMetric(data.query_plans.metrics, "before")!.toFixed(3)} ms`}
+                    </strong>
+                    before median
+                  </span>
+                  <span>
+                    <strong>
+                      {numberMetric(data.query_plans.metrics, "after") === null
+                        ? "미측정"
+                        : `${numberMetric(data.query_plans.metrics, "after")!.toFixed(3)} ms`}
+                    </strong>
+                    after median
+                  </span>
+                  <span>
+                    <strong>
+                      {numberMetric(data.query_plans.metrics, "improvement_ratio") === null
+                        ? "미측정"
+                        : `${numberMetric(data.query_plans.metrics, "improvement_ratio")!.toFixed(2)}×`}
+                    </strong>
+                    이번 실행 비율
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.query_plans.metrics, "records"))}
+                    </strong>
+                    rows
+                  </span>
+                </div>
+                <p>
+                  후보 인덱스는 채택하지 않음 ·{" "}
+                  {booleanMetric(data.query_plans.metrics, "candidate_rolled_back")
+                    ? "ROLLBACK 확인"
+                    : "rollback 미확인"}
+                </p>
+                <p>
+                  {textMetric(data.query_plans.metrics, "caution") ??
+                    "실험 한계를 확인할 수 없습니다."}
+                </p>
+              </>
+            ) : (
+              <p>별도 공개 query-plan artifact가 없어 미측정으로 남깁니다.</p>
+            )}
           </article>
 
           <article className="evidence-card release-evidence">
@@ -138,32 +321,6 @@ export function EvidencePanels() {
               ))}
             </div>
             <p>readiness: {data.release.readiness ?? "미측정"}</p>
-          </article>
-
-          <article className="evidence-card optional-evidence">
-            <header>
-              <span>Service details</span>
-              <b>정직한 공백</b>
-            </header>
-            <h3>세부 서비스 측정 artifact</h3>
-            <dl>
-              <div>
-                <dt>Queue summary</dt>
-                <dd>{statusLabel(data.queue.status)}</dd>
-              </div>
-              <div>
-                <dt>HTTP summary</dt>
-                <dd>{statusLabel(data.http.status)}</dd>
-              </div>
-              <div>
-                <dt>Query-plan summary</dt>
-                <dd>{statusLabel(data.query_plans.status)}</dd>
-              </div>
-            </dl>
-            <p>
-              release gate의 통과 여부와 상세 성능 수치는 구분합니다. 별도 공개
-              요약 artifact가 없으면 수치를 만들지 않습니다.
-            </p>
           </article>
         </div>
       )}
