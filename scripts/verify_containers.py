@@ -253,6 +253,7 @@ def main() -> None:
         if sys.platform.startswith('linux'):
             browser_args.append('--with-deps')
         execute('browser-install', browser_args + ['chromium'], ROOT / 'apps/web')
+        execute('product-browser-regression', ['node', 'tests/product.browser.mjs'], ROOT / 'apps/web')
         execute('real-lifecycle-e2e', ['node', 'e2e/lifecycle.mjs'], ROOT / 'apps/web')
         execute('pipeline-demo-e2e', ['node', 'e2e/pipeline.mjs'], ROOT / 'apps/web')
         # Stop cron before isolated ingestion load; only the benchmark's ARQ worker runs.
