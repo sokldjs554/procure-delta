@@ -267,6 +267,7 @@ export interface PipelineScenario {
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
+export const STATIC_DEMO_ENABLED = STATIC_DEMO;
 let csrfToken = "";
 let bootstrapPromise: Promise<Actor> | null = null;
 export class ApiError extends Error {
