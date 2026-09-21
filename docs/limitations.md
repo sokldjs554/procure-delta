@@ -2,7 +2,7 @@
 
 ## 검증된 범위
 
-2026-09-18 격리 Docker release gate에서 Compose, 이미지 빌드, PostgreSQL/Redis, backend lint/type/tests, DB isolation regression, source contracts, evaluation, fault drill, runtime readiness, frontend 검사, 브라우저 lifecycle E2E, queue scale, query plan, HTTP load, worker/scheduler pause-resume가 모두 통과했다.
+2026-09-21 격리 Docker release gate에서 Compose, 이미지 빌드, PostgreSQL/Redis, backend lint/type/tests, DB isolation regression, source contracts, evaluation, fault drill, runtime readiness, frontend 검사, 브라우저 lifecycle E2E, queue scale, query plan, HTTP load, worker/scheduler pause-resume가 모두 통과했다.
 
 원본 결과는 `artifacts/verification/release-gate.json`, 검증 계약은 `docs/verification.md`에 있다.
 
