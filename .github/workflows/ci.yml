@@ -87,3 +87,4 @@ jobs:
           path: |
             artifacts/container
             artifacts/e2e
+            artifacts/performance
