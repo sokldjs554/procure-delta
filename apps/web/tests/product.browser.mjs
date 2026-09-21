@@ -1,14 +1,21 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-const browser = await chromium.launch({ channel: "chrome", headless: true });
+const web = process.env.E2E_WEB_URL ?? "http://localhost:3000";
+if (!["localhost", "127.0.0.1"].includes(new URL(web).hostname)) {
+  throw Error("Product browser regression targets local verification only");
+}
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
+});
 const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 
 try {
-  await page.goto("http://localhost:3000/inbox", { waitUntil: "networkidle" });
+  await page.goto(`${web}/inbox`, { waitUntil: "networkidle" });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 
   let requests = 0;
@@ -62,20 +69,20 @@ try {
   assert.equal((await preferences).status(), 200);
 
   await page.getByRole("link", { name: "ProcureDelta" }).click();
-  await page.waitForURL("http://localhost:3000/");
+  await page.waitForURL(`${web}/`);
   const ordinaryCompletedVisit = await page.evaluate(() => localStorage.getItem("procureDeltaLastVisit"));
   assert.ok(ordinaryCompletedVisit, "ordinary SPA landing departure must persist the completed visit");
   await page.getByRole("link", { name: "제품 둘러보기" }).click();
-  await page.waitForURL("**/inbox");
+  await page.waitForURL(`${web}/inbox`);
   assert.equal(await page.evaluate(() => sessionStorage.getItem("procureDeltaPreviousVisit")), ordinaryCompletedVisit);
 
   await page.getByRole("button", { name: "데모 종료" }).click();
-  await page.waitForURL("http://localhost:3000/");
+  await page.waitForURL(`${web}/`);
   assert.equal(new URL(page.url()).pathname, "/");
   const completedVisit = await page.evaluate(() => localStorage.getItem("procureDeltaLastVisit"));
   assert.ok(completedVisit, "SPA departure must persist the completed visit timestamp");
   await page.getByRole("link", { name: "제품 둘러보기" }).click();
-  await page.waitForURL("**/inbox");
+  await page.waitForURL(`${web}/inbox`);
   assert.equal(await page.evaluate(() => sessionStorage.getItem("procureDeltaPreviousVisit")), completedVisit);
   assert.deepEqual(errors, []);
 
@@ -84,7 +91,7 @@ try {
   let loginAttempts = 0;
   await outagePage.route("**/api/v1/auth/session", (route) => route.fulfill({ status: 503, contentType: "application/json", body: '{"detail":"unavailable"}' }));
   await outagePage.route("**/api/v1/auth/demo-login", (route) => { loginAttempts += 1; return route.continue(); });
-  await outagePage.goto("http://localhost:3000/inbox");
+  await outagePage.goto(`${web}/inbox`);
   await outagePage.getByRole("heading", { name: "데모를 시작할 수 없습니다" }).waitFor();
   assert.equal(loginAttempts, 0, "session 503 must not create a replacement owner");
   await outage.close();
