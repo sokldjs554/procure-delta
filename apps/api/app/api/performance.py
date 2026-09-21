@@ -9,7 +9,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(prefix="/api/v1/evaluation", tags=["evaluation"])
 
-ARTIFACT_ROOT = Path(__file__).resolve().parents[4] / "artifacts"
+
+def resolve_artifact_root(module_path: Path) -> Path:
+    resolved = module_path.resolve()
+    for parent in resolved.parents:
+        candidate = parent / "artifacts"
+        if candidate.is_dir():
+            return candidate
+    for parent in resolved.parents:
+        if parent.name == "app":
+            return parent.parent / "artifacts"
+    return resolved.parent / "artifacts"
+
+
+ARTIFACT_ROOT = resolve_artifact_root(Path(__file__))
 
 
 class DTO(BaseModel):
