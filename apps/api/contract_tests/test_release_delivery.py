@@ -76,6 +76,8 @@ class ReleaseDeliveryTests(unittest.TestCase):
             'artifacts/performance/query-plans.json',
         ):
             self.assertIn(path, runner)
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text(encoding='utf-8')
+        self.assertIn('artifacts/performance', workflow)
 
     def test_required_documentation_and_scripts_exist(self) -> None:
         for path in (
