@@ -52,3 +52,30 @@ def test_artifact_root_resolution_is_safe_in_shallow_container_layout(tmp_path: 
     root = performance.resolve_artifact_root(fake_module)
 
     assert root == tmp_path / "artifacts"
+
+
+@pytest.mark.asyncio
+async def test_engineering_evidence_projects_committed_service_measurements() -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/evaluation/engineering-evidence")
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["queue"]["status"] == "measured"
+    assert body["queue"]["scope"] == "real_redis_arq_postgresql"
+    assert body["queue"]["metrics"]["records"] == 1000
+    assert body["queue"]["metrics"]["completed_records"] == 1000
+    assert body["queue"]["metrics"]["successful"] is True
+
+    assert body["http"]["status"] == "measured"
+    assert body["http"]["scope"] == "real_local_http"
+    assert body["http"]["metrics"]["requests"] == 200
+    assert body["http"]["metrics"]["failed_requests"] == 0
+    assert body["http"]["metrics"]["endpoints"]["inbox"]["p95_ms"] > 0
+
+    assert body["query_plans"]["status"] == "measured"
+    assert body["query_plans"]["scope"] == "real_postgresql_explain"
+    assert body["query_plans"]["metrics"]["candidate_adopted"] is False
+    assert body["query_plans"]["metrics"]["candidate_rolled_back"] is True
+    assert body["query_plans"]["metrics"]["improvement_ratio"] > 1
