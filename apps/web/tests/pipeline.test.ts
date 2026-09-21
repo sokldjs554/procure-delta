@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { nextReplayIndex } from "../components/pipeline/pipeline-control-room.tsx";
 import {
   staticPipelineScenario,
   staticPipelineScenarios,
@@ -27,4 +28,12 @@ test("static amendment replay preserves hard eligibility boundary", () => {
 
 test("unknown static scenario ids fail closed", () => {
   assert.throws(() => staticPipelineScenario("../../secret"));
+});
+
+
+test("replay helper advances once and clamps at the final stage", () => {
+  assert.equal(nextReplayIndex(-1, 3), 0);
+  assert.equal(nextReplayIndex(0, 3), 1);
+  assert.equal(nextReplayIndex(2, 3), 2);
+  assert.equal(nextReplayIndex(0, 0), -1);
 });
