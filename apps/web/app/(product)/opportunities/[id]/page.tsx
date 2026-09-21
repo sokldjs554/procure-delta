@@ -246,14 +246,23 @@ export default function Detail() {
           </Section>
           <Section title="원문 문서">
             {data.documents.length ? (
-              data.documents.map((document) => (
-                <article className="document" key={document.id}>
-                  <b>{document.filename}</b>
-                  <small>SHA-256 {document.sha256 ?? "확인 전"}</small>
-                  <small>다운로드 상태 {document.download_status}</small>
-                  <a href={documentUrl(document.id)}>인증된 원문 다운로드</a>
-                </article>
-              ))
+              data.documents.map((document) => {
+                const originalHref = documentUrl(document.id);
+                return (
+                  <article className="document" key={document.id}>
+                    <b>{document.filename}</b>
+                    <small>SHA-256 {document.sha256 ?? "확인 전"}</small>
+                    <small>다운로드 상태 {document.download_status}</small>
+                    {originalHref ? (
+                      <a href={originalHref}>인증된 원문 다운로드</a>
+                    ) : (
+                      <small className="static-document-note">
+                        합성 static 데모에서는 원문 파일 다운로드를 제공하지 않습니다.
+                      </small>
+                    )}
+                  </article>
+                );
+              })
             ) : (
               <p>연결된 문서가 없습니다.</p>
             )}
