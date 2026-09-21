@@ -78,3 +78,16 @@ test("pipeline E2E uses the shared stage selector helper in every viewport", () 
   assert.match(pipelineE2E, /stageButton\(mobileView\.page, "delta"\)/);
   assert.match(pipelineE2E, /stageButton\(reducedView\.page, "delta"\)/);
 });
+
+
+const evidencePanels = readFileSync(
+  new URL("../components/pipeline/evidence-panels.tsx", import.meta.url),
+  "utf8",
+);
+
+test("engineering evidence cards surface measured queue HTTP and query-plan scope", () => {
+  assert.match(evidencePanels, /Redis · ARQ · PostgreSQL/);
+  assert.match(evidencePanels, /HTTP 부하/);
+  assert.match(evidencePanels, /후보 인덱스는 채택하지 않음/);
+  assert.match(evidencePanels, /p95/);
+});
