@@ -404,6 +404,57 @@ export function retryAdminFailure(id: string) {
   }>(`/admin/failures/${id}/retry`, { method: "POST" });
 }
 
+export interface EngineeringEvidence {
+  cpu: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    synthetic: boolean | null;
+    normalized_records: number | null;
+    ranked_records: number | null;
+    delta_pairs: number | null;
+    elapsed_seconds: number | null;
+    records_per_second: number | null;
+    limitation: string | null;
+  };
+  failure_drill: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    cases: Array<{
+      name: string;
+      attempts: number;
+      succeeded: boolean;
+      passed: boolean;
+    }>;
+    limitation: string | null;
+  };
+  release: {
+    status: "measured" | "not_run";
+    passed: boolean | null;
+    readiness: string | null;
+    gates: Array<{
+      gate: string;
+      passed: boolean;
+      elapsed_seconds: number | null;
+    }>;
+    dependencies: Record<string, boolean>;
+  };
+  queue: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+  http: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+  query_plans: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
+}
+
 export interface EvaluationSummary {
   status: "measured" | "not_run";
   synthetic: boolean;
@@ -439,4 +490,8 @@ export function getPipelineScenario(id: string) {
   return request<PipelineScenario>(
     `/demo/pipeline/scenarios/${encodeURIComponent(id)}`,
   );
+}
+
+export function getEngineeringEvidence() {
+  return request<EngineeringEvidence>("/evaluation/engineering-evidence");
 }
