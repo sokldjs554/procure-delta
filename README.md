@@ -160,7 +160,6 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 
 이 숫자는 일반화 benchmark가 아니라 **작은 작성자 제작 regression set**입니다.
 
-![Evaluation and limits](docs/images/evaluation.png)
 
 ## Release gate
 
