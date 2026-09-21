@@ -455,6 +455,21 @@ export interface EngineeringEvidence {
   };
 }
 
+export interface EvaluationRouteSummary {
+  status: "measured" | "not_run";
+  support: number;
+  field_accuracy: number | null;
+  schema_failures: number | null;
+  grounded_acceptance_rate: number | null;
+  p50_latency_ms: number | null;
+  p95_latency_ms: number | null;
+  hosted_calls: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  reported_cost: number | null;
+  language: string | null;
+  notice: string | null;
+}
 export interface EvaluationSummary {
   status: "measured" | "not_run";
   synthetic: boolean;
@@ -478,6 +493,10 @@ export interface EvaluationSummary {
   ocr_support: number;
   ocr_language: string | null;
   hosted_evaluated: boolean;
+  routes: Record<
+    "deterministic" | "hosted_all" | "hosted_gated" | "ocr",
+    EvaluationRouteSummary
+  >;
   notice: string;
 }
 export function getEvaluationSummary() {
