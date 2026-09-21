@@ -10,7 +10,7 @@ docker compose up --build -d
 docker compose exec api python -m app.demo.seed --run-id review --phase base
 ```
 
-일반 포트는 웹 3000/API 8000/DB 5432/Redis 6379이다.
+일반 포트는 웹 3000/API 8000/DB 5432/Redis 6379이며 기본 Compose에서는 모두 `127.0.0.1`에만 바인딩한다.
 DB가 뜬 것과 서비스 전체가 준비된 것은 다르다. `/health/live`는 생존 확인이고 `/health/ready`는 DB·마이그레이션·Redis·worker·scheduler·저장소·추출 설정을 모두 확인한다.
 
 ```sh
@@ -18,7 +18,7 @@ docker compose ps
 docker compose logs --tail 100 api worker scheduler migrate
 ```
 
-기본 알림은 로컬 영수증이다. 이메일·웹훅을 실제 발송했다고 해석하지 않는다.
+기본 알림은 로컬 영수증이다. 이메일·웹훅을 실제 발송했다고 해석하지 않는다. 외부 webhook은 `NOTIFICATION_EXTERNAL_ENABLED=true`와 owner별 `NOTIFICATION_WEBHOOK_DESTINATIONS`를 운영자가 명시적으로 설정한 경우에만 worker가 사용한다.
 평가용 OCR이 있는 것과 기본 서비스에 실제 OCR 공급자가 연결된 것은 다르다.
 나라장터/외부 LLM 설정과 스모크는 `source-contracts.md` 및 `evaluation.md`에 분리했다.
 
