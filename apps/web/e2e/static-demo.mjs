@@ -95,6 +95,12 @@ try {
   await page.getByText("전달 완료", { exact: true }).first().waitFor();
   await page.screenshot({ path: resolve(output, "04-notifications.png"), fullPage: true });
 
+  await page.goto(`${web}/admin`);
+  await page.getByRole("heading", { name: "파이프라인 운영 현황" }).waitFor();
+  await page.getByText("저장된 합성 운영 스냅샷", { exact: false }).waitFor();
+  await page.getByText("저장된 합성 지표", { exact: true }).waitFor();
+  await page.screenshot({ path: resolve(output, "05-admin.png"), fullPage: true });
+
   assert.equal(apiRequests, 0, "static public demo must not call /api/v1");
   assert.deepEqual(errors, []);
 
