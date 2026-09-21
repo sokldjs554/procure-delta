@@ -422,3 +422,9 @@ footer{border-top:1px solid rgba(11,59,44,.1);background:rgba(250,248,241,.72)}
 @media(max-width:560px){
   .http-endpoint-list{grid-template-columns:1fr}
 }
+
+/* Keep nested provenance readable in the narrow detail rail. */
+.json,.json dl,.json ul,.json li,.json dd{min-width:0}
+.json dd,.json li,.json span{overflow-wrap:anywhere;word-break:break-word}
+.detail-grid aside .json>div{grid-template-columns:1fr;gap:.35rem}
+.detail-grid aside .json .json>div{padding-left:.55rem;border-left:2px solid #e5e3db}
