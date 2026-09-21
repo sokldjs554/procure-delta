@@ -30,6 +30,7 @@ async def test_engineering_evidence_missing_artifacts_are_not_reported_as_zero(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(performance, "ARTIFACT_ROOT", tmp_path)
+    monkeypatch.setattr(performance, "PUBLIC_SNAPSHOT", tmp_path / "missing-engineering.json")
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/v1/evaluation/engineering-evidence")
@@ -79,3 +80,22 @@ async def test_engineering_evidence_projects_committed_service_measurements() ->
     assert body["query_plans"]["metrics"]["candidate_adopted"] is False
     assert body["query_plans"]["metrics"]["candidate_rolled_back"] is True
     assert body["query_plans"]["metrics"]["improvement_ratio"] > 1
+
+
+@pytest.mark.asyncio
+async def test_engineering_evidence_falls_back_to_packaged_public_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(performance, "ARTIFACT_ROOT", tmp_path)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/evaluation/engineering-evidence")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["queue"]["status"] == "measured"
+    assert body["http"]["status"] == "measured"
+    assert body["query_plans"]["status"] == "measured"
+    assert body["release"]["passed"] is True
+    assert any(gate["gate"] == "pipeline-demo-e2e" for gate in body["release"]["gates"])
