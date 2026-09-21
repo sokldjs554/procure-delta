@@ -3,6 +3,7 @@ import type {
   AdminFailure,
   AdminPipeline,
   AdminSource,
+  EngineeringEvidence,
   EvaluationSummary,
   NotificationItem,
   Opportunity,
@@ -599,6 +600,60 @@ export function staticPipelineScenario(id: string): PipelineScenario {
   throw new Error("정적 데모 파이프라인 시나리오를 찾을 수 없습니다.");
 }
 
+
+const engineeringEvidence: EngineeringEvidence = {
+  cpu: {
+    status: "measured",
+    scope: "cpu_only_production_functions",
+    synthetic: true,
+    normalized_records: 50000,
+    ranked_records: 50000,
+    delta_pairs: 5000,
+    elapsed_seconds: 6.994830194999963,
+    records_per_second: 7148.13635300839,
+    limitation:
+      "CPU loop only; not PostgreSQL ingest, Redis throughput or SaaS capacity.",
+  },
+  failure_drill: {
+    status: "measured",
+    scope: "http_transport_injection",
+    cases: [
+      { name: "timeout-recovery", attempts: 3, succeeded: true, passed: true },
+      { name: "rate-limit-recovery", attempts: 2, succeeded: true, passed: true },
+      { name: "server-error-terminal", attempts: 3, succeeded: false, passed: true },
+      { name: "forbidden-not-retried", attempts: 1, succeeded: false, passed: true },
+    ],
+    limitation:
+      "Synthetic HTTP failures; sleepers recorded, not actual network/DB outages.",
+  },
+  release: {
+    status: "measured",
+    passed: true,
+    readiness: "ready",
+    gates: [
+      { gate: "database-and-redis", passed: true, elapsed_seconds: 26.194087600000785 },
+      { gate: "backend-integration", passed: true, elapsed_seconds: 452.70752619999985 },
+      { gate: "full-readiness", passed: true, elapsed_seconds: 4.313000000000102 },
+      { gate: "real-lifecycle-e2e", passed: true, elapsed_seconds: 21.05024670000057 },
+      { gate: "queue-scale", passed: true, elapsed_seconds: 60.9719800999992 },
+      { gate: "query-plans", passed: true, elapsed_seconds: 3.456305699999575 },
+      { gate: "http-load", passed: true, elapsed_seconds: 46.44038759999967 },
+    ],
+    dependencies: {
+      database: true,
+      schema: true,
+      redis: true,
+      worker: true,
+      scheduler: true,
+      storage: true,
+      extraction_config: true,
+    },
+  },
+  queue: { status: "not_run", scope: null, metrics: {} },
+  http: { status: "not_run", scope: null, metrics: {} },
+  query_plans: { status: "not_run", scope: null, metrics: {} },
+};
+
 function method(init: RequestInit) {
   return (init.method ?? "GET").toUpperCase();
 }
@@ -658,6 +713,8 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   }
 
   if (pathname === "/evaluation/summary") return evaluation;
+
+  if (pathname === "/evaluation/engineering-evidence") return engineeringEvidence;
 
   if (pathname === "/demo/pipeline/scenarios") return staticPipelineScenarios();
 
