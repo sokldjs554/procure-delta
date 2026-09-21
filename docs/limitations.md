@@ -2,7 +2,7 @@
 
 ## 검증된 범위
 
-2026-09-18 격리 Docker release gate에서 Compose, 이미지 빌드, PostgreSQL/Redis, backend lint/type/tests, DB isolation regression, source contracts, evaluation, fault drill, runtime readiness, frontend 검사, 브라우저 lifecycle E2E, queue scale, query plan, HTTP load, worker/scheduler pause-resume가 모두 통과했다.
+2026-09-21 격리 Docker reference release gate에서 Compose, 이미지 빌드, PostgreSQL/Redis, backend lint/type/tests, DB isolation regression, source contracts, evaluation, fault drill, runtime readiness, frontend 검사, 브라우저 lifecycle E2E, queue scale, query plan, HTTP load, worker/scheduler pause-resume가 모두 통과했다.
 
 원본 결과는 `artifacts/verification/release-gate.json`, 검증 계약은 `docs/verification.md`에 있다.
 
@@ -23,7 +23,7 @@ HWP 내용 추출은 구현하지 않았다.
 
 ## 서비스와 운영
 
-실제 결제·구독·크레딧 차감, 운영용 인증, 기관별 강한 격리, 외부 Sentry 연동, 클라우드 운영을 완료했다고 주장하지 않는다.
+실제 결제·구독·크레딧 차감, 운영용 인증, 기관별 강한 격리, 외부 Sentry/OpenTelemetry 연동, full backend 클라우드 운영을 완료했다고 주장하지 않는다. 공개 Render 데모는 client-only 합성 snapshot이다.
 CPU 5만 건 루프는 DB/Redis/HTTP 처리량이 아니며 실제 공개 문서 5만 건을 수집했다는 의미도 아니다.
 query-plan gate는 현재 쿼리의 실행 계획을 확인하는 검증 도구이며, 별도 인덱스 변경 효과를 과장하지 않는다.
 외부 알림은 기본 비활성이고, local receipt 경로가 기본이다.
