@@ -1,9 +1,10 @@
 import logging
 import time
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -45,7 +46,9 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def request_observability(request: Request, call_next):
+async def request_observability(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     request_id = uuid4().hex
     started = time.perf_counter()
     try:
