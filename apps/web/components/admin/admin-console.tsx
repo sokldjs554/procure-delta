@@ -20,6 +20,7 @@ type Load<T> = {
   message?: string;
 };
 type FailureList = { items: AdminFailure[]; nextCursor: string | null };
+const staticDemo = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
 const loading = <T,>(): Load<T> => ({ status: "loading" });
 const errorText = (error: unknown) =>
   error instanceof ApiError && error.status === 403
@@ -66,7 +67,7 @@ function Panel<T>({
 }
 export function AdminConsole() {
   const [actor, setActor] = useState<"checking" | "login" | "operator">(
-      "checking",
+      staticDemo ? "operator" : "checking",
     ),
     [secret, setSecret] = useState(""),
     [authError, setAuthError] = useState("");
@@ -81,6 +82,7 @@ export function AdminConsole() {
   const [continuationLoading, setContinuationLoading] = useState(false);
   const [continuationError, setContinuationError] = useState("");
   useEffect(() => {
+    if (staticDemo) return;
     session()
       .then((a) => setActor(a.role === "operator" ? "operator" : "login"))
       .catch(() => setActor("login"));
@@ -239,11 +241,14 @@ export function AdminConsole() {
     <main className="product admin">
       <header className="page-head">
         <div>
-          <p className="eyebrow">OBSERVABILITY · ACTUAL API</p>
+          <p className="eyebrow">
+            {staticDemo ? "SYNTHETIC OPERATOR SNAPSHOT" : "OBSERVABILITY · ACTUAL API"}
+          </p>
           <h1>파이프라인 운영 현황</h1>
           <p>
-            오늘은 UTC 00:00부터 집계합니다. 문서·추출 값은 누적 DB 합계이며
-            작업 활동은 현재 프로세스 수명 동안의 카운터입니다.
+            {staticDemo
+              ? "공개 Render에서는 저장된 합성 운영 스냅샷을 보여줍니다. 실제 DB·Redis·worker 현재값은 Docker/API 검증에서 별도로 확인합니다."
+              : "오늘은 UTC 00:00부터 집계합니다. 문서·추출 값은 누적 DB 합계이며 작업 활동은 현재 프로세스 수명 동안의 카운터입니다."}
           </p>
         </div>
       </header>
@@ -253,11 +258,13 @@ export function AdminConsole() {
           <strong>collect → parse → extract → delta → eligibility → rank → notify</strong>
         </div>
         <span className={pipeline.status === "ready" && pipeline.data?.worker_heartbeat && pipeline.data?.scheduler_heartbeat ? "success" : "pending"}>
-          {pipeline.status === "ready"
-            ? pipeline.data?.worker_heartbeat && pipeline.data?.scheduler_heartbeat
-              ? "현재 지표 연결"
-              : "현재 지표 경고"
-            : "현재 지표 미확인"}
+          {staticDemo
+            ? "저장된 합성 지표"
+            : pipeline.status === "ready"
+              ? pipeline.data?.worker_heartbeat && pipeline.data?.scheduler_heartbeat
+                ? "현재 지표 연결"
+                : "현재 지표 경고"
+              : "현재 지표 미확인"}
         </span>
       </section>
       <Panel title="오늘의 수집 · UTC" state={pipeline} reload={loadPipeline}>
