@@ -10,3 +10,7 @@ async def test_health_live() -> None:
         response = await client.get("/health/live")
 
     assert response.status_code == 200
+    request_id = response.headers.get("x-request-id")
+    assert request_id is not None
+    assert len(request_id) == 32
+    int(request_id, 16)
