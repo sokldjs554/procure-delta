@@ -41,12 +41,32 @@ try {
   await card.locator("h2 a").click();
   await page.getByRole("heading", { name: "AI 기반 민원상담 시스템 구축" }).waitFor();
   await page.getByText("공개 합성 데모에서는 원문 파일을 제공하지 않습니다.").waitFor();
-  assert.equal(
-    await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
-    false,
-    "detail page must not overflow horizontally",
-  );
   await page.screenshot({ path: resolve(output, "02-detail.png"), fullPage: true });
+  const overflow = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const offenders = [...document.querySelectorAll("*")]
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.right > width + 1 || rect.left < -1;
+      })
+      .slice(0, 12)
+      .map((element) => ({
+        tag: element.tagName,
+        className: String(element.className ?? ""),
+        left: Math.round(element.getBoundingClientRect().left),
+        right: Math.round(element.getBoundingClientRect().right),
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      }));
+    return {
+      overflows: document.documentElement.scrollWidth > innerWidth,
+      viewport: innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      offenders,
+    };
+  });
+  if (overflow.overflows) console.error("detail overflow diagnostics", JSON.stringify(overflow));
+  assert.equal(overflow.overflows, false, "detail page must not overflow horizontally");
 
   await page.getByRole("link", { name: "기업 프로필" }).click();
   await page.getByLabel("활동 지역").fill("부산");
