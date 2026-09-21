@@ -40,3 +40,17 @@ test("admin keeps operator pipeline overview separate from reviewer replay", () 
   assert.match(admin, /notify/);
   assert.doesNotMatch(admin, /파이프라인을 직접 재생해보세요/);
 });
+
+
+const about = readFileSync(
+  new URL("../app/(product)/about/page.tsx", import.meta.url),
+  "utf8",
+);
+
+test("evaluation page compares deterministic hosted and OCR routes honestly", () => {
+  assert.match(about, /추출 경로 비교/);
+  assert.match(about, /hosted all/);
+  assert.match(about, /hosted gated/);
+  assert.match(about, /OCR/);
+  assert.match(about, /미실행/);
+});
