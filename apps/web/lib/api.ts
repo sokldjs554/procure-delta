@@ -432,3 +432,11 @@ export interface EvaluationSummary {
 export function getEvaluationSummary() {
   return request<EvaluationSummary>("/evaluation/summary");
 }
+export function getPipelineScenarios() {
+  return request<PipelineScenarioSummary[]>("/demo/pipeline/scenarios");
+}
+export function getPipelineScenario(id: string) {
+  return request<PipelineScenario>(
+    `/demo/pipeline/scenarios/${encodeURIComponent(id)}`,
+  );
+}
