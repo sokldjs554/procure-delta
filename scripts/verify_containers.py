@@ -203,11 +203,15 @@ def main() -> None:
             execute('backend-integration', compose + ['run', '--rm', 'checks'])
         finally:
             record_backend_subgates()
-        execute('runtime-start', compose + ['up', '-d', 'api', 'worker', 'scheduler', 'web'])
+        execute(
+            'runtime-start',
+            compose + ['up', '-d', 'api', 'worker', 'scheduler', 'web', 'static-web'],
+        )
         start = time.monotonic()
         ready = False
         readiness_snapshot: dict[str, object] | None = None
         web_status: int | None = None
+        static_web_status: int | None = None
         while time.monotonic() - start < 180:
             try:
                 with urlopen('http://localhost:18000/health/ready', timeout=3) as response:
@@ -220,7 +224,9 @@ def main() -> None:
                 ):
                     with urlopen('http://localhost:13000', timeout=3) as response:
                         web_status = response.status
-                        ready = response.status == 200
+                    with urlopen('http://localhost:13001', timeout=3) as response:
+                        static_web_status = response.status
+                    ready = web_status == 200 and static_web_status == 200
                     if ready:
                         break
             except HTTPError as error:
@@ -234,8 +240,13 @@ def main() -> None:
                 pass
             time.sleep(2)
         report['readiness_snapshot'] = readiness_snapshot
-        gates.append({'gate': 'full-readiness', 'passed': ready, 'web_status': web_status,
-                      'elapsed_seconds': time.monotonic() - start})
+        gates.append({
+            'gate': 'full-readiness',
+            'passed': ready,
+            'web_status': web_status,
+            'static_web_status': static_web_status,
+            'elapsed_seconds': time.monotonic() - start,
+        })
         save()
         if not ready:
             raise RuntimeError(
@@ -250,6 +261,7 @@ def main() -> None:
         execute('browser-install', browser_args + ['chromium'], ROOT / 'apps/web')
         execute('real-lifecycle-e2e', ['node', 'e2e/lifecycle.mjs'], ROOT / 'apps/web')
         execute('pipeline-demo-e2e', ['node', 'e2e/pipeline.mjs'], ROOT / 'apps/web')
+        execute('static-demo-e2e', ['node', 'e2e/static-demo.mjs'], ROOT / 'apps/web')
         # Stop cron before isolated ingestion load; only the benchmark's ARQ worker runs.
         execute('pause-background-jobs', compose + ['stop', 'worker', 'scheduler'])
         execute('queue-scale', compose + ['run', '--rm', 'checks', 'python',
@@ -286,7 +298,10 @@ def main() -> None:
             print('Automatic cleanup was not completed; see the recorded isolated project name.')
     print('Container gate passed. Evidence: artifacts/container/release-gate.json')
     if args.keep_running:
-        print('Isolated demo: http://localhost:13000. Operator secret is not printed or stored.')
+        print(
+            'Isolated demos: http://localhost:13000 (API-backed), '
+            'http://localhost:13001 (static). Operator secret is not printed or stored.'
+        )
 
 
 if __name__ == '__main__':
