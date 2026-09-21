@@ -180,6 +180,29 @@
 
 
 @media (max-width: 800px) {
+  .topbar,
+  .topbar > *,
+  .topbar nav,
+  .product,
+  .pipeline-page,
+  .pipeline-control-room,
+  .pipeline-workspace,
+  .scenario-switcher,
+  .evidence-section,
+  .evidence-grid {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .topbar nav {
+    flex-basis: 100%;
+  }
+  .product {
+    width: 100%;
+  }
+  .product::after {
+    right: 0;
+    width: 42vw;
+  }
   .pipeline-stage-map {
     display: grid;
     grid-template-columns: 1fr;
