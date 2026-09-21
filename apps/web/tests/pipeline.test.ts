@@ -113,3 +113,34 @@ test("static engineering evidence stays aligned with packaged API snapshot", asy
     true,
   );
 });
+
+
+test("static pipeline replay keeps core backend stages inspectable", () => {
+  for (const id of ["new-opportunity", "amendment-eligibility-change"]) {
+    const scenario = staticPipelineScenario(id);
+    const byId = new Map(scenario.stages.map((stage) => [stage.id, stage]));
+    for (const stageId of ["dedupe", "normalize", "documents", "extract", "validate", "lifecycle"]) {
+      const stage = byId.get(stageId);
+      assert.ok(stage, `${id} must include ${stageId}`);
+      assert.ok(
+        Object.keys(stage.output).length > 0 ||
+          Object.keys(stage.input).length > 0 ||
+          Object.keys(stage.decision).length > 0,
+        `${id}/${stageId} must expose inspectable replay data`,
+      );
+    }
+  }
+});
+
+test("static amendment replay includes the same material change categories as backend", () => {
+  const scenario = staticPipelineScenario("amendment-eligibility-change");
+  const delta = scenario.stages.find((stage) => stage.id === "delta");
+  assert.ok(delta);
+  const changed = delta.output.changed_fields as Record<string, unknown>;
+  assert.deepEqual(Object.keys(changed).sort(), ["budget", "closes_at", "regions"]);
+  assert.deepEqual(delta.decision.reason_codes, [
+    "budget_decreased",
+    "deadline_earlier",
+    "region_restriction_changed",
+  ]);
+});
