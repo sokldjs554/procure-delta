@@ -53,6 +53,7 @@ class ResilientHttpClient:
         self._client = httpx.AsyncClient(
             transport=transport,
             timeout=httpx.Timeout(total_timeout_seconds, connect=connect_timeout_seconds),
+            trust_env=False,
         )
 
     async def __aenter__(self) -> ResilientHttpClient:
