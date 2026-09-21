@@ -32,3 +32,30 @@ test("static demo serves the core product journey without an API", async () => {
 
   assert.equal(staticDocumentUrl("doc-spec"), "#synthetic-document");
 });
+
+test("static demo honors full inbox filters and recomputes the eligibility gate after profile edits", async () => {
+  const filtered = await staticDemoRequest<{ items: Opportunity[]; next_cursor: string | null }>(
+    "/opportunities?buyer=%EC%84%9C%EC%9A%B8%20%EB%94%94%EC%A7%80%ED%84%B8%ED%96%89%EC%A0%95%EC%9B%90&amount_min=250000000&amount_max=300000000",
+  );
+  assert.deepEqual(filtered.items.map((item) => item.id), ["opp-ai-contact-center"]);
+
+  const original = await staticDemoRequest<Profile>("/company-profile");
+  try {
+    await staticDemoRequest<Profile>("/company-profile", {
+      method: "PATCH",
+      body: JSON.stringify({ regions: ["부산"] }),
+    });
+    const eligible = await staticDemoRequest<{ items: Opportunity[]; next_cursor: string | null }>(
+      "/opportunities?eligible_only=true",
+    );
+    assert.equal(eligible.items.length, 0);
+    const detail = await staticDemoRequest<OpportunityDetail>("/opportunities/opp-ai-contact-center");
+    assert.equal(detail.eligibility?.eligible, false);
+    assert.equal(detail.ranking?.recommended, false);
+  } finally {
+    await staticDemoRequest<Profile>("/company-profile", {
+      method: "PATCH",
+      body: JSON.stringify({ regions: original.regions }),
+    });
+  }
+});
