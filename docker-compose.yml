@@ -23,7 +23,7 @@ services:
     volumes:
       - attachment_data:/var/lib/procure-delta
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -69,6 +69,8 @@ services:
       EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
       EXTRACTION_API_KEY: ${EXTRACTION_API_KEY:-}
       EXTRACTION_MAX_COMPLETION_TOKENS: ${EXTRACTION_MAX_COMPLETION_TOKENS:-4096}
+      NOTIFICATION_EXTERNAL_ENABLED: ${NOTIFICATION_EXTERNAL_ENABLED:-false}
+      NOTIFICATION_WEBHOOK_DESTINATIONS: '${NOTIFICATION_WEBHOOK_DESTINATIONS:-{}}'
     volumes:
       - attachment_data:/var/lib/procure-delta
     command: ["arq", "app.workers.settings.WorkerSettings"]
@@ -94,6 +96,8 @@ services:
       EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
       EXTRACTION_API_KEY: ${EXTRACTION_API_KEY:-}
       EXTRACTION_MAX_COMPLETION_TOKENS: ${EXTRACTION_MAX_COMPLETION_TOKENS:-4096}
+      NOTIFICATION_EXTERNAL_ENABLED: ${NOTIFICATION_EXTERNAL_ENABLED:-false}
+      NOTIFICATION_WEBHOOK_DESTINATIONS: '${NOTIFICATION_WEBHOOK_DESTINATIONS:-{}}'
     volumes:
       - attachment_data:/var/lib/procure-delta
     command: ["arq", "app.workers.settings.SchedulerSettings"]
@@ -112,7 +116,7 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
       API_INTERNAL_URL: http://api:8000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -124,7 +128,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-procure_delta}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-procure_delta}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -136,7 +140,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
