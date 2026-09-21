@@ -3,7 +3,17 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import admin, auth, demo, evidence, health, notifications, opportunities, performance, watchlists
+from app.api import (
+    admin,
+    auth,
+    demo,
+    evidence,
+    health,
+    notifications,
+    opportunities,
+    performance,
+    watchlists,
+)
 from app.api.company_profiles import router as company_profiles_router
 from app.api.evaluation import router as evaluation_router
 from app.config import get_settings
