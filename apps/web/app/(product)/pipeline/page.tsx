@@ -6,6 +6,7 @@ import {
   getPipelineScenarios,
   type PipelineScenarioSummary,
 } from "../../../lib/api";
+import { EvidencePanels } from "../../../components/pipeline/evidence-panels";
 import { PipelineControlRoom } from "../../../components/pipeline/pipeline-control-room";
 
 export default function PipelinePage() {
@@ -54,7 +55,10 @@ export default function PipelinePage() {
           {error}
         </div>
       ) : (
-        <PipelineControlRoom scenarios={scenarios} />
+        <>
+          <PipelineControlRoom scenarios={scenarios} />
+          <EvidencePanels />
+        </>
       )}
     </main>
   );
