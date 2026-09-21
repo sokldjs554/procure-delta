@@ -238,23 +238,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
       timeline: {
         opportunity_ids: [opportunity.id],
         active_links: [],
-        historical_links:
-          opportunity.id === "opp-ai-contact-center"
-            ? [
-                {
-                  id: "link-ai-placeholder",
-                  parent_opportunity_id: "opp-ai-contact-center",
-                  child_opportunity_id: "opp-ai-contact-center",
-                  relation_type: "version-transition",
-                  confidence: "0.0000",
-                  link_method: "not-a-lifecycle-edge",
-                  status: "retracted",
-                  evidence_json: { reason: "amendments are versions of the same opportunity" },
-                  created_at: "2026-09-16T03:05:00Z",
-                  retracted_at: "2026-09-16T03:05:00Z",
-                },
-              ]
-            : [],
+        historical_links: [],
       },
       deltas: {
         current_inputs_ready: true,
@@ -331,7 +315,7 @@ const notifications: NotificationItem[] = [
     delta_id: "delta-ai-1",
     channel: "local",
     template_key: "watched_material_change",
-    status: "delivered",
+    status: "sent",
     attempt_count: 1,
     next_attempt_at: null,
     sent_at: "2026-09-16T03:07:00Z",
@@ -345,7 +329,7 @@ const notifications: NotificationItem[] = [
     delta_id: "delta-ai-1",
     channel: "local",
     template_key: "deadline_changed",
-    status: "delivered",
+    status: "sent",
     attempt_count: 1,
     next_attempt_at: null,
     sent_at: "2026-09-16T03:07:00Z",
@@ -455,7 +439,7 @@ const staticRequirements: Record<
 function opportunityView(item: Opportunity): Opportunity {
   const requirement = staticRequirements[item.id];
   if (!requirement || !item.eligibility) {
-    return { ...item, ...opportunityView(item) };
+    return { ...item, watched: watchedIds.has(item.id) };
   }
 
   const hardFailures = [] as NonNullable<Opportunity["eligibility"]>["hard_failures"];
@@ -1033,7 +1017,8 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   if (detailMatch) {
     const item = details[detailMatch[1]];
     if (!item) throw new Error("정적 데모 공고를 찾을 수 없습니다.");
-    return { ...item, watched: watchedIds.has(item.id) };
+    const summary = opportunityView(item);
+    return { ...item, ...summary };
   }
 
   if (pathname === "/watchlist") {
