@@ -38,10 +38,6 @@ export function PipelineControlRoom({
   useEffect(() => {
     if (!scenarioId) return;
     let active = true;
-    setLoading(true);
-    setError("");
-    setPlaying(false);
-    setReplayIndex(-1);
     getPipelineScenario(scenarioId)
       .then((value) => {
         if (!active) return;
@@ -71,6 +67,15 @@ export function PipelineControlRoom({
     }, 700);
     return () => window.clearInterval(timer);
   }, [playing, scenario]);
+
+  function selectScenario(id: string) {
+    if (id === scenarioId) return;
+    setScenarioId(id);
+    setLoading(true);
+    setError("");
+    setPlaying(false);
+    setReplayIndex(-1);
+  }
 
   const selectedStage = useMemo(
     () => scenario?.stages.find((stage) => stage.id === selectedStageId) ?? null,
@@ -103,7 +108,7 @@ export function PipelineControlRoom({
             key={item.id}
             className={scenarioId === item.id ? "active" : ""}
             aria-pressed={scenarioId === item.id}
-            onClick={() => setScenarioId(item.id)}
+            onClick={() => selectScenario(item.id)}
           >
             <strong>{item.title}</strong>
             <small>{item.description}</small>
