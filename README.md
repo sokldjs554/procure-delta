@@ -10,7 +10,7 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 
 **https://procure-delta-demo.onrender.com**
 
-공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **읽기전용 합성 데이터 모드**로 배포합니다.
+공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **서버 비영속 합성 데이터 모드**로 배포합니다. 프로필·관심공고·알림설정 변경은 브라우저 메모리에서만 유지되며 서버/DB에는 저장되지 않습니다.
 
 - Pipeline Control Room의 시나리오와 contract는 실제 backend 구현과 맞춰 둡니다.
 - 화면에 보이는 performance 값은 저장된 격리 검증 snapshot입니다.
@@ -163,7 +163,7 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 
 ## Release gate
 
-현재 저장된 `artifacts/verification/release-gate.json`은 **2026-09-21 GitHub Actions run 35568528869**의 격리 통합 검증 결과이며 `passed=true`입니다.
+현재 저장된 `artifacts/verification/release-gate.json`은 **2026-09-21 GitHub Actions run 35568528869**의 격리 통합 검증 결과이며 `passed=true`입니다. 이후 Pipeline 변경이 병합된 `main` SHA `47d24ad5`에서도 run **35575659698**이 backend/frontend/release-contract 전체 성공했습니다.
 
 통과 범위:
 
@@ -253,7 +253,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - hosted LLM은 현재 평가하지 않았으므로 정확도·비용·token 수치를 주장하지 않습니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
-- 공개 Render web은 static/read-only synthetic demo이며 full cloud backend 운영 증거가 아닙니다.
+- 공개 Render web은 서버 비영속 static synthetic demo이며 full cloud backend 운영 증거가 아닙니다.
 - 결제·구독, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
 
 자세한 내용: [Limitations](docs/limitations.md)
