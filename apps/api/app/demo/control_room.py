@@ -18,9 +18,9 @@ from app.extraction.schemas import DocumentBundle, DocumentPage
 from app.extraction.validation import validate_extraction
 from app.models import OpportunityVersion, RawRecord
 from app.ranking.eligibility import (
+    EligibilityDecision,
     EligibilityOpportunity,
     EligibilityProfile,
-    EligibilityDecision,
     EvidenceClaim,
     evaluate_eligibility,
 )
@@ -174,7 +174,11 @@ def _version(
     )
 
 
-def _claim(raw: RawRecord, normalized: NormalizedOpportunityInput, field_name: str) -> EvidenceClaim | None:
+def _claim(
+    raw: RawRecord,
+    normalized: NormalizedOpportunityInput,
+    field_name: str,
+) -> EvidenceClaim | None:
     value = normalized.normalized_json.get(field_name)
     if value in (None, "", []):
         return None
@@ -264,7 +268,9 @@ def _ranking_payload(decision: RankingDecision) -> dict[str, Any]:
     }
 
 
-def _document_projection(record: RawSourceRecord) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _document_projection(
+    record: RawSourceRecord,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     content = document_html(record)
     sha = hashlib.sha256(content).hexdigest()
     stored = StoredAttachment(
@@ -310,7 +316,12 @@ def _document_projection(record: RawSourceRecord) -> tuple[dict[str, Any], dict[
     )
 
 
-def _empty_stage(stage_id: str, *, status: StageStatus = "not_run", notice: str | None = None) -> PipelineStage:
+def _empty_stage(
+    stage_id: str,
+    *,
+    status: StageStatus = "not_run",
+    notice: str | None = None,
+) -> PipelineStage:
     for candidate_id, label, kind in _STAGE_DEFINITIONS:
         if candidate_id == stage_id:
             return PipelineStage(
@@ -361,7 +372,14 @@ def _new_opportunity() -> PipelineScenario:
             "system",
             "passed",
             input={"payload_sha256": raw.payload_sha256},
-            output={"duplicate": False, "dedupe_key": [str(raw.source_id), raw.source_record_id, raw.payload_sha256]},
+            output={
+                "duplicate": False,
+                "dedupe_key": [
+                    str(raw.source_id),
+                    raw.source_record_id,
+                    raw.payload_sha256,
+                ],
+            },
             measured_duration_ms=None,
         ),
         PipelineStage(
@@ -425,7 +443,10 @@ def _new_opportunity() -> PipelineScenario:
             "deterministic",
             "passed",
             input={"stage": "tender"},
-            output={"link_state": "initial_tender", "official_reference_count": len(normalized.official_references)},
+            output={
+                "link_state": "initial_tender",
+                "official_reference_count": len(normalized.official_references),
+            },
             measured_duration_ms=None,
         ),
         _empty_stage("delta", notice="최초 관측 버전에는 비교 대상이 없습니다."),
@@ -537,7 +558,10 @@ def _amendment() -> PipelineScenario:
             "중복 제거",
             "system",
             "passed",
-            input={"before_sha256": before_raw.payload_sha256, "after_sha256": after_raw.payload_sha256},
+            input={
+                "before_sha256": before_raw.payload_sha256,
+                "after_sha256": after_raw.payload_sha256,
+            },
             output={"duplicate": False, "new_version_required": True},
             measured_duration_ms=None,
         ),
@@ -665,7 +689,10 @@ def _amendment() -> PipelineScenario:
                 "external_delivery": False,
             },
             measured_duration_ms=None,
-            notice="관심 공고의 material change 알림 판단을 재생합니다. 외부 메시지는 보내지 않습니다.",
+            notice=(
+                "관심 공고의 material change 알림 판단을 재생합니다. "
+                "외부 메시지는 보내지 않습니다."
+            ),
         ),
     )
     return PipelineScenario(
@@ -707,7 +734,10 @@ def _failure_recovery() -> PipelineScenario:
                     kind,
                     "blocked",
                     measured_duration_ms=None,
-                    notice="수집 실패 경계를 설명하는 시나리오이므로 후속 처리를 실행하지 않습니다.",
+                    notice=(
+                        "수집 실패 경계를 설명하는 시나리오이므로 "
+                        "후속 처리를 실행하지 않습니다."
+                    ),
                 )
             )
     return PipelineScenario(
