@@ -4,7 +4,7 @@
 
 2026-09-21에 `python scripts/verify_containers.py --scale-records 1000`으로 원본 `.env`, 기존 DB/Redis 볼륨, 기존 서비스와 분리된 Compose 프로젝트에서 전체 검증을 실행했다.
 
-현재 저장된 `artifacts/verification/release-gate.json`은 GitHub Actions run **35568528869**의 성공 결과다.
+현재 저장된 `artifacts/verification/release-gate.json`은 2026-09-21 성공한 격리 실행의 **커밋된 reference 결과**다. 같은 runner는 GitHub Actions의 push/pull request마다 다시 실행되며, 현재 코드의 통과 여부는 해당 commit의 workflow 결과로 별도 확인한다.
 
 - `passed: true`
 - `status: passed`
@@ -45,7 +45,8 @@
 15. Redis/ARQ queue scale
 16. PostgreSQL query plans
 17. HTTP load
-18. resume background jobs
+18. static public-demo browser E2E
+19. resume background jobs
 
 Pipeline E2E는 request interception이나 fake HTTP response를 사용하지 않고 검증 Compose의 실제 web/API에 접근한다.
 
@@ -74,6 +75,7 @@ reference measurement의 상세 범위는 `docs/performance.md`에 있다.
 - admin/operator console
 - evaluation
 - Pipeline Control Room amendment replay
+- static public-demo profile/filter/detail/pipeline flow
 
 README에 사용되는 screenshot은 mockup이 아니라 이 검증 run의 실제 브라우저 출력이다.
 
