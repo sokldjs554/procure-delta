@@ -35,6 +35,16 @@ async function openPipeline(context) {
 
 try {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  const landing = await desktop.newPage();
+  landing.setDefaultTimeout(30000);
+  await landing.goto(`${web}/`);
+  await landing.locator(".hero h1").waitFor();
+  await landing.screenshot({
+    path: resolve(output, "landing.png"),
+    fullPage: true,
+  });
+  await landing.close();
+
   const { page, errors } = await openPipeline(desktop);
 
   await page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
@@ -61,10 +71,11 @@ try {
 
   await page.getByRole("button", { name: /장애와 복구/ }).click();
   await stageButton(page, "collect").waitFor();
-  await page.getByText(/timeout-recovery/).waitFor();
-  await page.getByText(/rate-limit-recovery/).waitFor();
-  await page.getByText(/server-error-terminal/).waitFor();
-  await page.getByText(/forbidden-not-retried/).waitFor();
+  const failureCases = page.locator(".failure-case-list");
+  await failureCases.getByText("timeout-recovery", { exact: true }).waitFor();
+  await failureCases.getByText("rate-limit-recovery", { exact: true }).waitFor();
+  await failureCases.getByText("server-error-terminal", { exact: true }).waitFor();
+  await failureCases.getByText("forbidden-not-retried", { exact: true }).waitFor();
 
   await page.getByRole("link", { name: "평가·한계" }).click();
   await page.getByRole("heading", { name: "추출 경로 비교" }).waitFor();
