@@ -116,7 +116,9 @@ export default function Notifications() {
                   </div>
                   <span
                     className={
-                      item.status === "delivered" ? "success" : "pending"
+                      ["sent", "delivered"].includes(item.status)
+                        ? "success"
+                        : "pending"
                     }
                   >
                     {item.status}
