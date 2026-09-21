@@ -35,13 +35,22 @@ class ReleaseDeliveryTests(unittest.TestCase):
 
     def test_verification_stack_uses_private_ports_and_distinct_databases(self) -> None:
         text = (ROOT / 'compose.verify.yml').read_text()
-        for port in (13000, 18000, 15432, 16379):
+        for port in (13000, 13001, 18000, 15432, 16379):
             self.assertIn(f'127.0.0.1:{port}:', text)
         self.assertIn('procure_delta_verify_test', text)
         self.assertIn('procure_delta_verify_bench', text)
         runner = (ROOT / 'scripts/verify_containers.py').read_text()
         self.assertIn("'--env-file', os.devnull", runner)
         self.assertNotIn("'procure-delta'", runner)
+
+    def test_default_compose_keeps_dev_ports_local_and_passes_notification_config(self) -> None:
+        text = (ROOT / 'docker-compose.yml').read_text(encoding='utf-8')
+        for port in (3000, 8000, 5432, 6379):
+            self.assertIn(f'127.0.0.1:{port}:{port}', text)
+        self.assertGreaterEqual(text.count('NOTIFICATION_EXTERNAL_ENABLED'), 3)
+        self.assertGreaterEqual(text.count('NOTIFICATION_WEBHOOK_DESTINATIONS'), 3)
+        example = (ROOT / '.env.example').read_text(encoding='utf-8')
+        self.assertIn('NOTIFICATION_WEBHOOK_DESTINATIONS={}', example)
 
 
     def test_backend_gate_runs_isolation_regression_and_surfaces_subgates(self) -> None:
@@ -70,6 +79,7 @@ class ReleaseDeliveryTests(unittest.TestCase):
     def test_pipeline_demo_is_part_of_release_gate_and_public_measurement_contract(self) -> None:
         runner = (ROOT / 'scripts/verify_containers.py').read_text(encoding='utf-8')
         self.assertIn("'pipeline-demo-e2e'", runner)
+        self.assertIn("'static-demo-e2e'", runner)
         for path in (
             'artifacts/performance/queue.json',
             'artifacts/performance/http.json',
