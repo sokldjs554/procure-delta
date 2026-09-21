@@ -1,0 +1,10 @@
+{
+  "scope": "real_redis_arq_postgresql",
+  "synthetic": true,
+  "records": 1000,
+  "completed_records": 1000,
+  "elapsed_seconds": 46.60000086600007,
+  "records_per_second": 21.45922706901948,
+  "successful": true,
+  "limitation": "Local ingestion only; OCR/external LLM and attachments excluded."
+}
