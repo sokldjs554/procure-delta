@@ -99,3 +99,27 @@ async def test_engineering_evidence_falls_back_to_packaged_public_snapshot(
     assert body["query_plans"]["status"] == "measured"
     assert body["release"]["passed"] is True
     assert any(gate["gate"] == "pipeline-demo-e2e" for gate in body["release"]["gates"])
+
+
+def test_packaged_snapshot_matches_committed_public_performance_artifacts() -> None:
+    import json
+
+    root = Path(__file__).resolve().parents[4]
+    snapshot = json.loads(
+        (root / "apps/api/app/evaluation/results/engineering.json").read_text(encoding="utf-8")
+    )
+    queue = json.loads((root / "artifacts/performance/queue.json").read_text(encoding="utf-8"))
+    http = json.loads((root / "artifacts/performance/http.json").read_text(encoding="utf-8"))
+    query = json.loads(
+        (root / "artifacts/performance/query-plans.json").read_text(encoding="utf-8")
+    )
+
+    assert snapshot["queue"]["metrics"]["records_per_second"] == queue["records_per_second"]
+    assert (
+        snapshot["http"]["metrics"]["endpoints"]["inbox"]["p95_ms"]
+        == http["endpoints"]["inbox"]["p95_ms"]
+    )
+    assert (
+        snapshot["query_plans"]["metrics"]["improvement_ratio"]
+        == query["improvement_ratio"]
+    )
