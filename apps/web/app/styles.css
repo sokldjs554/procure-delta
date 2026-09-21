@@ -253,6 +253,7 @@ button:hover,.button:hover{
   max-width:1320px;
   position:relative;
   padding-top:3.5rem;
+  overflow-x:clip;
 }
 .product::before{
   content:"";
