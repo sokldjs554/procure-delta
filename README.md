@@ -39,7 +39,7 @@ collect → dedupe → normalize → document/OCR → structured extraction
 → validation → lifecycle → Delta → eligibility → ranking → notification
 ```
 
-![Pipeline Control Room](docs/images/pipeline-control-room.png)
+![Pipeline Control Room](docs/images/pipeline-control-room.webp)
 
 ## 왜 이 구조인가
 
