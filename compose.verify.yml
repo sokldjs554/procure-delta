@@ -67,11 +67,21 @@ services:
       context: ./apps/web
       args:
         NEXT_PUBLIC_API_URL: http://localhost:18000
+        NEXT_PUBLIC_STATIC_DEMO: "false"
     environment:
       API_INTERNAL_URL: http://api:8000
       NEXT_PUBLIC_API_URL: http://localhost:18000
     ports: ["127.0.0.1:13000:3000"]
     depends_on: [api]
+  static-web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:18000
+        NEXT_PUBLIC_STATIC_DEMO: "true"
+    environment:
+      NEXT_PUBLIC_STATIC_DEMO: "true"
+    ports: ["127.0.0.1:13001:3000"]
   checks:
     build:
       context: .
