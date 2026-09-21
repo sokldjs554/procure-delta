@@ -91,3 +91,11 @@ test("engineering evidence cards surface measured queue HTTP and query-plan scop
   assert.match(evidencePanels, /후보 인덱스는 채택하지 않음/);
   assert.match(evidencePanels, /p95/);
 });
+
+
+const styles = readFileSync(new URL("../app/styles.css", import.meta.url), "utf8");
+
+test("measured service evidence has dedicated compact list styling", () => {
+  assert.match(styles, /\.http-endpoint-list/);
+  assert.match(styles, /\.query-evidence/);
+});
