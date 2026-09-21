@@ -13,6 +13,7 @@ export default function Home() {
           <Link href="/watchlist">관심 공고</Link>
           <Link href="/notifications">알림</Link>
           <Link href="/about">평가·한계</Link>
+          <Link href="/admin">운영 콘솔</Link>
         </div>
         <Link className="landing-demo-link" href="/inbox">
           합성 데모 시작 <span aria-hidden="true">→</span>
