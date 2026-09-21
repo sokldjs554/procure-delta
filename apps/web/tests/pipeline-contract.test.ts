@@ -18,3 +18,25 @@ test("pipeline page has reviewer-first controls and honesty copy", () => {
   assert.match(source, /재생/);
   assert.match(source, /초기화/);
 });
+
+const shell = readFileSync(
+  new URL("../components/app-shell.tsx", import.meta.url),
+  "utf8",
+);
+const landing = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+const admin = readFileSync(
+  new URL("../components/admin/admin-console.tsx", import.meta.url),
+  "utf8",
+);
+
+test("pipeline differentiator is visible from landing and product nav", () => {
+  assert.match(shell, /\/pipeline/);
+  assert.match(shell, /파이프라인/);
+  assert.match(landing, /파이프라인 데모 보기/);
+});
+
+test("admin keeps operator pipeline overview separate from reviewer replay", () => {
+  assert.match(admin, /collect/);
+  assert.match(admin, /notify/);
+  assert.doesNotMatch(admin, /파이프라인을 직접 재생해보세요/);
+});
