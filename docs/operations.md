@@ -34,7 +34,7 @@ python scripts/verify_containers.py
 검증 프로젝트 이름은 `procure-delta-verify-<random>`이며 포트 13000/18000/15432/16379를 로컬에서만 사용한다.
 원본 `.env`를 읽지 않고 일회성 운영자 비밀값을 메모리에서 생성한다. 기존 프로젝트 DB/볼륨/.git/origin을 바꾸지 않는다.
 검증 종료 시 생성한 격리 스택과 볼륨만 정리한다. `--keep-running`이면 격리 스택을 유지한다.
-로그에 임시 비밀값이 있으면 기록 전에 제거한다. HAR/세션 쿠키/브라우저 trace는 저장하지 않는다.
+로그에 임시 비밀값이 있으면 기록 전에 제거한다. HAR/세션 쿠키/브라우저 trace는 저장하지 않는다. source/attachment/webhook HTTP 경계는 환경변수 프록시를 신뢰하지 않도록 구성한다.
 
 `artifacts/container/release-gate.json`에 각 단계 통과/실패와 프로젝트 이름이 남는다.
 백엔드 실패는 `checks.json`, `backend-tests.log`와 `pytest.xml`을 본다.
