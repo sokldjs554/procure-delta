@@ -29,6 +29,26 @@ Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리
 연결은 해소된 링크의 정확도와 미해결 수를 함께 본다. 무조건 연결해야 높은 점수를 받는 구조가 아니다.
 랭킹 Recall@K/nDCG@K는 frozen relevance 라벨에 대해 계산한다. 낙찰 사실만으로 기업 참가 자격 정답을 만들지 않는다.
 
+
+## Pipeline Control Room과 hosted LLM 평가는 별개다
+
+`/pipeline`의 세 시나리오는 파이프라인 구조와 판단 경계를 보여 주기 위한 **합성 deterministic replay**다.
+
+- 신규 공고: 수집 → 정규화 → 문서 → 추출/검증 → eligibility → ranking → 알림 판단
+- 정정 시나리오: immutable version → Delta → hard eligibility 변화 → ranking 차단 → notification decision
+- 장애 시나리오: 저장된 synthetic transport failure classification
+
+이 replay가 움직인다고 해서 hosted LLM을 호출한 것은 아니다. 공개 demo의 scenario stage timing도 backend latency로 사용하지 않는다.
+
+현재 저장된 평가 artifact에서:
+
+- deterministic extraction: measured
+- OCR: measured, 영어 합성 이미지 3장
+- hosted all: `not_run`
+- hosted gated: `not_run`
+
+UI는 네 경로를 같은 표에 두되 hosted 경로가 실행되지 않았으면 정확도·latency·token·cost를 **미실행/미측정**으로 남긴다.
+
 ## 과거 시점 재생
 
 버전의 effective_at, observed_at, created_at이 모두 as_of 이하일 때만 사용할 수 있다.
