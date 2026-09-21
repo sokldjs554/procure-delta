@@ -20,3 +20,10 @@ export function decisionHeadline(value: DecisionHeadlineInput): string {
   if (value.recommended) return "추천 가능";
   return "추천 기준 미충족";
 }
+
+
+export function displayMetric(
+  value: string | number | null | undefined,
+): string {
+  return value === null || value === undefined ? "미측정" : String(value);
+}
