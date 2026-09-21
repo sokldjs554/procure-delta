@@ -23,6 +23,7 @@ def resolve_artifact_root(module_path: Path) -> Path:
 
 
 ARTIFACT_ROOT = resolve_artifact_root(Path(__file__))
+PUBLIC_SNAPSHOT = Path(__file__).resolve().parents[1] / "evaluation" / "results" / "engineering.json"
 
 
 class DTO(BaseModel):
@@ -245,13 +246,43 @@ def _optional(relative: str) -> OptionalEvidence:
     )
 
 
+def _packaged_snapshot() -> EngineeringEvidence | None:
+    if not PUBLIC_SNAPSHOT.is_file():
+        return None
+    try:
+        value = json.loads(PUBLIC_SNAPSHOT.read_text(encoding="utf-8"))
+        return EngineeringEvidence.model_validate(value)
+    except (OSError, json.JSONDecodeError, ValueError):
+        return None
+
+
 @router.get("/engineering-evidence", response_model=EngineeringEvidence)
 def engineering_evidence() -> EngineeringEvidence:
+    snapshot = _packaged_snapshot()
+    cpu = _cpu()
+    failure_drill = _failures()
+    release = _release()
+    queue = _optional("performance/queue.json")
+    http = _optional("performance/http.json")
+    query_plans = _optional("performance/query-plans.json")
+    if snapshot is not None:
+        if cpu.status == "not_run":
+            cpu = snapshot.cpu
+        if failure_drill.status == "not_run":
+            failure_drill = snapshot.failure_drill
+        if release.status == "not_run":
+            release = snapshot.release
+        if queue.status == "not_run":
+            queue = snapshot.queue
+        if http.status == "not_run":
+            http = snapshot.http
+        if query_plans.status == "not_run":
+            query_plans = snapshot.query_plans
     return EngineeringEvidence(
-        cpu=_cpu(),
-        failure_drill=_failures(),
-        release=_release(),
-        queue=_optional("performance/queue.json"),
-        http=_optional("performance/http.json"),
-        query_plans=_optional("performance/query-plans.json"),
+        cpu=cpu,
+        failure_drill=failure_drill,
+        release=release,
+        queue=queue,
+        http=http,
+        query_plans=query_plans,
     )
