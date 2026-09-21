@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { decisionHeadline, nextReplayIndex } from "../lib/pipeline.ts";
+import {
+  decisionHeadline,
+  displayMetric,
+  nextReplayIndex,
+} from "../lib/pipeline.ts";
 import {
   staticPipelineScenario,
   staticPipelineScenarios,
@@ -49,4 +53,11 @@ test("eligibility decision headline does not call a blocked item recommended", (
     }),
     "참여 불가 · 관련도와 별개",
   );
+});
+
+
+test("missing hosted metrics render as unmeasured instead of zero", () => {
+  assert.equal(displayMetric(null), "미측정");
+  assert.equal(displayMetric(undefined), "미측정");
+  assert.equal(displayMetric(0), "0");
 });
