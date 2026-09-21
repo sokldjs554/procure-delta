@@ -251,7 +251,11 @@ export default function Detail() {
                   <b>{document.filename}</b>
                   <small>SHA-256 {document.sha256 ?? "확인 전"}</small>
                   <small>다운로드 상태 {document.download_status}</small>
-                  <a href={documentUrl(document.id)}>인증된 원문 다운로드</a>
+                  {documentUrl(document.id).startsWith("#") ? (
+                    <small>공개 합성 데모에서는 원문 파일을 제공하지 않습니다.</small>
+                  ) : (
+                    <a href={documentUrl(document.id)}>인증된 원문 다운로드</a>
+                  )}
                 </article>
               ))
             ) : (
