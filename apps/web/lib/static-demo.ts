@@ -585,8 +585,37 @@ function newOpportunityScenario(): PipelineScenario {
   );
   const byId = new Map(stages.map((stage) => [stage.id, stage]));
   Object.assign(byId.get("collect")!, {
+    input: { source: "packaged synthetic fixture" },
     output: { source_record_id: "control-room-tender" },
+    evidence: [{ source_url: "https://example.invalid/lifecycle/control-room/1", synthetic: true }],
     notice: "합성 시나리오 · 외부 네트워크 호출 없음",
+  });
+  Object.assign(byId.get("dedupe")!, {
+    input: { payload_sha256: "committed synthetic fixture" },
+    output: {
+      duplicate: false,
+      dedupe_key: ["synthetic-source", "control-room-tender", "committed-fixture"],
+    },
+  });
+  Object.assign(byId.get("normalize")!, {
+    input: { source_record_id: "control-room-tender" },
+    output: {
+      title: "Synthetic cloud document processing [control-room]",
+      lifecycle_stage: "tender",
+      estimated_amount: "320000000",
+      currency: "KRW",
+      regions: ["Seoul"],
+    },
+    evidence: [{ provenance: "deterministic normalizer snapshot" }],
+  });
+  Object.assign(byId.get("documents")!, {
+    input: { media_type: "text/html" },
+    output: {
+      parser_kind: "html",
+      parser_version: "native-v1",
+      page_count: 1,
+      text_sha256: "stored in backend replay; omitted from public static snapshot",
+    },
   });
   Object.assign(byId.get("ocr-route")!, {
     status: "not_run",
@@ -594,8 +623,43 @@ function newOpportunityScenario(): PipelineScenario {
     notice: "HTML native parsing 품질이 충분해 OCR을 실행하지 않았습니다.",
   });
   Object.assign(byId.get("extract")!, {
-    output: { extractor: "deterministic-labels-v1", hosted_llm: false },
+    input: { extractor: "deterministic-labels-v1" },
+    output: {
+      schema_version: "1",
+      title: "Synthetic cloud document processing [control-room]",
+      buyer_name: "Synthetic Seoul Digital Agency",
+      procurement_type: "services",
+      estimated_amount: "320000000",
+      currency: "KRW",
+      published_at: "2026-09-12T00:00:00+00:00",
+      closes_at: "2026-10-06T00:00:00+00:00",
+      regions: ["Seoul"],
+      required_certifications: ["ISO 27001"],
+      required_capabilities: ["cloud migration", "document processing"],
+    },
     notice: "로컬 deterministic extractor · hosted LLM 호출 없음",
+  });
+  Object.assign(byId.get("validate")!, {
+    input: { schema_version: "1" },
+    output: {
+      valid: true,
+      errors: [],
+      trusted_fields: {
+        title: "Synthetic cloud document processing [control-room]",
+        buyer_name: "Synthetic Seoul Digital Agency",
+        procurement_type: "services",
+        estimated_amount: "320000000",
+        currency: "KRW",
+        regions: ["Seoul"],
+        required_certifications: ["ISO 27001"],
+        required_capabilities: ["cloud migration", "document processing"],
+      },
+    },
+    decision: { trusted: true },
+  });
+  Object.assign(byId.get("lifecycle")!, {
+    input: { stage: "tender" },
+    output: { link_state: "initial_tender", official_reference_count: 1 },
   });
   Object.assign(byId.get("delta")!, {
     status: "not_run",
@@ -615,6 +679,7 @@ function newOpportunityScenario(): PipelineScenario {
     decision: { eligibility_overrides_rank: true },
   });
   Object.assign(byId.get("notification")!, {
+    input: { watched: false, recommended: true },
     output: { trigger: "new_high_relevance" },
     decision: { external_delivery: false },
     notice: "알림 트리거 판단만 재생하며 외부 메시지를 보내지 않습니다.",
@@ -635,8 +700,50 @@ function amendmentScenario(): PipelineScenario {
   );
   const byId = new Map(stages.map((stage) => [stage.id, stage]));
   Object.assign(byId.get("collect")!, {
+    input: { source_record_id: "control-room-tender" },
     output: { observed_revision: "control-room-tender", amendment: true },
+    evidence: [{ source_url: "https://example.invalid/lifecycle/control-room/2", synthetic: true }],
     notice: "합성 정정 시나리오 · 외부 네트워크 호출 없음",
+  });
+  Object.assign(byId.get("dedupe")!, {
+    input: {
+      before_sha256: "committed tender fixture",
+      after_sha256: "committed amendment fixture",
+    },
+    output: { duplicate: false, new_version_required: true },
+  });
+  Object.assign(byId.get("normalize")!, {
+    output: {
+      before: {
+        title: "Synthetic cloud document processing [control-room]",
+        lifecycle_stage: "tender",
+        estimated_amount: "320000000",
+        currency: "KRW",
+        closes_at: "2026-10-06T00:00:00+00:00",
+        regions: ["Seoul"],
+        required_certifications: ["ISO 27001"],
+        required_capabilities: ["cloud migration", "document processing"],
+      },
+      after: {
+        title: "Synthetic cloud document processing [control-room]",
+        lifecycle_stage: "amendment",
+        estimated_amount: "280000000",
+        currency: "KRW",
+        closes_at: "2026-09-28T00:00:00+00:00",
+        regions: ["Busan"],
+        required_certifications: ["ISO 27001"],
+        required_capabilities: ["cloud migration", "document processing"],
+      },
+    },
+  });
+  Object.assign(byId.get("documents")!, {
+    input: { media_type: "text/html" },
+    output: {
+      parser_kind: "html",
+      parser_version: "native-v1",
+      page_count: 1,
+      text_sha256: "stored in backend replay; omitted from public static snapshot",
+    },
   });
   Object.assign(byId.get("ocr-route")!, {
     status: "not_run",
@@ -644,8 +751,43 @@ function amendmentScenario(): PipelineScenario {
     notice: "HTML native parsing 경로이므로 OCR은 실행하지 않았습니다.",
   });
   Object.assign(byId.get("extract")!, {
-    output: { extractor: "deterministic-labels-v1", hosted_llm: false },
+    input: { extractor: "deterministic-labels-v1" },
+    output: {
+      schema_version: "1",
+      title: "Synthetic cloud document processing [control-room]",
+      buyer_name: "Synthetic Seoul Digital Agency",
+      procurement_type: "services",
+      estimated_amount: "280000000",
+      currency: "KRW",
+      published_at: "2026-09-13T00:00:00+00:00",
+      closes_at: "2026-09-28T00:00:00+00:00",
+      regions: ["Busan"],
+      required_certifications: ["ISO 27001"],
+      required_capabilities: ["cloud migration", "document processing"],
+    },
     notice: "hosted LLM이 아닌 재현 가능한 로컬 추출 경로입니다.",
+  });
+  Object.assign(byId.get("validate")!, {
+    output: {
+      valid: true,
+      errors: [],
+      trusted_fields: {
+        title: "Synthetic cloud document processing [control-room]",
+        buyer_name: "Synthetic Seoul Digital Agency",
+        procurement_type: "services",
+        estimated_amount: "280000000",
+        currency: "KRW",
+        regions: ["Busan"],
+        required_certifications: ["ISO 27001"],
+        required_capabilities: ["cloud migration", "document processing"],
+      },
+    },
+    decision: { trusted: true },
+  });
+  Object.assign(byId.get("lifecycle")!, {
+    input: { before_stage: "tender", after_stage: "amendment" },
+    output: { same_opportunity: true, version_transition: "tender → amendment" },
+    decision: { link_method: "same source record identity" },
   });
   Object.assign(byId.get("delta")!, {
     output: {
@@ -654,12 +796,21 @@ function amendmentScenario(): PipelineScenario {
           before: { estimated_amount: "320000000", currency: "KRW" },
           after: { estimated_amount: "280000000", currency: "KRW" },
         },
+        closes_at: {
+          before: "2026-10-06T00:00:00+00:00",
+          after: "2026-09-28T00:00:00+00:00",
+        },
         regions: { before: ["Seoul"], after: ["Busan"] },
       },
+      document_changes: {},
     },
     decision: {
       impact: "high",
-      reason_codes: ["budget_decreased", "region_restriction_changed"],
+      reason_codes: [
+        "budget_decreased",
+        "deadline_earlier",
+        "region_restriction_changed",
+      ],
     },
   });
   Object.assign(byId.get("eligibility")!, {
