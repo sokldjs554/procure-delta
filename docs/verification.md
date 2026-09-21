@@ -4,7 +4,7 @@
 
 2026-09-21에 `python scripts/verify_containers.py --scale-records 1000`으로 원본 `.env`, 기존 DB/Redis 볼륨, 기존 서비스와 분리된 Compose 프로젝트에서 전체 검증을 실행했다.
 
-현재 저장된 `artifacts/verification/release-gate.json`은 GitHub Actions run **35568528869**의 성공 결과다.
+현재 저장된 `artifacts/verification/release-gate.json`은 GitHub Actions run **35568528869**의 성공 결과다. 이후 Pipeline 변경 병합본 `main` SHA `47d24ad5`도 run **35575659698**에서 backend/frontend/release-contract가 모두 성공했다. 단, 아래 공개 reference measurement 숫자는 별도로 고정한 run을 사용한다.
 
 - `passed: true`
 - `status: passed`
