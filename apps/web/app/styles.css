@@ -387,3 +387,14 @@ footer{border-top:1px solid rgba(11,59,44,.1);background:rgba(250,248,241,.72)}
 .operator-pipeline-strip{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;padding:1rem 1.2rem;border-radius:16px;background:linear-gradient(135deg,#0a3b2c,#0f503b);color:#fff;box-shadow:0 18px 50px rgba(5,39,29,.14)}.operator-pipeline-strip .eyebrow{color:#90d2b2;margin:.1rem 0 .35rem}.operator-pipeline-strip>span{padding:.35rem .6rem;border-radius:99px;font-size:.72rem;font-weight:800}.operator-pipeline-strip>span.success{background:#d9f2e2;color:#176332}.operator-pipeline-strip>span.pending{background:#fff0d6;color:#855700}
 @media(max-width:900px){.scenario-switcher,.evidence-grid{grid-template-columns:1fr}.pipeline-workspace{grid-template-columns:1fr}.evidence-heading{align-items:start;flex-direction:column;gap:.4rem}.evidence-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.pipeline-toolbar,.operator-pipeline-strip{align-items:flex-start;flex-direction:column}.pipeline-controls{width:100%}.pipeline-controls button{flex:1}.impact-change-list article{grid-template-columns:1fr}.eligibility-compare{grid-template-columns:1fr}.eligibility-compare>span{transform:rotate(90deg);justify-self:center}.ranking-compare,.failure-case-list,.release-gate-list{grid-template-columns:1fr}.evidence-metrics{grid-template-columns:1fr 1fr}}
+
+
+.evaluation-route-table{display:grid;gap:.35rem;margin:1rem 0 1.2rem;overflow-x:auto}
+.evaluation-route-row{display:grid;grid-template-columns:1.15fr repeat(7,minmax(90px,1fr));gap:.45rem;min-width:900px;padding:.65rem .75rem;border-radius:10px;background:#f6f4ed;align-items:center;font-size:.76rem}
+.evaluation-route-row.head{background:#0c3b2d;color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.04em}
+.evaluation-route-row>span,.evaluation-route-row>strong{overflow-wrap:anywhere}
+.evaluation-boundary{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:1rem 0 1.25rem}
+.evaluation-boundary article{padding:.85rem;border:1px solid rgba(11,59,44,.12);border-radius:12px;background:#fbfaf5}
+.evaluation-boundary small,.evaluation-boundary strong,.evaluation-boundary span{display:block}
+.evaluation-boundary small{color:#4f765f;font-weight:800;letter-spacing:.1em}.evaluation-boundary strong{margin:.3rem 0}.evaluation-boundary span{font-size:.72rem;color:#6d7872;line-height:1.45}
+@media(max-width:700px){.evaluation-boundary{grid-template-columns:1fr}}
