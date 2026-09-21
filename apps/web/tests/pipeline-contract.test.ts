@@ -99,3 +99,10 @@ test("measured service evidence has dedicated compact list styling", () => {
   assert.match(styles, /\.http-endpoint-list/);
   assert.match(styles, /\.query-evidence/);
 });
+
+
+test("admin console distinguishes public static snapshot from actual API mode", () => {
+  assert.match(admin, /SYNTHETIC OPERATOR SNAPSHOT/);
+  assert.match(admin, /OBSERVABILITY · ACTUAL API/);
+  assert.match(admin, /저장된 합성 지표/);
+});
