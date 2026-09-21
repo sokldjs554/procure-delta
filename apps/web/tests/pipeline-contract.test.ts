@@ -54,3 +54,15 @@ test("evaluation page compares deterministic hosted and OCR routes honestly", ()
   assert.match(about, /OCR/);
   assert.match(about, /미실행/);
 });
+
+
+const mobile = readFileSync(
+  new URL("../app/mobile-fixes.css", import.meta.url),
+  "utf8",
+);
+
+test("pipeline mobile styles include vertical rail and reduced motion safeguards", () => {
+  assert.match(mobile, /\.pipeline-stage-map/);
+  assert.match(mobile, /prefers-reduced-motion:\s*reduce/);
+  assert.match(mobile, /\.stage-inspector/);
+});
