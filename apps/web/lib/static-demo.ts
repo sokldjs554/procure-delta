@@ -25,7 +25,7 @@ const userActor: Actor = {
   synthetic_demo: true,
 };
 
-let profile: Profile = {
+const initialProfile: Profile = {
   id: "profile-static",
   owner_user_id: "synthetic-demo-user",
   display_name: "Synthetic AI Systems",
@@ -41,7 +41,7 @@ let profile: Profile = {
   excluded_keywords: ["토목", "건축"],
 };
 
-let preferences: Preferences = {
+const initialPreferences: Preferences = {
   enabled: true,
   channels: ["local"],
   triggers: [
@@ -52,6 +52,28 @@ let preferences: Preferences = {
     "outcome_published",
   ],
 };
+
+function cloneProfile(value: Profile): Profile {
+  return {
+    ...value,
+    regions: [...value.regions],
+    industries: [...value.industries],
+    capabilities: [...value.capabilities],
+    certifications: [...value.certifications],
+    excluded_keywords: [...value.excluded_keywords],
+  };
+}
+
+function clonePreferences(value: Preferences): Preferences {
+  return {
+    ...value,
+    channels: [...value.channels],
+    triggers: [...value.triggers],
+  };
+}
+
+let profile = cloneProfile(initialProfile);
+let preferences = clonePreferences(initialPreferences);
 
 const baseOpportunities: Opportunity[] = [
   {
@@ -70,15 +92,8 @@ const baseOpportunities: Opportunity[] = [
       id: "elig-ai",
       eligible: true,
       hard_failures: [],
-      warnings: [
-        {
-          code: "REGION_REVIEW",
-          field: "regions",
-          message: "서울 소재 조건을 최종 원문에서 다시 확인해야 합니다.",
-          evidence: [{ source: "amendment", page: 2 }],
-        },
-      ],
-      ruleset_version: "eligibility-v1",
+      warnings: [],
+      ruleset_version: "hard-eligibility-v1",
     },
     ranking: {
       id: "rank-ai",
@@ -88,7 +103,7 @@ const baseOpportunities: Opportunity[] = [
       explanation: { summary: "LLM·OCR 역량과 예산 범위가 기업 프로필에 부합합니다." },
       as_of: now,
       evaluation_epoch: "2026-09-static",
-      ranking_version: "rank-v1",
+      ranking_version: "deterministic-baseline-v1",
     },
     watched: true,
     changed_at: "2026-09-16T03:00:00Z",
@@ -111,7 +126,7 @@ const baseOpportunities: Opportunity[] = [
       eligible: true,
       hard_failures: [],
       warnings: [],
-      ruleset_version: "eligibility-v1",
+      ruleset_version: "hard-eligibility-v1",
     },
     ranking: {
       id: "rank-doc",
@@ -121,7 +136,7 @@ const baseOpportunities: Opportunity[] = [
       explanation: { summary: "OCR·문서 처리 역량과 직접적으로 맞닿아 있습니다." },
       as_of: now,
       evaluation_epoch: "2026-09-static",
-      ranking_version: "rank-v1",
+      ranking_version: "deterministic-baseline-v1",
     },
     watched: false,
     changed_at: "2026-09-14T01:00:00Z",
@@ -151,7 +166,7 @@ const baseOpportunities: Opportunity[] = [
         },
       ],
       warnings: [],
-      ruleset_version: "eligibility-v1",
+      ruleset_version: "hard-eligibility-v1",
     },
     ranking: {
       id: "rank-data",
@@ -161,7 +176,7 @@ const baseOpportunities: Opportunity[] = [
       explanation: { summary: "기술 관련도는 높지만 필수 인증 게이트를 통과하지 못했습니다." },
       as_of: now,
       evaluation_epoch: "2026-09-static",
-      ranking_version: "rank-v1",
+      ranking_version: "deterministic-baseline-v1",
     },
     watched: false,
     changed_at: "2026-09-17T02:00:00Z",
@@ -222,24 +237,24 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
             ],
       timeline: {
         opportunity_ids: [opportunity.id],
-        active_links:
+        active_links: [],
+        historical_links:
           opportunity.id === "opp-ai-contact-center"
             ? [
                 {
-                  id: "link-ai",
+                  id: "link-ai-placeholder",
                   parent_opportunity_id: "opp-ai-contact-center",
                   child_opportunity_id: "opp-ai-contact-center",
-                  relation_type: "amends",
-                  confidence: "1.0000",
-                  link_method: "deterministic-source-key",
-                  status: "active",
-                  evidence_json: { notice_number: "R26BK-AI-001" },
+                  relation_type: "version-transition",
+                  confidence: "0.0000",
+                  link_method: "not-a-lifecycle-edge",
+                  status: "retracted",
+                  evidence_json: { reason: "amendments are versions of the same opportunity" },
                   created_at: "2026-09-16T03:05:00Z",
-                  retracted_at: null,
+                  retracted_at: "2026-09-16T03:05:00Z",
                 },
               ]
             : [],
-        historical_links: [],
       },
       deltas: {
         current_inputs_ready: true,
@@ -257,7 +272,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
                     deadline: { before: "2026-09-30", after: "2026-10-02" },
                   },
                   document_changes_json: { replaced: ["제안요청서_v2.pdf"] },
-                  impact_level: "HIGH",
+                  impact_level: "high",
                   impact_reasons_json: ["예산 감소", "필수 기술 추가", "참가 조건 추가"],
                   comparison_kind: "successive-version",
                   created_at: "2026-09-16T03:06:00Z",
@@ -307,7 +322,8 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
   ]),
 ) as Record<string, OpportunityDetail>;
 
-const watchedIds = new Set<string>(["opp-ai-contact-center"]);
+const initialWatchedIds = ["opp-ai-contact-center"] as const;
+const watchedIds = new Set<string>(initialWatchedIds);
 const notifications: NotificationItem[] = [
   {
     id: "notice-1",
@@ -427,8 +443,139 @@ const evaluation: EvaluationSummary = {
   notice: "작은 합성 회귀셋의 저장된 측정값입니다. 실제 조달 성능을 의미하지 않습니다.",
 };
 
+const staticRequirements: Record<
+  string,
+  { regions: string[]; requiredCertifications: string[] }
+> = {
+  "opp-ai-contact-center": { regions: ["서울"], requiredCertifications: [] },
+  "opp-ai-document": { regions: ["경기"], requiredCertifications: ["소프트웨어사업자"] },
+  "opp-data-platform": { regions: ["서울"], requiredCertifications: ["ISMS-P"] },
+};
+
 function opportunityView(item: Opportunity): Opportunity {
-  return { ...item, watched: watchedIds.has(item.id) };
+  const requirement = staticRequirements[item.id];
+  if (!requirement || !item.eligibility) {
+    return { ...item, ...opportunityView(item) };
+  }
+
+  const hardFailures = [] as NonNullable<Opportunity["eligibility"]>["hard_failures"];
+  const warnings = [] as NonNullable<Opportunity["eligibility"]>["warnings"];
+  const normalizedRegions = new Set(profile.regions.map((value) => value.trim().toLocaleLowerCase()));
+  const requiredRegions = requirement.regions.map((value) => value.trim().toLocaleLowerCase());
+  if (!profile.regions.length) {
+    warnings.push({
+      code: "profile_regions_unknown",
+      field: "regions",
+      message: "기업 활동 지역이 설정되지 않았습니다.",
+      evidence: [],
+    });
+  } else if (requiredRegions.length && !requiredRegions.some((value) => normalizedRegions.has(value))) {
+    hardFailures.push({
+      code: "region_not_served",
+      field: "regions",
+      message: "공고 지역이 기업 활동 지역과 일치하지 않습니다.",
+      evidence: [],
+    });
+  }
+
+  const ownedCertifications = new Set(
+    profile.certifications.map((value) => value.trim().toLocaleLowerCase()),
+  );
+  const missingCertifications = requirement.requiredCertifications.filter(
+    (value) => !ownedCertifications.has(value.trim().toLocaleLowerCase()),
+  );
+  if (missingCertifications.length) {
+    hardFailures.push({
+      code: "missing_certification",
+      field: "required_certifications",
+      message: `필수 인증 부족: ${missingCertifications.join(", ")}`,
+      evidence: [],
+    });
+  }
+
+  const amount = item.estimated_amount === null ? null : Number(item.estimated_amount);
+  const minimum =
+    profile.min_contract_amount === null ? null : Number(profile.min_contract_amount);
+  const maximum =
+    profile.max_contract_amount === null ? null : Number(profile.max_contract_amount);
+  if ((minimum !== null || maximum !== null) && amount === null) {
+    warnings.push({
+      code: "amount_unknown",
+      field: "estimated_amount",
+      message: "공고 금액을 확인할 수 없습니다.",
+      evidence: [],
+    });
+  } else if (
+    amount !== null &&
+    profile.contract_currency &&
+    item.currency !== profile.contract_currency
+  ) {
+    warnings.push({
+      code: "amount_currency_mismatch",
+      field: "currency",
+      message: "프로필 계약 통화와 공고 통화가 달라 금액을 비교하지 않았습니다.",
+      evidence: [],
+    });
+  } else if (amount !== null) {
+    if (minimum !== null && amount < minimum) {
+      hardFailures.push({
+        code: "amount_below_minimum",
+        field: "estimated_amount",
+        message: "공고 금액이 기업 최소 계약 금액보다 작습니다.",
+        evidence: [],
+      });
+    }
+    if (maximum !== null && amount > maximum) {
+      hardFailures.push({
+        code: "amount_above_maximum",
+        field: "estimated_amount",
+        message: "공고 금액이 기업 최대 계약 금액보다 큽니다.",
+        evidence: [],
+      });
+    }
+  }
+
+  const eligible = hardFailures.length === 0;
+  const allowsRecommendation = eligible && warnings.length === 0;
+  const eligibility = {
+    ...item.eligibility,
+    eligible,
+    hard_failures: hardFailures,
+    warnings,
+    ruleset_version: "hard-eligibility-v1",
+  };
+  const score = Number(item.ranking?.final_score ?? 0);
+  const ranking = item.ranking
+    ? {
+        ...item.ranking,
+        recommended: allowsRecommendation && score >= 0.6,
+        ranking_version: "deterministic-baseline-v1",
+        explanation: {
+          ...(typeof item.ranking.explanation === "object" &&
+          item.ranking.explanation !== null &&
+          !Array.isArray(item.ranking.explanation)
+            ? item.ranking.explanation
+            : {}),
+          eligibility_gate: allowsRecommendation ? "allowed" : "blocked",
+          static_demo_note:
+            "공개 static 데모에서는 저장된 관련도 점수를 유지하고 필수 조건 게이트만 현재 프로필로 다시 계산합니다.",
+        },
+      }
+    : null;
+
+  return {
+    ...item,
+    eligibility,
+    ranking,
+    watched: watchedIds.has(item.id),
+  };
+}
+
+function resetStaticSession() {
+  profile = cloneProfile(initialProfile);
+  preferences = clonePreferences(initialPreferences);
+  watchedIds.clear();
+  initialWatchedIds.forEach((id) => watchedIds.add(id));
 }
 
 const pipelineCatalog: PipelineScenarioSummary[] = [
@@ -798,7 +945,10 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   const requestMethod = method(init);
 
   if (pathname === "/auth/session" || pathname === "/auth/demo-login") return userActor;
-  if (pathname === "/auth/logout") return undefined;
+  if (pathname === "/auth/logout") {
+    resetStaticSession();
+    return undefined;
+  }
 
   if (pathname === "/company-profile") {
     if (requestMethod === "PATCH" && init.body) {
@@ -809,14 +959,65 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   }
 
   if (pathname === "/opportunities") {
-    const q = (url.searchParams.get("q") ?? "").toLowerCase();
+    const q = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
     const stage = url.searchParams.get("lifecycle_stage") ?? "";
+    const category = url.searchParams.get("category") ?? "";
+    const buyer = (url.searchParams.get("buyer") ?? "").toLocaleLowerCase();
     const eligibleOnly = url.searchParams.get("eligible_only") === "true";
+    const amountMin = url.searchParams.get("amount_min");
+    const amountMax = url.searchParams.get("amount_max");
+    const deadlineFrom = url.searchParams.get("deadline_from");
+    const deadlineTo = url.searchParams.get("deadline_to");
+    const changedSince = url.searchParams.get("changed_since");
     const items = baseOpportunities
-      .filter((item) => !q || `${item.title} ${item.buyer_name}`.toLowerCase().includes(q))
+      .map(opportunityView)
+      .filter(
+        (item) =>
+          !q ||
+          `${item.title} ${item.buyer_name}`.toLocaleLowerCase().includes(q),
+      )
       .filter((item) => !stage || item.lifecycle_stage === stage)
-      .filter((item) => !eligibleOnly || Boolean(item.eligibility?.eligible && !item.eligibility.warnings.length))
-      .map(opportunityView);
+      .filter((item) => !category || item.procurement_type === category)
+      .filter((item) => !buyer || item.buyer_name.toLocaleLowerCase().includes(buyer))
+      .filter(
+        (item) =>
+          !amountMin ||
+          (item.estimated_amount !== null &&
+            Number(item.estimated_amount) >= Number(amountMin)),
+      )
+      .filter(
+        (item) =>
+          !amountMax ||
+          (item.estimated_amount !== null &&
+            Number(item.estimated_amount) <= Number(amountMax)),
+      )
+      .filter(
+        (item) =>
+          !deadlineFrom ||
+          (item.closes_at !== null &&
+            new Date(item.closes_at).getTime() >= new Date(deadlineFrom).getTime()),
+      )
+      .filter(
+        (item) =>
+          !deadlineTo ||
+          (item.closes_at !== null &&
+            new Date(item.closes_at).getTime() <= new Date(deadlineTo).getTime()),
+      )
+      .filter(
+        (item) =>
+          !changedSince ||
+          (item.changed_at !== null &&
+            new Date(item.changed_at).getTime() > new Date(changedSince).getTime()),
+      )
+      .filter(
+        (item) =>
+          !eligibleOnly ||
+          Boolean(
+            item.eligibility?.eligible &&
+              !item.eligibility.hard_failures.length &&
+              !item.eligibility.warnings.length,
+          ),
+      );
     return { items, next_cursor: null };
   }
 
@@ -921,7 +1122,7 @@ export async function staticDemoRequest<T = unknown>(path: string, init: Request
   return (await staticDemoValue(path, init)) as T;
 }
 
-export function staticDocumentUrl(id: string) {
+export function staticDocumentUrl(id: string): null {
   void id;
-  return "#synthetic-document";
+  return null;
 }
