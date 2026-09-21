@@ -155,7 +155,13 @@ def main() -> None:
         raise SystemExit(2)
     project = 'procure-delta-verify-' + secrets.token_hex(4)
     secret = secrets.token_urlsafe(32)
-    environment = {**os.environ, 'COMPOSE_PROJECT_NAME': project, 'VERIFY_OPERATOR_SECRET': secret}
+    environment = {
+        **os.environ,
+        'COMPOSE_PROJECT_NAME': project,
+        'VERIFY_OPERATOR_SECRET': secret,
+        'E2E_WEB_URL': 'http://127.0.0.1:13000',
+        'E2E_API_URL': 'http://127.0.0.1:18000',
+    }
     report['compose_project'] = project
     compose = ['docker', 'compose', '--env-file', os.devnull,
                '-p', project, '-f', 'compose.verify.yml']
