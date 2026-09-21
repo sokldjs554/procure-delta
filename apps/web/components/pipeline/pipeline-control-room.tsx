@@ -7,13 +7,9 @@ import {
   type PipelineScenario,
   type PipelineScenarioSummary,
 } from "../../lib/api";
+import { nextReplayIndex } from "../../lib/pipeline";
 import { PipelineStageMap } from "./pipeline-stage-map";
 import { StageInspector } from "./stage-inspector";
-
-export function nextReplayIndex(current: number, length: number): number {
-  if (length <= 0) return -1;
-  return Math.min(current + 1, length - 1);
-}
 
 function prefersReducedMotion() {
   return (
