@@ -25,6 +25,8 @@ HWP 내용 추출은 구현하지 않았다.
 
 실제 결제·구독·크레딧 차감, 운영용 인증, 기관별 강한 격리, 외부 Sentry 연동, 클라우드 운영을 완료했다고 주장하지 않는다.
 CPU 5만 건 루프는 DB/Redis/HTTP 처리량이 아니며 실제 공개 문서 5만 건을 수집했다는 의미도 아니다.
+paginated source backfill gate는 합성 source의 cursor/raw-ingest/normalize 경로를 측정할 뿐,
+실제 나라장터 대규모 수집량·public-network latency·API quota를 증명하지 않는다.
 query-plan gate는 현재 쿼리의 실행 계획을 확인하는 검증 도구이며, 별도 인덱스 변경 효과를 과장하지 않는다.
 외부 알림은 기본 비활성이고, local receipt 경로가 기본이다.
 
