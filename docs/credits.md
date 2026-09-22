@@ -33,6 +33,8 @@ available
 - `credit_reservations`: 예약 금액과 terminal state
 - `credit_ledger_entries`: grant/reserve/commit/refund의 append-only 감사 원장
 
+원장 테이블에는 PostgreSQL `BEFORE UPDATE OR DELETE` trigger를 두어 애플리케이션 실수나 직접 SQL에서도 기존 row 변경·삭제를 거절합니다. 정정이 필요하면 기존 row를 고치지 않고 새로운 보정 이벤트를 추가하는 방식으로 확장해야 합니다.
+
 각 ledger row에는 mutation 직후 `available_after`, `reserved_after`를 저장해 운영 시점의 판단을 재구성할 수 있습니다.
 
 ## 검증
@@ -44,5 +46,6 @@ available
 - 부족한 잔액의 reserve 거절
 - terminal reservation 재정산 거절
 - 독립 DB session 두 개의 동시 reserve에서 초과 사용 방지
+- 직접 UPDATE/DELETE 시 PostgreSQL이 원장 변경을 거절하는지
 
 이 범위는 **크레딧 원장 설계·트랜잭션 안전성 증거**이며 실제 결제사 운영 증거는 아닙니다.
