@@ -19,6 +19,17 @@ test("pipeline page has reviewer-first controls and honesty copy", () => {
   assert.match(source, /초기화/);
 });
 
+const inspector = readFileSync(
+  new URL("../components/pipeline/stage-inspector.tsx", import.meta.url),
+  "utf8",
+);
+
+test("stage inspector keeps raw JSON available but collapsed behind reviewer-first copy", () => {
+  assert.match(inspector, /기술 세부 JSON 보기/);
+  assert.match(inspector, /입력 · 출력 · 근거 · 판단 원문/);
+  assert.match(inspector, /<details className="pipeline-technical-details">/);
+});
+
 const shell = readFileSync(
   new URL("../components/app-shell.tsx", import.meta.url),
   "utf8",
