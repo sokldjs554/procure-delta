@@ -23,13 +23,14 @@ from app.models import (
     RawRecord,
     SourceRegistry,
 )
-from app.sources.base import DiscoveryPage
+from app.sources.base import DiscoveryPage, RawSourceRecord
 from app.workers.jobs import (
     _is_transient,
     _safe_error_message,
     ingest_record,
     job_key,
     poll_source,
+    poll_source_pages,
     reconcile_pending_normalizations,
 )
 
@@ -340,6 +341,73 @@ async def test_poll_source_persists_discovered_raw_records(session: AsyncSession
             (await session.scalars(select(RawRecord).where(RawRecord.source_id == source.id))).all()
         )
         == 2
+    )
+
+
+@pytest.mark.asyncio
+async def test_paginated_poll_resumes_after_transient_page_failure(
+    session: AsyncSession,
+) -> None:
+    source_code = "synthetic-backfill-resume"
+
+    class ResumeAdapter:
+        def __init__(self) -> None:
+            self.failed_once = False
+
+        async def discover(self, cursor: str | None) -> DiscoveryPage:
+            start = int(cursor) if cursor is not None else 0
+            if start == 1 and not self.failed_once:
+                self.failed_once = True
+                raise httpx.ConnectError("synthetic page outage")
+            record = RawSourceRecord(
+                source_record_id=f"resume-{start}",
+                raw_payload={
+                    **_normalizable_payload(f"Resume page {start}"),
+                    "is_synthetic": True,
+                },
+            )
+            next_cursor = str(start + 1) if start < 2 else None
+            return DiscoveryPage(records=(record,), next_cursor=next_cursor)
+
+    adapter = ResumeAdapter()
+    ctx = {"session": session, "source_adapters": {source_code: adapter}}
+
+    with pytest.raises(Retry):
+        await poll_source_pages(ctx, source_code, max_pages=10)
+
+    source = await session.scalar(
+        select(SourceRegistry).where(SourceRegistry.code == source_code)
+    )
+    assert source is not None
+    latest_success = await session.scalar(
+        select(IngestRun)
+        .where(IngestRun.source_id == source.id, IngestRun.status == "success")
+        .order_by(IngestRun.finished_at.desc())
+        .limit(1)
+    )
+    assert latest_success is not None
+    assert latest_success.cursor_after == "1"
+    assert (
+        await session.scalar(
+            select(func.count()).select_from(RawRecord).where(RawRecord.source_id == source.id)
+        )
+        == 1
+    )
+
+    result = await poll_source_pages(ctx, source_code, max_pages=10)
+
+    assert result == {
+        "status": "success",
+        "source": source_code,
+        "pages": 2,
+        "fetched_count": 2,
+        "cycle_complete": True,
+    }
+    assert (
+        await session.scalar(
+            select(func.count()).select_from(RawRecord).where(RawRecord.source_id == source.id)
+        )
+        == 3
     )
 
 
