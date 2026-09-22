@@ -62,6 +62,7 @@ class EvaluationSummary(BaseModel):
     ocr_language: str | None = None
     hosted_evaluated: bool = False
     hosted_optimization: HostedOptimizationSummary = HostedOptimizationSummary()
+    provider_contract_optimization: HostedOptimizationSummary = HostedOptimizationSummary()
     routes: dict[str, EvaluationRouteSummary] = {}
     notice: str = ('저장된 소규모 합성 회귀 평가입니다. 현재 운영 지표나 '
                    '실제 조달 데이터·한국어 스캔·LLM 품질 성적이 아닙니다.')
@@ -99,6 +100,51 @@ def _hosted_route(value: dict[str, Any]) -> EvaluationRouteSummary:
         completion_tokens=metrics.get('completion_tokens'),
         reported_cost=metrics.get('reported_cost_per_document'),
     )
+
+
+def read_provider_contract(
+    path: Path,
+) -> tuple[EvaluationRouteSummary, EvaluationRouteSummary, HostedOptimizationSummary]:
+    limitation = (
+        "Provider contract artifact is unavailable; external model quality remains unmeasured."
+    )
+    if not path.exists():
+        missing = EvaluationRouteSummary(status="not_run", notice=limitation)
+        return missing, missing.model_copy(), HostedOptimizationSummary(notice=limitation)
+
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if (
+        raw.get("schema_version") != 1
+        or raw.get("synthetic") is not True
+        or raw.get("model_quality_measured") is not False
+        or raw.get("external_network") is not False
+    ):
+        raise ValueError("invalid provider contract artifact")
+
+    routes = raw.get("routes")
+    optimization = raw.get("optimization")
+    if not isinstance(routes, dict) or not isinstance(optimization, dict):
+        raise ValueError("provider contract artifact is incomplete")
+
+    notice = str(raw.get("limitation") or "")
+    all_route = _hosted_route(routes.get("all", {}))
+    gated_route = _hosted_route(routes.get("gated", {}))
+    all_route.notice = notice
+    gated_route.notice = notice
+    summary = HostedOptimizationSummary(
+        status="measured" if optimization.get("status") == "measured" else "not_run",
+        all_calls=optimization.get("all_calls"),
+        gated_calls=optimization.get("gated_calls"),
+        avoided_calls=optimization.get("avoided_calls"),
+        call_reduction_rate=optimization.get("call_reduction_rate"),
+        all_tokens=optimization.get("all_tokens"),
+        gated_tokens=optimization.get("gated_tokens"),
+        token_reduction_rate=optimization.get("token_reduction_rate"),
+        reported_cost_reduction_rate=optimization.get("reported_cost_reduction_rate"),
+        cost_basis=optimization.get("cost_basis"),
+        notice=notice,
+    )
+    return all_route, gated_route, summary
 
 
 def read_korean_ocr_route(path: Path) -> EvaluationRouteSummary:
