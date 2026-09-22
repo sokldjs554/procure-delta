@@ -470,6 +470,20 @@ export interface EvaluationRouteSummary {
   language: string | null;
   notice: string | null;
 }
+export interface EvaluationOptimizationSummary {
+  status: "measured" | "not_run";
+  all_calls: number | null;
+  gated_calls: number | null;
+  avoided_calls: number | null;
+  call_reduction_rate: number | null;
+  all_tokens: number | null;
+  gated_tokens: number | null;
+  token_reduction_rate: number | null;
+  reported_cost_reduction_rate: number | null;
+  cost_basis: string | null;
+  notice: string | null;
+}
+
 export interface EvaluationSummary {
   status: "measured" | "not_run";
   synthetic: boolean;
@@ -493,8 +507,16 @@ export interface EvaluationSummary {
   ocr_support: number;
   ocr_language: string | null;
   hosted_evaluated: boolean;
+  hosted_optimization: EvaluationOptimizationSummary;
+  provider_contract_optimization: EvaluationOptimizationSummary;
   routes: Record<
-    "deterministic" | "hosted_all" | "hosted_gated" | "ocr" | "ocr_korean",
+    | "deterministic"
+    | "provider_contract_all"
+    | "provider_contract_gated"
+    | "hosted_all"
+    | "hosted_gated"
+    | "ocr"
+    | "ocr_korean",
     EvaluationRouteSummary
   >;
   notice: string;
