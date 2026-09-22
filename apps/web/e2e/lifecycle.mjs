@@ -28,6 +28,14 @@ function seed(phase) {
   assert.equal(result.synthetic, true);
   return result;
 }
+
+async function assertBoundedDetailHeight(page, label) {
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  assert.ok(
+    height < 10000,
+    `${label} detail page is ${height}px tall; nested evidence layout likely regressed`,
+  );
+}
 const base = seed("base");
 const tender = base.versions.find(item => item.stage === "tender");
 assert.ok(tender);
@@ -58,6 +66,7 @@ try {
   await page.getByRole("button", { name: "필터 적용", exact: true }).click();
   await page.locator(`a[href="/opportunities/${tender.opportunity_id}"]`).first().click();
   await page.locator(".detail-head h1").waitFor();
+  await assertBoundedDetailHeight(page, "tender");
   let detail = await (await context.request.get(`${api}/api/v1/opportunities/${tender.opportunity_id}`)).json();
   assert.equal(detail.eligibility.eligible, true);
   assert.equal(detail.eligibility.warnings.length, 0);
@@ -70,6 +79,7 @@ try {
   seed("amendment");
   await page.reload();
   await page.locator("article.delta").getByText("high 영향", { exact: true }).first().waitFor();
+  await assertBoundedDetailHeight(page, "amendment");
   detail = await (await context.request.get(`${api}/api/v1/opportunities/${tender.opportunity_id}`)).json();
   assert.equal(detail.lifecycle_stage, "amendment");
   assert.equal(detail.versions.length, 2);
@@ -93,6 +103,7 @@ try {
   assert.ok(notices.items.some(item => item.template_key === "outcome_published"));
   await page.goto(`${web}/opportunities/${contract.opportunity_id}`);
   await page.locator(".detail-head h1").waitFor();
+  await assertBoundedDetailHeight(page, "contract");
   checks.push("prespec → tender/amendment → award → contract active graph");
   await page.screenshot({ path: resolve(output, "04-contract.png"), fullPage: true });
   const operatorContext = await browser.newContext({ viewport: { width: 1440, height: 960 } });
