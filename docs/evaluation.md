@@ -5,8 +5,10 @@
 ```sh
 python -m pip install -e "./apps/api[dev]"
 python scripts/run_eval.py --output artifacts/evaluation/new-run.json
-# 실제 인식기 설치된 환경에서만 선택
+# 기존 영어 OCR 회귀
 python scripts/run_eval.py --with-ocr --output artifacts/evaluation/new-ocr.json
+# CI와 동일한 한국어 합성 OCR 회귀
+python scripts/run_korean_ocr_eval.py --output artifacts/evaluation/korean-ocr.json
 # 환경 설정과 명시적인 유료 호출 허용 후에만
 python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.json
 ```
@@ -44,7 +46,8 @@ Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리
 현재 저장된 평가 artifact에서:
 
 - deterministic extraction: measured
-- OCR: measured, 영어 합성 이미지 3장
+- OCR English: measured, 영어 합성 이미지 3장
+- OCR Korean: measured, `kor+eng` 합성 이미지 3장, 18/18 fields
 - hosted all: `not_run`
 - hosted gated: `not_run`
 
@@ -66,10 +69,14 @@ UI는 네 경로를 같은 표에 두되 hosted 경로가 실행되지 않았으
 예를 들어 향후 한국어 회귀셋은 `kor` 또는 `kor+eng`로 명시할 수 있지만, 해당 언어 데이터가
 설치되어 있지 않으면 측정하지 않고 `not_run`으로 남긴다.
 
-현재 저장 artifact는 여전히 영어 합성 이미지 결과이며 **한국어 OCR 측정값은 없다**.
-한글 실문서·표·복잡한 레이아웃·다양한 스캐너에 대한 결과로 해석하지 않는다.
-서비스의 기본 fake fixture OCR도 이 정확도로 평가하지 않는다. 반복 측정으로 잘 나온 결과만 고르지 않았고,
-입력 이미지와 실패 인식 텍스트를 함께 보존했다.
+한국어 회귀는 release-contract 안에서 NanumGothic으로 같은 원문을 clean / blurred / low-resolution
+3가지로 렌더링하고 Tesseract 5.5.0 `kor+eng`로 실제 인식한다. CI 저장 artifact
+`korean-ocr.json`에서 3장 × 6개 구조화 필드가 모두 일치해 **18/18 (100%)**였고,
+세 케이스 모두 downstream evidence validation을 통과했다.
+
+이 결과는 한글 **합성 렌더 이미지** 회귀 성능이다. 실제 나라장터 스캔·표·손글씨·압축 노이즈·복잡한
+레이아웃·다양한 스캐너에 대한 일반화 성능으로 해석하지 않는다. 서비스의 기본 fake fixture OCR도
+이 정확도로 평가하지 않는다. 영어 17/18 결과와 한국어 18/18 결과는 서로 다른 회귀 범위로 분리해 보존한다.
 
 ## provenance
 

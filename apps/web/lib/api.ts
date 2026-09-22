@@ -494,7 +494,7 @@ export interface EvaluationSummary {
   ocr_language: string | null;
   hosted_evaluated: boolean;
   routes: Record<
-    "deterministic" | "hosted_all" | "hosted_gated" | "ocr",
+    "deterministic" | "hosted_all" | "hosted_gated" | "ocr" | "ocr_korean",
     EvaluationRouteSummary
   >;
   notice: string;

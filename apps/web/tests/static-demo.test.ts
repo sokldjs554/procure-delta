@@ -29,6 +29,10 @@ test("static demo serves the core product journey without an API", async () => {
   const evaluation = await staticDemoRequest<EvaluationSummary>("/evaluation/summary");
   assert.equal(evaluation.status, "measured");
   assert.equal(evaluation.synthetic, true);
+  assert.equal(evaluation.routes.ocr_korean.status, "measured");
+  assert.equal(evaluation.routes.ocr_korean.support, 18);
+  assert.equal(evaluation.routes.ocr_korean.field_accuracy, 1);
+  assert.equal(evaluation.routes.ocr_korean.language, "kor+eng");
 
   assert.equal(staticDocumentUrl("doc-spec"), "#synthetic-document");
 });

@@ -66,3 +66,17 @@ def test_measured_hosted_route_uses_direct_metrics_shape():
     assert route.prompt_tokens == 80
     assert route.completion_tokens == 20
     assert route.reported_cost == 0.015
+
+
+def test_committed_korean_ocr_artifact_is_projected_without_raw_text():
+    from app.evaluation.summary import read_korean_ocr_route
+
+    root = Path(__file__).resolve().parents[2] / "app/evaluation/results"
+    route = read_korean_ocr_route(root / "korean-ocr.json")
+
+    assert route.status == "measured"
+    assert route.support == 18
+    assert route.field_accuracy == 1.0
+    assert route.language == "kor+eng"
+    assert route.hosted_calls == 1
+    assert "recognition_text" not in route.model_dump_json()

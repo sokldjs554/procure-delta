@@ -101,6 +101,31 @@ def _hosted_route(value: dict[str, Any]) -> EvaluationRouteSummary:
     )
 
 
+def read_korean_ocr_route(path: Path) -> EvaluationRouteSummary:
+    if not path.exists():
+        return EvaluationRouteSummary(
+            status="not_run",
+            notice="stored Korean OCR artifact is unavailable",
+        )
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if raw.get("schema_version") != 1 or raw.get("synthetic") is not True:
+        raise ValueError("invalid Korean OCR artifact")
+    measurement = raw.get("measurement")
+    if not isinstance(measurement, dict) or measurement.get("status") != "measured":
+        return EvaluationRouteSummary(
+            status="not_run",
+            notice="Korean OCR artifact was not measured",
+        )
+    return EvaluationRouteSummary(
+        status="measured",
+        support=int(measurement.get("expected_fields", 0) or 0),
+        field_accuracy=measurement.get("field_accuracy"),
+        hosted_calls=int(measurement.get("actual_recognition_invocations", 0) or 0),
+        language=measurement.get("language"),
+        notice=str(raw.get("limitation") or measurement.get("limitation") or ""),
+    )
+
+
 def read_summary(path: Path) -> EvaluationSummary:
     if not path.exists():
         return EvaluationSummary()
