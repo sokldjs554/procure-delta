@@ -673,34 +673,139 @@ const engineeringEvidence: EngineeringEvidence = {
     delta_pairs: 5000,
     elapsed_seconds: 6.994830194999963,
     records_per_second: 7148.13635300839,
-    limitation:
-      "CPU loop only; not PostgreSQL ingest, Redis throughput or SaaS capacity.",
+    limitation: "CPU loop only; not PostgreSQL ingest, Redis throughput or SaaS capacity."
   },
   failure_drill: {
     status: "measured",
     scope: "http_transport_injection",
     cases: [
-      { name: "timeout-recovery", attempts: 3, succeeded: true, passed: true },
-      { name: "rate-limit-recovery", attempts: 2, succeeded: true, passed: true },
-      { name: "server-error-terminal", attempts: 3, succeeded: false, passed: true },
-      { name: "forbidden-not-retried", attempts: 1, succeeded: false, passed: true },
+      {
+        name: "timeout-recovery",
+        attempts: 3,
+        succeeded: true,
+        passed: true
+      },
+      {
+        name: "rate-limit-recovery",
+        attempts: 2,
+        succeeded: true,
+        passed: true
+      },
+      {
+        name: "server-error-terminal",
+        attempts: 3,
+        succeeded: false,
+        passed: true
+      },
+      {
+        name: "forbidden-not-retried",
+        attempts: 1,
+        succeeded: false,
+        passed: true
+      }
     ],
-    limitation:
-      "Synthetic HTTP failures; sleepers recorded, not actual network/DB outages.",
+    limitation: "Synthetic HTTP failures; sleepers recorded, not actual network/DB outages."
   },
   release: {
     status: "measured",
     passed: true,
     readiness: "ready",
     gates: [
-      { gate: "database-and-redis", passed: true, elapsed_seconds: 9.128632955 },
-      { gate: "backend-integration", passed: true, elapsed_seconds: 134.80993098599998 },
-      { gate: "full-readiness", passed: true, elapsed_seconds: 2.1315207579999935 },
-      { gate: "real-lifecycle-e2e", passed: true, elapsed_seconds: 13.098819434000006 },
-      { gate: "pipeline-demo-e2e", passed: true, elapsed_seconds: 9.468859132000034 },
-      { gate: "queue-scale", passed: true, elapsed_seconds: 50.98416539200002 },
-      { gate: "query-plans", passed: true, elapsed_seconds: 1.6847892979999983 },
-      { gate: "http-load", passed: true, elapsed_seconds: 27.555093554999985 },
+      {
+        gate: "compose-contract",
+        passed: true,
+        elapsed_seconds: 2.6998520029999966
+      },
+      {
+        gate: "image-build",
+        passed: true,
+        elapsed_seconds: 43.290227379
+      },
+      {
+        gate: "database-and-redis",
+        passed: true,
+        elapsed_seconds: 8.393207966999995
+      },
+      {
+        gate: "backend-integration",
+        passed: true,
+        elapsed_seconds: 154.287714598
+      },
+      {
+        gate: "runtime-start",
+        passed: true,
+        elapsed_seconds: 2.2362376100000176
+      },
+      {
+        gate: "full-readiness",
+        passed: true,
+        elapsed_seconds: 2.1692379030000097
+      },
+      {
+        gate: "web-install",
+        passed: true,
+        elapsed_seconds: 10.150087448000022
+      },
+      {
+        gate: "web-test",
+        passed: true,
+        elapsed_seconds: 0.5783618869999714
+      },
+      {
+        gate: "web-typecheck",
+        passed: true,
+        elapsed_seconds: 3.2429146160000073
+      },
+      {
+        gate: "web-lint",
+        passed: true,
+        elapsed_seconds: 4.95725027900005
+      },
+      {
+        gate: "browser-install",
+        passed: true,
+        elapsed_seconds: 28.081713235999985
+      },
+      {
+        gate: "real-lifecycle-e2e",
+        passed: true,
+        elapsed_seconds: 15.101241236000021
+      },
+      {
+        gate: "pipeline-demo-e2e",
+        passed: true,
+        elapsed_seconds: 10.503002544000026
+      },
+      {
+        gate: "pause-background-jobs",
+        passed: true,
+        elapsed_seconds: 1.8856313120000436
+      },
+      {
+        gate: "credit-ledger",
+        passed: true,
+        elapsed_seconds: 1.8424910020000311
+      },
+      {
+        gate: "queue-scale",
+        passed: true,
+        elapsed_seconds: 51.48898849600005
+      },
+      {
+        gate: "query-plans",
+        passed: true,
+        elapsed_seconds: 1.806920359000003
+      },
+      {
+        gate: "http-load",
+        passed: true,
+        elapsed_seconds: 29.406327917
+      },
+      {
+        gate: "resume-background-jobs",
+        passed: true,
+        elapsed_seconds: 1.868475439000008
+      }
     ],
     dependencies: {
       database: true,
@@ -709,8 +814,8 @@ const engineeringEvidence: EngineeringEvidence = {
       worker: true,
       scheduler: true,
       storage: true,
-      extraction_config: true,
-    },
+      extraction_config: true
+    }
   },
   queue: {
     status: "measured",
@@ -718,11 +823,11 @@ const engineeringEvidence: EngineeringEvidence = {
     metrics: {
       records: 1000,
       completed_records: 1000,
-      elapsed_seconds: 46.592474568,
-      records_per_second: 21.462693477259656,
+      elapsed_seconds: 46.588698432,
+      records_per_second: 21.464433084765858,
       successful: true,
-      limitation: "Local ingestion only; OCR/external LLM and attachments excluded.",
-    },
+      limitation: "Local ingestion only; OCR/external LLM and attachments excluded."
+    }
   },
   http: {
     status: "measured",
@@ -739,58 +844,75 @@ const engineeringEvidence: EngineeringEvidence = {
           requests: 50,
           concurrency: 5,
           error_count: 0,
-          p50_ms: 1159.5945154999754,
-          p95_ms: 1219.162342549987,
-          requests_per_second: 4.27610158052812,
+          p50_ms: 1213.7625100000093,
+          p95_ms: 1370.140840749974,
+          requests_per_second: 4.040520954632836
         },
         search: {
           status: "measured",
           requests: 50,
           concurrency: 5,
           error_count: 0,
-          p50_ms: 1154.90500049998,
-          p95_ms: 1210.3923193499668,
-          requests_per_second: 4.322374359850543,
+          p50_ms: 1240.6243089999691,
+          p95_ms: 1312.304742200004,
+          requests_per_second: 4.01499772431975
         },
         detail: {
           status: "measured",
           requests: 50,
           concurrency: 5,
           error_count: 0,
-          p50_ms: 165.51361700004463,
-          p95_ms: 195.71727990001762,
-          requests_per_second: 29.249808926793392,
+          p50_ms: 180.88199949997374,
+          p95_ms: 201.89188104999118,
+          requests_per_second: 26.93449799970118
         },
         admin: {
           status: "measured",
           requests: 50,
           concurrency: 5,
           error_count: 0,
-          p50_ms: 25.335382500003334,
-          p95_ms: 71.60217759999625,
-          requests_per_second: 164.72935934867678,
-        },
-      },
-    },
-  },
-  credit: {
-    status: "not_run",
-    scope: null,
-    metrics: {},
+          p50_ms: 28.509066999987454,
+          p95_ms: 32.67678934998627,
+          requests_per_second: 170.32784495795966
+        }
+      }
+    }
   },
   query_plans: {
     status: "measured",
     scope: "real_postgresql_explain",
     metrics: {
-      records: 1007,
-      before: 0.331,
-      after: 0.041,
-      improvement_ratio: 8.073170731707316,
+      records: 1006,
+      before: 0.36,
+      after: 0.046,
+      improvement_ratio: 7.826086956521739,
       candidate_adopted: false,
       candidate_rolled_back: true,
-      caution: "Fixed order and warmed caches; repeat across fresh runs before adopting.",
-    },
+      caution: "Fixed order and warmed caches; repeat across fresh runs before adopting."
+    }
   },
+  credit: {
+    status: "measured",
+    scope: "real_postgresql_credit_ledger",
+    metrics: {
+      concurrent_requests: 2,
+      successful_reservations: 1,
+      insufficient_rejections: 1,
+      overspend_prevented: true,
+      duplicate_request_suppressed: true,
+      refund_restored: true,
+      commit_finalized: true,
+      immutable_update_rejected: true,
+      immutable_delete_rejected: true,
+      ledger_entries: 5,
+      reservations: 2,
+      available_after: 3,
+      reserved_after: 0,
+      elapsed_seconds: 0.09823463100002527,
+      successful: true,
+      limitation: "Synthetic isolated PostgreSQL ledger drill; no external PG, subscription webhook, or production billing traffic."
+    }
+  }
 };
 
 function method(init: RequestInit) {

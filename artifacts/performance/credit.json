@@ -1,0 +1,20 @@
+{
+  "scope": "real_postgresql_credit_ledger",
+  "synthetic": true,
+  "concurrent_requests": 2,
+  "successful_reservations": 1,
+  "insufficient_rejections": 1,
+  "overspend_prevented": true,
+  "duplicate_request_suppressed": true,
+  "refund_restored": true,
+  "commit_finalized": true,
+  "immutable_update_rejected": true,
+  "immutable_delete_rejected": true,
+  "ledger_entries": 5,
+  "reservations": 2,
+  "available_after": 3,
+  "reserved_after": 0,
+  "elapsed_seconds": 0.09823463100002527,
+  "successful": true,
+  "limitation": "Synthetic isolated PostgreSQL ledger drill; no external PG, subscription webhook, or production billing traffic."
+}

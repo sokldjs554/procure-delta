@@ -22,6 +22,10 @@ async def test_engineering_evidence_exposes_measured_values_and_scope() -> None:
     assert body["failure_drill"]["scope"] == "http_transport_injection"
     assert body["release"]["passed"] is True
     assert body["release"]["readiness"] == "ready"
+    assert body["credit"]["status"] == "measured"
+    assert body["credit"]["metrics"]["overspend_prevented"] is True
+    assert body["credit"]["metrics"]["immutable_update_rejected"] is True
+    assert body["credit"]["metrics"]["immutable_delete_rejected"] is True
 
 
 @pytest.mark.asyncio
@@ -99,7 +103,9 @@ async def test_engineering_evidence_falls_back_to_packaged_public_snapshot(
     assert body["http"]["status"] == "measured"
     assert body["query_plans"]["status"] == "measured"
     assert body["release"]["passed"] is True
-    assert body["credit"]["status"] == "not_run"
+    assert body["credit"]["status"] == "measured"
+    assert body["credit"]["metrics"]["duplicate_request_suppressed"] is True
+    assert any(gate["gate"] == "credit-ledger" for gate in body["release"]["gates"])
     assert any(gate["gate"] == "pipeline-demo-e2e" for gate in body["release"]["gates"])
 
 
@@ -115,6 +121,9 @@ def test_packaged_snapshot_matches_committed_public_performance_artifacts() -> N
     query = json.loads(
         (root / "artifacts/performance/query-plans.json").read_text(encoding="utf-8")
     )
+    credit = json.loads(
+        (root / "artifacts/performance/credit.json").read_text(encoding="utf-8")
+    )
 
     assert snapshot["queue"]["metrics"]["records_per_second"] == queue["records_per_second"]
     assert (
@@ -124,4 +133,12 @@ def test_packaged_snapshot_matches_committed_public_performance_artifacts() -> N
     assert (
         snapshot["query_plans"]["metrics"]["improvement_ratio"]
         == query["improvement_ratio"]
+    )
+    assert (
+        snapshot["credit"]["metrics"]["overspend_prevented"]
+        == credit["overspend_prevented"]
+    )
+    assert (
+        snapshot["credit"]["metrics"]["immutable_update_rejected"]
+        == credit["immutable_update_rejected"]
     )

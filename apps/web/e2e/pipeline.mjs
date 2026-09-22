@@ -46,6 +46,14 @@ try {
   await landing.close();
 
   const { page, errors } = await openPipeline(desktop);
+  await page
+    .getByRole("heading", { name: "PostgreSQL 크레딧 원장 안전성" })
+    .waitFor();
+  const creditEvidence = page.locator(".credit-evidence");
+  await creditEvidence.getByText("중복 차감 방지", { exact: true }).waitFor();
+  await creditEvidence.getByText("초과 사용 방지", { exact: true }).waitFor();
+  await creditEvidence.getByText(/UPDATE 차단/).waitFor();
+  await creditEvidence.getByText(/DELETE 차단/).waitFor();
 
   await page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
   await stageButton(page, "delta").waitFor();

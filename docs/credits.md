@@ -57,3 +57,13 @@ available
 이 drill은 동일 idempotency key 재요청, 두 독립 session의 동시 reserve, refund/commit 정산,
 그리고 직접 UPDATE/DELETE 차단을 다시 실행하고 `artifacts/performance/credit.json` 공개 요약을 만듭니다.
 공개 화면은 이 artifact가 없으면 0이나 PASS를 만들어내지 않고 `미측정`으로 표시합니다.
+
+
+### 저장된 측정 결과
+
+2026-09-22 격리 release-contract에서 credit drill은 동시 reserve 요청 2건 중 1건만 승인하고
+1건을 잔액 부족으로 거절했습니다. 같은 idempotency key 재요청은 중복 반영하지 않았고,
+refund와 commit 경로가 모두 통과했습니다. PostgreSQL trigger는 직접 UPDATE와 DELETE를 모두
+거절했습니다. 최종 잔액은 available 3 / reserved 0, ledger entry 5건, reservation 2건입니다.
+
+이 값은 합성 격리 PostgreSQL 검증이며 외부 PG·정기결제·실제 고객 과금 처리량을 의미하지 않습니다.

@@ -3,8 +3,8 @@
   "synthetic": true,
   "records": 1000,
   "completed_records": 1000,
-  "elapsed_seconds": 46.592474568,
-  "records_per_second": 21.462693477259656,
+  "elapsed_seconds": 46.588698432,
+  "records_per_second": 21.464433084765858,
   "successful": true,
   "limitation": "Local ingestion only; OCR/external LLM and attachments excluded."
 }

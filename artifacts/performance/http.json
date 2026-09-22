@@ -4,44 +4,44 @@
   "requests": 200,
   "successful_requests": 200,
   "failed_requests": 0,
+  "client_observed_only": true,
+  "successful": true,
   "endpoints": {
     "inbox": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 1159.5945154999754,
-      "p95_ms": 1219.162342549987,
-      "requests_per_second": 4.27610158052812
+      "p50_ms": 1213.7625100000093,
+      "p95_ms": 1370.140840749974,
+      "requests_per_second": 4.040520954632836
     },
     "search": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 1154.90500049998,
-      "p95_ms": 1210.3923193499668,
-      "requests_per_second": 4.322374359850543
+      "p50_ms": 1240.6243089999691,
+      "p95_ms": 1312.304742200004,
+      "requests_per_second": 4.01499772431975
     },
     "detail": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 165.51361700004463,
-      "p95_ms": 195.71727990001762,
-      "requests_per_second": 29.249808926793392
+      "p50_ms": 180.88199949997374,
+      "p95_ms": 201.89188104999118,
+      "requests_per_second": 26.93449799970118
     },
     "admin": {
       "status": "measured",
       "requests": 50,
       "concurrency": 5,
       "error_count": 0,
-      "p50_ms": 25.335382500003334,
-      "p95_ms": 71.60217759999625,
-      "requests_per_second": 164.72935934867678
+      "p50_ms": 28.509066999987454,
+      "p95_ms": 32.67678934998627,
+      "requests_per_second": 170.32784495795966
     }
-  },
-  "client_observed_only": true,
-  "successful": true
+  }
 }
