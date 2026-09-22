@@ -168,7 +168,7 @@ async def source_backfill_load(
     page_size: int = 100,
     page_budget: int = 10,
 ) -> dict[str, Any]:
-    """Measure paginated discovery -> PostgreSQL raw ingest -> normalization with durable cursors."""
+    """Measure paginated discovery through durable PostgreSQL cursor checkpoints."""
     if not 1 <= records <= 50000:
         raise ValueError('source backfill benchmark accepts 1..50000 records')
     if not 1 <= page_size <= 1000:
