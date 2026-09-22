@@ -141,7 +141,26 @@ async def test_configured_factory_and_scheduler_include_official_feed_only_when_
         calls.append(source_code)
         return {"status": "success", "source": source_code}
 
+    async def poll_pages(
+        ctx: Any,
+        source_code: str = "mock",
+        *,
+        max_pages: int = 1,
+        inter_page_delay_seconds: float = 0,
+    ) -> dict[str, Any]:
+        assert max_pages == 10
+        assert inter_page_delay_seconds == pytest.approx(0.1)
+        calls.append(source_code)
+        return {
+            "status": "success",
+            "source": source_code,
+            "pages": 1,
+            "fetched_count": 1,
+            "cycle_complete": True,
+        }
+
     monkeypatch.setattr(jobs, "poll_source", poll)
+    monkeypatch.setattr(jobs, "poll_source_pages", poll_pages)
     await jobs.poll_configured_sources({"session": session})
     assert calls == ["mock", "koneps-services"]
 
