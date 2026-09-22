@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "suite": "korean-synthetic-v1",
+  "synthetic": true,
+  "source_text_sha256": "41cbb41446246ac185995f06f14d6cef771c6c660c3bfe9ce7833d3ba0ee1c8d",
+  "font": "NanumGothic.ttf",
+  "image_sha256": {
+    "ocr_ko/clean.png": "fed473c2a751e5a5d4bc400b5bc7b85f488c33624b08671cd4ab48e8bd340e93",
+    "ocr_ko/blurred.png": "364a34af0474520f4d618183e43d46e814d803e1b4fae63f683de826b8841a51",
+    "ocr_ko/low_resolution.png": "4d3f5b735dd2562276668e3f98a706fc5806853ed71ae4606f755d1627ccb0b1"
+  },
+  "measurement": {
+    "status": "measured",
+    "provider": "tesseract 5.5.0",
+    "language": "kor+eng",
+    "synthetic": true,
+    "images": 3,
+    "actual_recognition_invocations": 1,
+    "elapsed_ms": 336.6598819999922,
+    "correct_fields": 18,
+    "expected_fields": 18,
+    "field_accuracy": 1,
+    "rows": [
+      {
+        "id": "ko_clean",
+        "recognition_text": "사업명: 합성 클라우드 전환 사업\n발주기관: 예시 공공기관\n\n분류: 용역\n\n예산: 125,000,000원\n\n지역: 서울",
+        "field_metrics": {
+          "correct": 6,
+          "expected_fields": 6,
+          "accuracy": 1,
+          "per_field": {
+            "title": true,
+            "buyer_name": true,
+            "procurement_type": true,
+            "estimated_amount": true,
+            "currency": true,
+            "regions": true
+          },
+          "missing": [],
+          "unexpected": [],
+          "exact_match": true
+        },
+        "downstream_valid": true
+      },
+      {
+        "id": "ko_blurred",
+        "recognition_text": "사업명: 합성 클라우드 전환 사업\n발주기관: 예시 공공기관\n\n분류: 용역\n\n예산: 125,000,000원\n\n지역: 서울",
+        "field_metrics": {
+          "correct": 6,
+          "expected_fields": 6,
+          "accuracy": 1,
+          "per_field": {
+            "title": true,
+            "buyer_name": true,
+            "procurement_type": true,
+            "estimated_amount": true,
+            "currency": true,
+            "regions": true
+          },
+          "missing": [],
+          "unexpected": [],
+          "exact_match": true
+        },
+        "downstream_valid": true
+      },
+      {
+        "id": "ko_low_resolution",
+        "recognition_text": "사업명: 합성 클라우드 전환 사업\n발주기관: 예시 공공기관\n\n분류: 용역\n\n예산: 125,000,000원\n\n지역: 서울",
+        "field_metrics": {
+          "correct": 6,
+          "expected_fields": 6,
+          "accuracy": 1,
+          "per_field": {
+            "title": true,
+            "buyer_name": true,
+            "procurement_type": true,
+            "estimated_amount": true,
+            "currency": true,
+            "regions": true
+          },
+          "missing": [],
+          "unexpected": [],
+          "exact_match": true
+        },
+        "downstream_valid": true
+      }
+    ],
+    "limitation": "Frozen synthetic rendered images only; not production scans or complex layouts."
+  },
+  "limitation": "Synthetic Korean rendered text only; not production scans, handwriting, tables, or diverse public-procurement document layouts."
+}
