@@ -50,10 +50,12 @@ E2E는 `artifacts/e2e/result.json`과 화면 캡처를 본다. 파일이 없거�
 
 ## 배포 계약과 보안 경계
 
-이 저장소는 컨테이너 실행 계약을 제공하며 실제 GCP/AWS 배포는 하지 않았다.
-클라우드에서는 PostgreSQL 영속 저장, Redis 연결, 공용 문서 저장소, 별도 worker/scheduler, 비밀값 관리, HTTPS/CORS, readiness와 migration 순서를 별도로 구성해야 한다.
-현재 로컬 볼륨을 여러 서버의 공용 오브젝트 저장소라고 취급하면 안 된다. 서버리스 프로세스가 꺼질 때 ARQ 작업도 멈출 수 있다.
-운영 인증·기관 격리 검증·보존 정책·외부 모니터링 서비스 연결은 별도 운영화 과제다.
+이 저장소는 컨테이너 실행 계약과 Render reference Blueprint를 제공하지만 full backend cloud stack을 실제 운영했다고 주장하지 않는다.
+클라우드 구성은 PostgreSQL·Key Value, 별도 API/worker/scheduler/web, S3-compatible 공용 문서 저장소, 비밀값, HTTPS/CORS, readiness와 migration 순서를 분리한다.
+worker/scheduler는 schema head가 적용될 때까지 시작을 기다리며, API와 worker는 같은 S3-compatible blob store를 사용한다. 로컬 Docker Compose는 기존 파일시스템 backend를 유지한다.
+운영 인증·기관 격리 검증·보존 정책·외부 모니터링 서비스 연결과 실제 cloud sync는 별도 운영화 과제다.
+
+자세한 배포 경계: [Cloud deployment contract](cloud-deployment.md)
 
 ## 공개 저장소 원칙
 

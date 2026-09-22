@@ -336,6 +336,46 @@ async def test_original_documents_are_checksum_verified_and_never_remote_fetches
 
 
 @pytest.mark.asyncio
+async def test_original_document_can_use_shared_blob_store(
+    client, session, opportunities, monkeypatch
+):
+    import hashlib
+
+    from app.models import Attachment
+
+    await login(client)
+    content = b"shared object storage document"
+    checksum = hashlib.sha256(content).hexdigest()
+    key = f"sha256/{checksum[:2]}/{checksum}.blob"
+
+    class MemoryStore:
+        async def read(self, requested: str, *, max_bytes: int) -> bytes:
+            assert requested == key
+            assert max_bytes >= len(content)
+            return content
+
+    monkeypatch.setattr(
+        "app.api.evidence.configured_attachment_store",
+        lambda settings: MemoryStore(),
+    )
+    attachment = Attachment(
+        opportunity_version_id=opportunities[0].current_version_id,
+        source_url="https://example.invalid/shared.pdf",
+        filename="shared.pdf",
+        media_type="application/pdf",
+        sha256=checksum,
+        storage_key=key,
+        byte_size=len(content),
+    )
+    session.add(attachment)
+    await session.flush()
+
+    response = await client.get(f"/api/v1/documents/{attachment.id}/original")
+    assert response.status_code == 200
+    assert response.content == content
+
+
+@pytest.mark.asyncio
 async def test_profile_edit_recomputes_eligibility_identity_and_demo_flag_is_enforced(
     client, opportunities
 ):

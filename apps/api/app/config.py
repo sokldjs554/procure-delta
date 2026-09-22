@@ -2,8 +2,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def normalize_database_url(value: str) -> str:
+    if value.startswith("postgresql://"):
+        return "postgresql+psycopg://" + value.removeprefix("postgresql://")
+    return value
 
 
 class Settings(BaseSettings):
@@ -15,6 +21,13 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://redis:6379/0"
     attachment_storage_path: Path = Path("/var/lib/procure-delta")
+    attachment_storage_backend: Literal["local", "s3"] = "local"
+    attachment_s3_bucket: str | None = None
+    attachment_s3_prefix: str = "procure-delta"
+    attachment_s3_region: str | None = None
+    attachment_s3_endpoint_url: str | None = None
+    attachment_s3_access_key_id: SecretStr | None = None
+    attachment_s3_secret_access_key: SecretStr | None = None
     attachment_max_bytes: int = 10 * 1024 * 1024
     koneps_enabled: bool = False
     koneps_service_key: SecretStr | None = None
@@ -34,6 +47,26 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = Field(default=86400, ge=300, le=86400)
     cors_origins: list[str] = ["http://localhost:3000"]
     release_revision: str = "development"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_driver(cls, value: object) -> object:
+        return normalize_database_url(value) if isinstance(value, str) else value
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def accept_single_cors_origin(cls, value: object) -> object:
+        if isinstance(value, str) and not value.lstrip().startswith("["):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("attachment_s3_prefix")
+    @classmethod
+    def safe_storage_prefix(cls, value: str) -> str:
+        normalized = value.strip("/")
+        if ".." in normalized.split("/"):
+            raise ValueError("attachment S3 prefix cannot contain parent traversal")
+        return normalized
 
 
 @lru_cache

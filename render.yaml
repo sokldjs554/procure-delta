@@ -1,0 +1,155 @@
+# Reference Blueprint only. CI does not sync this file to Render.
+# Syncing can create billable resources depending on the workspace plan.
+
+services:
+  - type: web
+    name: procure-delta-api
+    runtime: docker
+    region: singapore
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    dockerCommand: sh -c 'uvicorn app.main:app --host 0.0.0.0 --port $PORT'
+    preDeployCommand: alembic upgrade head
+    healthCheckPath: /health/live
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: procure-delta-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: procure-delta-cache
+          type: keyvalue
+          property: connectionString
+      - key: ATTACHMENT_STORAGE_BACKEND
+        value: s3
+      - key: ATTACHMENT_S3_BUCKET
+        sync: false
+      - key: ATTACHMENT_S3_PREFIX
+        value: procure-delta
+      - key: ATTACHMENT_S3_REGION
+        sync: false
+      - key: ATTACHMENT_S3_ENDPOINT_URL
+        sync: false
+      - key: ATTACHMENT_S3_ACCESS_KEY_ID
+        sync: false
+      - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: KONEPS_ENABLED
+        value: "false"
+      - key: EXTRACTION_MODE
+        value: deterministic
+      - key: DEMO_AUTH_ENABLED
+        value: "true"
+      - key: DEMO_OPERATOR_SECRET
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: worker
+    name: procure-delta-worker
+    runtime: docker
+    region: singapore
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    dockerCommand: sh -c 'python -m app.ops.wait_for_schema && arq app.workers.settings.WorkerSettings'
+    maxShutdownDelaySeconds: 120
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: procure-delta-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: procure-delta-cache
+          type: keyvalue
+          property: connectionString
+      - key: ATTACHMENT_STORAGE_BACKEND
+        value: s3
+      - key: ATTACHMENT_S3_BUCKET
+        sync: false
+      - key: ATTACHMENT_S3_PREFIX
+        value: procure-delta
+      - key: ATTACHMENT_S3_REGION
+        sync: false
+      - key: ATTACHMENT_S3_ENDPOINT_URL
+        sync: false
+      - key: ATTACHMENT_S3_ACCESS_KEY_ID
+        sync: false
+      - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: KONEPS_ENABLED
+        value: "false"
+      - key: EXTRACTION_MODE
+        value: deterministic
+
+  - type: worker
+    name: procure-delta-scheduler
+    runtime: docker
+    region: singapore
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    dockerCommand: sh -c 'python -m app.ops.wait_for_schema && arq app.workers.settings.SchedulerSettings'
+    maxShutdownDelaySeconds: 120
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: procure-delta-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: procure-delta-cache
+          type: keyvalue
+          property: connectionString
+      - key: ATTACHMENT_STORAGE_BACKEND
+        value: s3
+      - key: ATTACHMENT_S3_BUCKET
+        sync: false
+      - key: ATTACHMENT_S3_PREFIX
+        value: procure-delta
+      - key: ATTACHMENT_S3_REGION
+        sync: false
+      - key: ATTACHMENT_S3_ENDPOINT_URL
+        sync: false
+      - key: ATTACHMENT_S3_ACCESS_KEY_ID
+        sync: false
+      - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: KONEPS_ENABLED
+        value: "false"
+      - key: EXTRACTION_MODE
+        value: deterministic
+
+  - type: web
+    name: procure-delta-web
+    runtime: docker
+    region: singapore
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: ./apps/web
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_STATIC_DEMO
+        value: "false"
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+
+  - type: keyvalue
+    name: procure-delta-cache
+    region: singapore
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+databases:
+  - name: procure-delta-db
+    region: singapore
+    postgresMajorVersion: "16"
+    databaseName: procure_delta
+    user: procure_delta
+    ipAllowList: []

@@ -20,6 +20,7 @@ from app.documents.ocr import (
 )
 from app.documents.parsers import PARSER_VERSION, ParsedDocument, ParsedPage, parse_document
 from app.documents.quality import assess_text_quality
+from app.documents.storage import AttachmentBlobStore, LocalBlobStore
 from app.models import Attachment, DocumentParse, OpportunityVersion
 from app.sources.base import AttachmentRef
 
@@ -215,6 +216,7 @@ async def persist_and_parse_attachments(
     refs: list[AttachmentRef],
     allowed_source_host: str,
     storage_root: Path,
+    blob_store: AttachmentBlobStore | None = None,
     client: httpx.AsyncClient | None = None,
     max_bytes: int = 10 * 1024 * 1024,
     ocr_adapter: OcrAdapter | None = None,
@@ -240,6 +242,7 @@ async def persist_and_parse_attachments(
             return 0  # A newer staging pass owns processing and completion now.
     await session.flush()
     processed = 0
+    store = blob_store or LocalBlobStore(storage_root)
     selected_ocr_adapter = ocr_adapter or FakeFixtureOcrAdapter()
     for ref in refs:
         attachment = await session.scalar(
@@ -271,7 +274,7 @@ async def persist_and_parse_attachments(
                 or attachment.storage_key is None
             ):
                 raise ValueError("persisted attachment metadata is incomplete")
-            content = (storage_root / attachment.storage_key).read_bytes()
+            content = await store.read(attachment.storage_key, max_bytes=max_bytes)
             if hashlib.sha256(content).hexdigest() != attachment.sha256:
                 raise ValueError("persisted attachment checksum mismatch")
             stored = StoredAttachment(
@@ -302,6 +305,7 @@ async def persist_and_parse_attachments(
             ),
             client=client,
             storage_root=storage_root,
+            blob_store=store,
             max_bytes=max_bytes,
         )
         attachment.filename = stored.filename

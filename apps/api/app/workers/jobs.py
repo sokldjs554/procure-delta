@@ -29,6 +29,7 @@ from app.documents.service import (
     materialize_attachment_refs,
     persist_and_parse_attachments,
 )
+from app.documents.storage import configured_attachment_store
 from app.models import IngestRun, JobFailure, OpportunityVersion, RawRecord, SourceRegistry
 from app.repositories.opportunities import upsert_opportunity_version
 from app.services.ingest import ingest_raw_record
@@ -597,6 +598,9 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
     failed = 0
     settings = get_settings()
     storage_root = Path(ctx.get("attachment_storage_path", settings.attachment_storage_path))
+    blob_store = ctx.get("attachment_blob_store") or configured_attachment_store(
+        settings, local_root=storage_root
+    )
     now = datetime.now(UTC)
     async with _session_scope(ctx) as discovery_session:
         rows = (
@@ -734,6 +738,7 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
                     refs=refs,
                     allowed_source_host=host,
                     storage_root=storage_root,
+                    blob_store=blob_store,
                     max_bytes=settings.attachment_max_bytes,
                     ocr_adapter=ctx.get("ocr_adapter"),
                     processing_generation=processing_generation,
