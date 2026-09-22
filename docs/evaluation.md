@@ -11,8 +11,9 @@ python scripts/run_eval.py --with-ocr --output artifacts/evaluation/new-ocr.json
 python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.json
 ```
 
-기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 위험 입력에만 호출하는 gated 경로를 같은 사례로 비교한다.
-사용량/비용이 공급자 응답에 없으면 null이다. 가격을 추정해 채우지 않는다. 로컬 경로를 유료 호출 수에 포함하지 않는다.
+기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.
+두 hosted 경로가 모두 실제 실행되면 provider 호출 수, prompt+completion token 수, provider가 직접 보고한 비용의 절감률을 별도로 기록한다.
+사용량/비용이 공급자 응답에 없으면 null이다. 모델 가격표를 추정해 비용을 채우지 않으며, 로컬 deterministic 경로를 유료 호출 수에 포함하지 않는다.
 CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
 
 ## 데이터와 분모
@@ -60,8 +61,15 @@ UI는 네 경로를 같은 표에 두되 hosted 경로가 실행되지 않았으
 
 `artifacts/evaluation/local.json`은 Tesseract 5.5.0을 한 번의 배치 인식으로 실행한 저장 결과다.
 영어 이미지 3장/18개 필드 중 17개가 맞았다. 저해상도 이미지에서 Region이 잘못 인식되어 지역 필드가 누락됐다.
-한글 실문서·표·복잡한 레이아웃·다양한 스캐너에 대한 결과가 아니다. 서비스의 기본 fake fixture OCR을 이 정확도로 평가하지 않는다.
-반복 측정으로 잘 나온 결과만 고르지 않았다. 입력 이미지와 실패 인식 텍스트를 함께 보존했다.
+
+평가기는 manifest의 언어 설정을 사용하고, 실행 전에 Tesseract의 실제 설치 언어 목록을 확인한다.
+예를 들어 향후 한국어 회귀셋은 `kor` 또는 `kor+eng`로 명시할 수 있지만, 해당 언어 데이터가
+설치되어 있지 않으면 측정하지 않고 `not_run`으로 남긴다.
+
+현재 저장 artifact는 여전히 영어 합성 이미지 결과이며 **한국어 OCR 측정값은 없다**.
+한글 실문서·표·복잡한 레이아웃·다양한 스캐너에 대한 결과로 해석하지 않는다.
+서비스의 기본 fake fixture OCR도 이 정확도로 평가하지 않는다. 반복 측정으로 잘 나온 결과만 고르지 않았고,
+입력 이미지와 실패 인식 텍스트를 함께 보존했다.
 
 ## provenance
 

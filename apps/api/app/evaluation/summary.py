@@ -24,6 +24,20 @@ class EvaluationRouteSummary(BaseModel):
     notice: str | None = None
 
 
+class HostedOptimizationSummary(BaseModel):
+    status: Literal['measured', 'not_run'] = 'not_run'
+    all_calls: int | None = None
+    gated_calls: int | None = None
+    avoided_calls: int | None = None
+    call_reduction_rate: float | None = None
+    all_tokens: int | None = None
+    gated_tokens: int | None = None
+    token_reduction_rate: float | None = None
+    reported_cost_reduction_rate: float | None = None
+    cost_basis: str | None = None
+    notice: str | None = None
+
+
 class EvaluationSummary(BaseModel):
     status: Literal['measured', 'not_run'] = 'not_run'
     synthetic: bool = True
@@ -47,6 +61,7 @@ class EvaluationSummary(BaseModel):
     ocr_support: int = 0
     ocr_language: str | None = None
     hosted_evaluated: bool = False
+    hosted_optimization: HostedOptimizationSummary = HostedOptimizationSummary()
     routes: dict[str, EvaluationRouteSummary] = {}
     notice: str = ('저장된 소규모 합성 회귀 평가입니다. 현재 운영 지표나 '
                    '실제 조달 데이터·한국어 스캔·LLM 품질 성적이 아닙니다.')
@@ -69,7 +84,8 @@ def _hosted_route(value: dict[str, Any]) -> EvaluationRouteSummary:
         )
     metrics = value.get('metrics')
     if not isinstance(metrics, dict):
-        metrics = {}
+        # Measured evaluation artifacts store route metrics directly; older wrappers may nest them.
+        metrics = value
     return EvaluationRouteSummary(
         status='measured',
         support=int(metrics.get('expected_fields', metrics.get('support', 0)) or 0),
@@ -122,6 +138,26 @@ def read_summary(path: Path) -> EvaluationSummary:
             notice=ocr.get('limitation'),
         ),
     }
+    optimization_raw = raw.get('hosted_optimization', {})
+    if not isinstance(optimization_raw, dict):
+        optimization_raw = {}
+    optimization = HostedOptimizationSummary(
+        status='measured' if optimization_raw.get('status') == 'measured' else 'not_run',
+        all_calls=optimization_raw.get('all_calls'),
+        gated_calls=optimization_raw.get('gated_calls'),
+        avoided_calls=optimization_raw.get('avoided_calls'),
+        call_reduction_rate=optimization_raw.get('call_reduction_rate'),
+        all_tokens=optimization_raw.get('all_tokens'),
+        gated_tokens=optimization_raw.get('gated_tokens'),
+        token_reduction_rate=optimization_raw.get('token_reduction_rate'),
+        reported_cost_reduction_rate=optimization_raw.get('reported_cost_reduction_rate'),
+        cost_basis=optimization_raw.get('cost_basis'),
+        notice=(
+            str(optimization_raw.get('reason'))
+            if optimization_raw.get('reason')
+            else None
+        ),
+    )
     return EvaluationSummary(
         status='measured', measured_at=raw['created_at'], dataset_version=raw['dataset_version'],
         public_real_records=raw['public_real_records'],
@@ -138,5 +174,6 @@ def read_summary(path: Path) -> EvaluationSummary:
         ocr_accuracy=ocr.get('field_accuracy'), ocr_correct=ocr.get('correct_fields', 0),
         ocr_support=ocr.get('expected_fields', 0), ocr_language=ocr.get('language'),
         hosted_evaluated=raw['extraction_routes']['hosted_all'].get('status') == 'measured',
+        hosted_optimization=optimization,
         routes=routes,
     )

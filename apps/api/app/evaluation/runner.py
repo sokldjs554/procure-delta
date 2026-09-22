@@ -158,6 +158,71 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
     }
 
 
+def hosted_optimization(
+    all_route: Mapping[str, Any], gated_route: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Compare measured provider usage without inventing token prices."""
+    if all_route.get('status') != 'measured' or gated_route.get('status') != 'measured':
+        return {'status': 'not_run', 'reason': 'hosted routes were not both measured'}
+
+    all_calls = all_route.get('hosted_calls')
+    gated_calls = gated_route.get('hosted_calls')
+    if (
+        isinstance(all_calls, bool)
+        or not isinstance(all_calls, int)
+        or isinstance(gated_calls, bool)
+        or not isinstance(gated_calls, int)
+    ):
+        return {'status': 'not_run', 'reason': 'hosted call counts are unavailable'}
+
+    def token_total(route: Mapping[str, Any]) -> int | None:
+        prompt = route.get('prompt_tokens')
+        completion = route.get('completion_tokens')
+        if (
+            isinstance(prompt, bool)
+            or not isinstance(prompt, int)
+            or isinstance(completion, bool)
+            or not isinstance(completion, int)
+        ):
+            return None
+        return prompt + completion
+
+    all_tokens = token_total(all_route)
+    gated_tokens = token_total(gated_route)
+    all_cost = all_route.get('reported_cost_per_document')
+    gated_cost = gated_route.get('reported_cost_per_document')
+    cost_reduction: float | None = None
+    if all_cost is not None and gated_cost is not None:
+        try:
+            all_decimal = Decimal(str(all_cost))
+            gated_decimal = Decimal(str(gated_cost))
+            if all_decimal > 0:
+                cost_reduction = float((all_decimal - gated_decimal) / all_decimal)
+        except (ValueError, ArithmeticError):
+            cost_reduction = None
+
+    return {
+        'status': 'measured',
+        'all_calls': all_calls,
+        'gated_calls': gated_calls,
+        'avoided_calls': all_calls - gated_calls,
+        'call_reduction_rate': rate(all_calls - gated_calls, all_calls),
+        'all_tokens': all_tokens,
+        'gated_tokens': gated_tokens,
+        'token_reduction_rate': (
+            rate(all_tokens - gated_tokens, all_tokens)
+            if all_tokens is not None and gated_tokens is not None
+            else None
+        ),
+        'reported_cost_reduction_rate': cost_reduction,
+        'cost_basis': (
+            'provider-reported; no catalog price inferred'
+            if cost_reduction is not None
+            else None
+        ),
+    }
+
+
 def snapshot(number: int, fields: Mapping[str, Any]) -> DeltaSnapshot:
     copied_fields = deepcopy(dict(fields))
     raw = RawRecord(id=UUID(int=100 + number), source_id=UUID(int=1),
@@ -253,9 +318,14 @@ async def run_evaluation(root: Path, *, with_ocr: bool = False,
         'hosted_gated': {'status': 'not_run', 'reason': 'explicit hosted opt-in not supplied',
             'metrics': None},
     }
+    optimization: dict[str, Any] = {
+        'status': 'not_run',
+        'reason': 'hosted routes were not both measured',
+    }
     if hosted is not None:
         routes['hosted_all'] = await extraction_eval(data['extraction_cases'], hosted)
         routes['hosted_gated'] = await extraction_eval(data['extraction_cases'], hosted, gated=True)
+        optimization = hosted_optimization(routes['hosted_all'], routes['hosted_gated'])
     ocr: dict[str, Any] = {'status': 'not_run', 'field_accuracy': None,
                            'reason': (
                                'real OCR opt-in not supplied; fixture fake is never scored as OCR'
@@ -268,7 +338,7 @@ async def run_evaluation(root: Path, *, with_ocr: bool = False,
         'provenance': provenance(root, dataset_hash, {'with_ocr': with_ocr,
             'hosted': hosted is not None}),
         'dataset_version': data['dataset_version'], 'public_real_records': 0,
-        'extraction_routes': routes, 'ocr': ocr,
+        'extraction_routes': routes, 'hosted_optimization': optimization, 'ocr': ocr,
         'lifecycle': link_eval(data['link_cases']), 'delta': delta_eval(data['delta_cases']),
         'eligibility': {**eligible, 'false_positive_hard_eligibility_rate':
                         rate(int(eligible['fp'] or 0), hard_negative_support),

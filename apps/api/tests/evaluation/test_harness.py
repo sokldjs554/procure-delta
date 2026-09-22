@@ -71,3 +71,50 @@ def test_gated_hosted_usage_counts_only_actual_provider_calls():
     assert result['prompt_tokens'] == 3
     assert result['completion_tokens'] == 5
     assert Decimal(result['reported_cost_per_document']) == Decimal('0.05')
+
+
+def test_hosted_optimization_reports_call_token_and_provider_cost_reduction():
+    from app.evaluation.runner import hosted_optimization
+
+    result = hosted_optimization(
+        {
+            'status': 'measured',
+            'hosted_calls': 10,
+            'prompt_tokens': 100,
+            'completion_tokens': 50,
+            'reported_cost_per_document': '0.20',
+        },
+        {
+            'status': 'measured',
+            'hosted_calls': 4,
+            'prompt_tokens': 40,
+            'completion_tokens': 20,
+            'reported_cost_per_document': '0.08',
+        },
+    )
+
+    assert result['status'] == 'measured'
+    assert result['all_calls'] == 10
+    assert result['gated_calls'] == 4
+    assert result['avoided_calls'] == 6
+    assert result['call_reduction_rate'] == pytest.approx(0.6)
+    assert result['token_reduction_rate'] == pytest.approx(0.6)
+    assert result['reported_cost_reduction_rate'] == pytest.approx(0.6)
+    assert result['cost_basis'] == 'provider-reported; no catalog price inferred'
+
+
+def test_ocr_evaluation_requires_one_explicit_supported_language_shape():
+    from app.evaluation.ocr import available_languages, requested_language
+
+    assert requested_language([{'language': 'eng'}, {'language': 'eng'}]) == 'eng'
+    assert requested_language([{'language': 'kor+eng'}]) == 'kor+eng'
+    with pytest.raises(ValueError, match='one explicit language'):
+        requested_language([{'language': 'eng'}, {'language': 'kor'}])
+    with pytest.raises(ValueError, match='invalid OCR evaluation language'):
+        requested_language([{'language': 'eng;rm -rf'}])
+
+    parsed = available_languages(
+        'List of available languages in "/usr/share/tesseract-ocr/5/tessdata/" (3):\n'
+        'eng\nkor\nosd\n'
+    )
+    assert parsed == {'eng', 'kor', 'osd'}

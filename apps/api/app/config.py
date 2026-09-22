@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     koneps_enabled: bool = False
     koneps_service_key: SecretStr | None = None
     koneps_lookback_days: int = Field(default=1, ge=1, le=30)
+    koneps_pages_per_poll: int = Field(default=5, ge=1, le=100)
     extraction_mode: Literal["deterministic", "hosted"] = "deterministic"
     extraction_endpoint: str | None = None
     extraction_provider: str | None = None
