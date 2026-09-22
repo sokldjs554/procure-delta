@@ -64,20 +64,30 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
       {["delta", "eligibility", "ranking", "notification"].includes(stage.id) && (
         <AmendmentImpact stage={stage} />
       )}
-      <div className="inspector-tabs" role="tablist" aria-label="단계 세부 정보">
-        {labels.map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            className={tab === id ? "active" : ""}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <pre className="pipeline-json">{pretty(values[tab])}</pre>
+      <details className="pipeline-technical-details">
+        <summary>
+          <span>
+            <strong>기술 세부 JSON 보기</strong>
+            <small>입력 · 출력 · 근거 · 판단 원문</small>
+          </span>
+        </summary>
+        <div className="pipeline-technical-body">
+          <div className="inspector-tabs" role="tablist" aria-label="단계 세부 정보">
+            {labels.map(([id, label]) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                className={tab === id ? "active" : ""}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <pre className="pipeline-json">{pretty(values[tab])}</pre>
+        </div>
+      </details>
     </section>
   );
 }
