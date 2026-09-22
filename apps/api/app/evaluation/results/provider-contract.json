@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "suite": "provider-contract-v1",
+  "created_at": "2026-09-22T17:34:01.259317+00:00",
+  "synthetic": true,
+  "model_quality_measured": false,
+  "external_network": false,
+  "transport": "httpx.MockTransport",
+  "dataset_sha256": "60915644e3d3d36a7aca72a410d40a3075eb472809ed014e50c77f8ecab78116",
+  "usage_basis": "Synthetic provider-reported usage counters; not tokenizer output or billing.",
+  "source_workflow_run_id": 35761144727,
+  "source_workflow_artifact_digest": "sha256:c3a0073ea7f3b95db5de81af5b4383167b6a2651c9a7823bbfd6085484ff2eaa",
+  "source_full_artifact_sha256": "509268da250c8a9e2415c2501ef56b7e106040e9209a129069ad6f885d32e8e7",
+  "routes": {
+    "all": {
+      "status": "measured",
+      "expected_fields": 30,
+      "field_accuracy": 1.0,
+      "schema_failures": 4,
+      "grounded_acceptance_rate": 0.5,
+      "hosted_calls": 10,
+      "prompt_tokens": 1000,
+      "completion_tokens": 200,
+      "reported_cost_per_document": null,
+      "latency_ms": {
+        "p50": 1.9718629999943005,
+        "p95": 3.3097369999950397
+      }
+    },
+    "gated": {
+      "status": "measured",
+      "expected_fields": 30,
+      "field_accuracy": 1.0,
+      "schema_failures": 4,
+      "grounded_acceptance_rate": 0.5,
+      "hosted_calls": 5,
+      "prompt_tokens": 500,
+      "completion_tokens": 100,
+      "reported_cost_per_document": null,
+      "latency_ms": {
+        "p50": 1.272859500005552,
+        "p95": 2.1316749499888488
+      }
+    }
+  },
+  "optimization": {
+    "status": "measured",
+    "all_calls": 10,
+    "gated_calls": 5,
+    "avoided_calls": 5,
+    "call_reduction_rate": 0.5,
+    "all_tokens": 1200,
+    "gated_tokens": 600,
+    "token_reduction_rate": 0.5,
+    "reported_cost_reduction_rate": null,
+    "cost_basis": null
+  },
+  "http_requests": 15,
+  "unique_idempotency_keys": 10,
+  "idempotency_reuse_verified": true,
+  "limitation": "Exercises the production HTTP/JSON extraction contract with a deterministic provider stub. It does not measure external LLM accuracy, latency, tokens, pricing, availability, or provider behavior."
+}
