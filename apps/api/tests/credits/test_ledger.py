@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.credits import (
@@ -216,3 +217,44 @@ async def test_concurrent_reservations_cannot_overspend(
             )
             == 1
         )
+
+
+@pytest.mark.asyncio
+async def test_credit_ledger_rows_are_database_immutable(
+    worker_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    owner = "immutable-owner"
+    async with worker_session_factory() as setup:
+        mutation = await grant_credits(
+            setup,
+            owner_user_id=owner,
+            amount=7,
+            idempotency_key="immutable-grant",
+            reference_type="plan",
+            reference_key="trial",
+        )
+        ledger_id = mutation.ledger.id
+        await setup.commit()
+
+    async with worker_session_factory() as updater:
+        with pytest.raises(DBAPIError, match="credit ledger entries are immutable"):
+            await updater.execute(
+                update(CreditLedgerEntry)
+                .where(CreditLedgerEntry.id == ledger_id)
+                .values(amount=99)
+            )
+            await updater.commit()
+        await updater.rollback()
+
+    async with worker_session_factory() as deleter:
+        with pytest.raises(DBAPIError, match="credit ledger entries are immutable"):
+            await deleter.execute(
+                delete(CreditLedgerEntry).where(CreditLedgerEntry.id == ledger_id)
+            )
+            await deleter.commit()
+        await deleter.rollback()
+
+    async with worker_session_factory() as verify:
+        row = await verify.get(CreditLedgerEntry, ledger_id)
+        assert row is not None
+        assert row.amount == 7
