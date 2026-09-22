@@ -58,6 +58,7 @@ try {
   await stageButton(page, "delta").click();
   await page.getByText("high 영향", { exact: true }).waitFor();
   await page.getByText(/region_restriction_changed/).waitFor();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: resolve(output, "pipeline-amendment-delta.png"),
     fullPage: true,
