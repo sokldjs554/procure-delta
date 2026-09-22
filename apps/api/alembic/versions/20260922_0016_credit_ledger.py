@@ -98,11 +98,11 @@ def upgrade() -> None:
         CREATE FUNCTION prevent_credit_ledger_mutation()
         RETURNS trigger
         LANGUAGE plpgsql
-        AS $
+        AS $ledger$
         BEGIN
             RAISE EXCEPTION 'credit ledger entries are immutable';
         END;
-        $
+        $ledger$
         """
     )
     op.execute(
