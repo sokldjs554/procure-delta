@@ -28,6 +28,21 @@ API는 저장소 checkout에서는 원본 artifact를 우선 읽고, Docker 이�
 
 이 값은 **CPU-only production-function loop**다. DB INSERT, Redis/ARQ, HTTP, OCR, 외부 LLM, 실제 수집을 포함하지 않으므로 서비스 처리량으로 해석하지 않는다.
 
+## Paginated source backfill
+
+`scripts/source_backfill_benchmark.py`는 실제 `poll_source_pages()` 경로를 사용해
+합성 paginated source를 PostgreSQL raw 저장과 normalization까지 통과시킨다.
+
+- 페이지마다 성공 cursor를 `IngestRun`에 커밋
+- 한 scheduler batch의 page budget을 제한
+- budget을 넘는 backlog는 다음 batch에서 재개
+- 실제 worker의 source poll 코드와 동일한 DB transaction 경계를 사용
+- release gate에서는 `--scale-records`와 같은 합성 레코드 수를 대상으로 측정
+
+결과는 `artifacts/performance/source-backfill.json`에 공개 요약으로 남긴다.
+이 값은 **실제 나라장터 네트워크 처리량이 아니다.** public API latency·quota·OCR·hosted LLM·첨부
+다운로드는 제외하며, collector의 pagination/cursor/raw-ingest/normalize 경로만 검증한다.
+
 ## Redis · ARQ · PostgreSQL queue
 
 `artifacts/performance/queue.json`:
