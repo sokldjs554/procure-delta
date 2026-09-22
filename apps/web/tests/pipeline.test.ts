@@ -82,6 +82,7 @@ test("static engineering evidence mirrors committed isolated measurements", asyn
   assert.equal(evidence.query_plans.status, "measured");
   assert.equal(evidence.query_plans.metrics.candidate_adopted, false);
   assert.equal(evidence.query_plans.metrics.candidate_rolled_back, true);
+  assert.equal(evidence.credit.status, "not_run");
 });
 
 
@@ -108,6 +109,7 @@ test("static engineering evidence stays aligned with packaged API snapshot", asy
     staticEvidence.query_plans.metrics.improvement_ratio,
     packaged.query_plans.metrics.improvement_ratio,
   );
+  assert.equal(staticEvidence.credit.status, packaged.credit.status);
   assert.equal(
     staticEvidence.release.gates.some((gate) => gate.gate === "pipeline-demo-e2e"),
     true,

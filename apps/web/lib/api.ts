@@ -453,6 +453,11 @@ export interface EngineeringEvidence {
     scope: string | null;
     metrics: Record<string, unknown>;
   };
+  credit: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
 }
 
 export interface EvaluationRouteSummary {

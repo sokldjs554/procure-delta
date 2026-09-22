@@ -14,6 +14,7 @@ const importantGates = new Set([
   "full-readiness",
   "real-lifecycle-e2e",
   "pipeline-demo-e2e",
+  "credit-ledger",
   "queue-scale",
   "query-plans",
   "http-load",
@@ -241,6 +242,66 @@ export function EvidencePanels() {
               </>
             ) : (
               <p>별도 공개 HTTP 측정 artifact가 없어 미측정으로 남깁니다.</p>
+            )}
+          </article>
+
+          <article className="evidence-card credit-evidence">
+            <header>
+              <span>Credits</span>
+              <b>{statusLabel(data.credit.status)}</b>
+            </header>
+            <h3>PostgreSQL 크레딧 원장 안전성</h3>
+            {data.credit.status === "measured" ? (
+              <>
+                <div className="evidence-metrics">
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.credit.metrics, "concurrent_requests"))}
+                    </strong>
+                    동시 예약 요청
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.credit.metrics, "successful_reservations"))}
+                    </strong>
+                    승인
+                  </span>
+                  <span>
+                    <strong>
+                      {booleanMetric(data.credit.metrics, "duplicate_request_suppressed")
+                        ? "PASS"
+                        : "FAIL"}
+                    </strong>
+                    중복 차감 방지
+                  </span>
+                  <span>
+                    <strong>
+                      {booleanMetric(data.credit.metrics, "overspend_prevented")
+                        ? "PASS"
+                        : "FAIL"}
+                    </strong>
+                    초과 사용 방지
+                  </span>
+                </div>
+                <div className="http-endpoint-list">
+                  <span>
+                    <b>settlement</b>
+                    refund {booleanMetric(data.credit.metrics, "refund_restored") ? "PASS" : "FAIL"}
+                    {" · "}commit {booleanMetric(data.credit.metrics, "commit_finalized") ? "PASS" : "FAIL"}
+                  </span>
+                  <span>
+                    <b>immutable ledger</b>
+                    UPDATE {booleanMetric(data.credit.metrics, "immutable_update_rejected") ? "차단" : "미확인"}
+                    {" · "}DELETE {booleanMetric(data.credit.metrics, "immutable_delete_rejected") ? "차단" : "미확인"}
+                  </span>
+                </div>
+                <p>
+                  {textMetric(data.credit.metrics, "limitation") ??
+                    "측정 범위를 확인할 수 없습니다."}
+                </p>
+              </>
+            ) : (
+              <p>실제 PostgreSQL 크레딧 원장 drill artifact가 없어 미측정으로 남깁니다.</p>
             )}
           </article>
 

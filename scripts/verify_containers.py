@@ -45,11 +45,12 @@ def _write_public_summary(destination: Path, payload: dict[str, object]) -> None
 
 
 # Public destinations: artifacts/performance/queue.json, artifacts/performance/http.json,
-# artifacts/performance/query-plans.json
+# artifacts/performance/query-plans.json, artifacts/performance/credit.json
 def publish_public_measurements() -> None:
     queue_raw = json.loads((OUTPUT / 'queue-load.json').read_text(encoding='utf-8'))
     http_raw = json.loads((OUTPUT / 'http-load.json').read_text(encoding='utf-8'))
     query_raw = json.loads((OUTPUT / 'query-plans.json').read_text(encoding='utf-8'))
+    credit_raw = json.loads((OUTPUT / 'credit-ledger.json').read_text(encoding='utf-8'))
 
     queue_summary: dict[str, object] = {
         'scope': queue_raw['scope'],
@@ -125,9 +126,23 @@ def publish_public_measurements() -> None:
         'caution': query_raw.get('caution'),
     }
 
+    credit_keys = (
+        'scope', 'synthetic', 'concurrent_requests', 'successful_reservations',
+        'insufficient_rejections', 'overspend_prevented', 'duplicate_request_suppressed',
+        'refund_restored', 'commit_finalized', 'immutable_update_rejected',
+        'immutable_delete_rejected', 'ledger_entries', 'reservations',
+        'available_after', 'reserved_after', 'elapsed_seconds', 'successful', 'limitation',
+    )
+    credit_summary = {
+        key: credit_raw[key]
+        for key in credit_keys
+        if key in credit_raw
+    }
+
     _write_public_summary(PUBLIC_PERFORMANCE / 'queue.json', queue_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'http.json', http_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'query-plans.json', query_summary)
+    _write_public_summary(PUBLIC_PERFORMANCE / 'credit.json', credit_summary)
 
 
 
@@ -252,6 +267,9 @@ def main() -> None:
         execute('pipeline-demo-e2e', ['node', 'e2e/pipeline.mjs'], ROOT / 'apps/web')
         # Stop cron before isolated ingestion load; only the benchmark's ARQ worker runs.
         execute('pause-background-jobs', compose + ['stop', 'worker', 'scheduler'])
+        execute('credit-ledger', compose + ['run', '--rm', 'checks', 'python',
+            'scripts/credit_ledger_drill.py', '--output',
+            '/workspace/artifacts/container/credit-ledger.json'])
         execute('queue-scale', compose + ['run', '--rm', 'checks', 'python',
             'scripts/seed_scale.py',
                 '--records', str(args.scale_records), '--output',

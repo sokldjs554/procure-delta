@@ -49,3 +49,11 @@ available
 - 직접 UPDATE/DELETE 시 PostgreSQL이 원장 변경을 거절하는지
 
 이 범위는 **크레딧 원장 설계·트랜잭션 안전성 증거**이며 실제 결제사 운영 증거는 아닙니다.
+
+
+## release evidence
+
+격리 컨테이너 release gate는 실제 PostgreSQL benchmark DB에서 별도 `credit-ledger` drill을 실행합니다.
+이 drill은 동일 idempotency key 재요청, 두 독립 session의 동시 reserve, refund/commit 정산,
+그리고 직접 UPDATE/DELETE 차단을 다시 실행하고 `artifacts/performance/credit.json` 공개 요약을 만듭니다.
+공개 화면은 이 artifact가 없으면 0이나 PASS를 만들어내지 않고 `미측정`으로 표시합니다.

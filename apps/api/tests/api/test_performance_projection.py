@@ -43,6 +43,7 @@ async def test_engineering_evidence_missing_artifacts_are_not_reported_as_zero(
     assert body["queue"]["status"] == "not_run"
     assert body["http"]["status"] == "not_run"
     assert body["query_plans"]["status"] == "not_run"
+    assert body["credit"]["status"] == "not_run"
 
 
 def test_artifact_root_resolution_is_safe_in_shallow_container_layout(tmp_path: Path) -> None:
@@ -98,6 +99,7 @@ async def test_engineering_evidence_falls_back_to_packaged_public_snapshot(
     assert body["http"]["status"] == "measured"
     assert body["query_plans"]["status"] == "measured"
     assert body["release"]["passed"] is True
+    assert body["credit"]["status"] == "not_run"
     assert any(gate["gate"] == "pipeline-demo-e2e" for gate in body["release"]["gates"])
 
 

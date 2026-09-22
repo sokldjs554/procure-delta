@@ -85,6 +85,7 @@ class EngineeringEvidence(DTO):
     queue: OptionalEvidence
     http: OptionalEvidence
     query_plans: OptionalEvidence
+    credit: OptionalEvidence = Field(default_factory=lambda: OptionalEvidence(status="not_run"))
 
 
 def _read(relative: str) -> dict[str, Any] | None:
@@ -229,6 +230,19 @@ _OPTIONAL_KEYS = {
     "candidate_adopted",
     "candidate_rolled_back",
     "caution",
+    "concurrent_requests",
+    "successful_reservations",
+    "insufficient_rejections",
+    "overspend_prevented",
+    "duplicate_request_suppressed",
+    "refund_restored",
+    "commit_finalized",
+    "immutable_update_rejected",
+    "immutable_delete_rejected",
+    "ledger_entries",
+    "reservations",
+    "available_after",
+    "reserved_after",
 }
 
 
@@ -267,6 +281,7 @@ def engineering_evidence() -> EngineeringEvidence:
     queue = _optional("performance/queue.json")
     http = _optional("performance/http.json")
     query_plans = _optional("performance/query-plans.json")
+    credit = _optional("performance/credit.json")
     if snapshot is not None:
         if cpu.status == "not_run":
             cpu = snapshot.cpu
@@ -280,6 +295,8 @@ def engineering_evidence() -> EngineeringEvidence:
             http = snapshot.http
         if query_plans.status == "not_run":
             query_plans = snapshot.query_plans
+        if credit.status == "not_run":
+            credit = snapshot.credit
     return EngineeringEvidence(
         cpu=cpu,
         failure_drill=failure_drill,
@@ -287,4 +304,5 @@ def engineering_evidence() -> EngineeringEvidence:
         queue=queue,
         http=http,
         query_plans=query_plans,
+        credit=credit,
     )

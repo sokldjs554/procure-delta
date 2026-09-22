@@ -773,6 +773,11 @@ const engineeringEvidence: EngineeringEvidence = {
       },
     },
   },
+  credit: {
+    status: "not_run",
+    scope: null,
+    metrics: {},
+  },
   query_plans: {
     status: "measured",
     scope: "real_postgresql_explain",

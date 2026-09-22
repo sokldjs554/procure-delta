@@ -100,6 +100,9 @@ test("engineering evidence cards surface measured queue HTTP and query-plan scop
   assert.match(evidencePanels, /Redis · ARQ · PostgreSQL/);
   assert.match(evidencePanels, /HTTP 부하/);
   assert.match(evidencePanels, /후보 인덱스는 채택하지 않음/);
+  assert.match(evidencePanels, /PostgreSQL 크레딧 원장 안전성/);
+  assert.match(evidencePanels, /중복 차감 방지/);
+  assert.match(evidencePanels, /immutable ledger/);
   assert.match(evidencePanels, /p95/);
 });
 
