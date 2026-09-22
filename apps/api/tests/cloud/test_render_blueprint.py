@@ -1,4 +1,5 @@
 from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[4]
 BLUEPRINT = (ROOT / "render.yaml").read_text(encoding="utf-8")
 
