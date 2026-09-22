@@ -9,7 +9,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 import httpx
@@ -72,11 +72,30 @@ def source_adapters() -> dict[str, SourceAdapter]:
     return adapters
 
 
+def _source_adapters_for_ctx(ctx: dict[str, Any]) -> dict[str, SourceAdapter]:
+    supplied = ctx.get("source_adapters")
+    if supplied is None:
+        return source_adapters()
+    if not isinstance(supplied, dict):
+        raise TypeError("source_adapters context override must be a dict")
+    return cast(dict[str, SourceAdapter], supplied)
+
+
 async def poll_configured_sources(ctx: dict[str, Any]) -> dict[str, str]:
-    results = {}
+    results: dict[str, str] = {}
+    settings = get_settings()
     for code in source_adapters():
         try:
-            results[code] = (await poll_source(ctx, code))["status"]
+            if code == SOURCE_CODE:
+                outcome = await poll_source_pages(
+                    ctx,
+                    code,
+                    max_pages=settings.koneps_page_budget,
+                    inter_page_delay_seconds=settings.koneps_inter_page_delay_ms / 1000,
+                )
+            else:
+                outcome = await poll_source(ctx, code)
+            results[code] = str(outcome["status"])
         except Retry:
             # poll_source has already persisted its retry; other sources still get their turn.
             results[code] = "retry_pending"
@@ -283,7 +302,7 @@ async def ingest_record(
 
 async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[str, str]:
     started = time.perf_counter()
-    adapter = source_adapters().get(source_code)
+    adapter = _source_adapters_for_ctx(ctx).get(source_code)
     if adapter is None:
         raise MalformedJobError(f"unknown source adapter: {source_code}")
     stable_key = job_key("poll_source", source_code, {"source_code": source_code})
@@ -405,6 +424,89 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
         },
     )
     return {"status": "success", "source": source_code}
+
+
+async def _latest_success_page_state(
+    ctx: dict[str, Any], source_code: str
+) -> tuple[str | None, int]:
+    async with _session_scope(ctx) as session:
+        source = await session.scalar(
+            select(SourceRegistry).where(SourceRegistry.code == source_code)
+        )
+        if source is None:
+            raise MalformedJobError(f"unknown source: {source_code}")
+        latest = await session.scalar(
+            select(IngestRun)
+            .where(IngestRun.source_id == source.id, IngestRun.status == "success")
+            .order_by(IngestRun.finished_at.desc())
+            .limit(1)
+        )
+        if latest is None:
+            return None, 0
+        return latest.cursor_after, int(latest.fetched_count or 0)
+
+
+def _discovery_cycle_complete(source_code: str, cursor: str | None) -> bool:
+    if cursor is None:
+        return True
+    if source_code != SOURCE_CODE:
+        return False
+    try:
+        state = KonepsSourceAdapter._cursor_state(cursor)
+    except ValueError:
+        return False
+    return state["mode"] == "done"
+
+
+async def poll_source_pages(
+    ctx: dict[str, Any],
+    source_code: str = "mock",
+    *,
+    max_pages: int = 1,
+    inter_page_delay_seconds: float = 0,
+) -> dict[str, Any]:
+    """Drain a bounded number of discovery pages while persisting progress after every page."""
+    if not 1 <= max_pages <= 100:
+        raise ValueError("max_pages must be between 1 and 100")
+    if not 0 <= inter_page_delay_seconds <= 5:
+        raise ValueError("inter_page_delay_seconds must be between 0 and 5")
+
+    pages = 0
+    fetched_count = 0
+    for index in range(max_pages):
+        outcome = await poll_source(ctx, source_code)
+        status = str(outcome["status"])
+        if status != "success":
+            return {
+                "status": status,
+                "source": source_code,
+                "pages": pages,
+                "fetched_count": fetched_count,
+                "cycle_complete": False,
+            }
+
+        pages += 1
+        cursor, fetched = await _latest_success_page_state(ctx, source_code)
+        fetched_count += fetched
+        if _discovery_cycle_complete(source_code, cursor):
+            return {
+                "status": "success",
+                "source": source_code,
+                "pages": pages,
+                "fetched_count": fetched_count,
+                "cycle_complete": True,
+            }
+
+        if inter_page_delay_seconds and index + 1 < max_pages:
+            await asyncio.sleep(inter_page_delay_seconds)
+
+    return {
+        "status": "success",
+        "source": source_code,
+        "pages": pages,
+        "fetched_count": fetched_count,
+        "cycle_complete": False,
+    }
 
 
 async def reconcile_failed_jobs(ctx: dict[str, Any]) -> dict[str, int]:
