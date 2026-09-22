@@ -259,7 +259,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo이며 full cloud backend 운영 증거가 아닙니다.
-- 결제·구독, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
+- 내부 크레딧 원장의 grant → reserve → commit/refund와 중복 차감 방지는 구현했습니다. 외부 PG·정기구독 연동, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
 
 자세한 내용: [Limitations](docs/limitations.md)
 
@@ -272,6 +272,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - [Delta Engine](docs/DELTA_ENGINE.md)
 - [Ranking](docs/RANKING.md)
 - [Notifications](docs/notifications.md)
+- [Credit ledger](docs/credits.md)
 - [Evaluation](docs/evaluation.md)
 - [Performance](docs/performance.md)
 - [Operations](docs/operations.md)
