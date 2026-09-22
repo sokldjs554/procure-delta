@@ -29,8 +29,16 @@
 페이지 처리 중에는 시간 창을 고정한다. 창이 끝나면 이전 종료시각보다 한 시간 앞부터
 겹쳐 읽는다. 중복 payload는 기존 raw/version 중복 방지 규칙으로 처리한다.
 
-한 번의 cron polling은 소스별 한 페이지이다. 모든 과거 데이터를 한꺼번에 받는 기능이나
-대규모 운영 처리량을 증명하는 계약은 아니다. 수집 주기와 backlog는 별도 queue/load gate와 운영 지표로 확인한다.
+한 번의 scheduler tick은 KONEPS에 대해 **최대 10페이지(기본값)**까지만 순차적으로
+backfill한다. `KONEPS_PAGE_BUDGET`으로 1~100페이지 범위에서 상한을 정하고,
+페이지 사이에는 `KONEPS_INTER_PAGE_DELAY_MS` 지연을 둘 수 있다. 한 페이지가 성공할 때마다
+`IngestRun.cursor_after`가 커밋되므로 이후 페이지에서 timeout/429/5xx가 발생해도 이미 성공한
+페이지를 다시 처음부터 읽지 않고 마지막 성공 cursor부터 재개한다. page budget에 도달하면 다음
+scheduler tick이 같은 cursor에서 이어서 처리한다.
+
+이 bounded backfill은 무제한 크롤링이나 실제 나라장터 대규모 운영 처리량을 증명하는 계약이 아니다.
+격리 release gate에서는 합성 paginated source로 `discovery → cursor → raw ingest → normalize`
+경로를 별도 측정하며, 실제 public-network latency·API quota·OCR·hosted LLM은 그 측정에서 제외한다.
 변경일시 조회는 매 변경 순간의 스냅샷을 보장하지 않으며, polling 사이에 덮어써진
 중간 변경을 완벽하게 복원한다고 주장하지 않는다.
 
@@ -78,6 +86,8 @@ HTTP 200 안에 들어 있는 API 오류 코드도 성공으로 간주하지 않
 KONEPS_ENABLED=false
 KONEPS_SERVICE_KEY=
 KONEPS_LOOKBACK_DAYS=1
+KONEPS_PAGE_BUDGET=10
+KONEPS_INTER_PAGE_DELAY_MS=100
 ```
 
 키를 설정하고 실제 polling을 켤 때만 `KONEPS_ENABLED=true`로 바꾼다.
