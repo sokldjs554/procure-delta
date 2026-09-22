@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     koneps_enabled: bool = False
     koneps_service_key: SecretStr | None = None
     koneps_lookback_days: int = Field(default=1, ge=1, le=30)
+    koneps_page_budget: int = Field(default=10, ge=1, le=100)
+    koneps_inter_page_delay_ms: int = Field(default=100, ge=0, le=5000)
     extraction_mode: Literal["deterministic", "hosted"] = "deterministic"
     extraction_endpoint: str | None = None
     extraction_provider: str | None = None
