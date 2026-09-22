@@ -217,6 +217,11 @@ python scripts/verify_containers.py --scale-records 1000
 
 현재 실제 adapter는 조달청 나라장터 **용역 입찰공고 조회와 관측 변경 상태**까지 연결되어 있습니다.
 
+수집은 등록/변경 시간 창을 고정한 cursor 기반 pagination이며, 기본 한 주기에서 최대 5페이지를
+연속 처리합니다. 각 페이지를 별도 checkpoint로 커밋해 뒤 페이지 실패 시에도 마지막 성공 cursor부터
+재개합니다. 이 구조는 backlog catch-up을 위한 bounded batch 계약이며 실제 운영 대규모 처리량을
+증명한다고 표현하지 않습니다.
+
 사전규격·낙찰·계약의 실제 collector는 아직 구현하지 않았으며, 합성 5단계 lifecycle과 구분합니다.
 
 키 없이 source contract 확인:
