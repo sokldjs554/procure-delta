@@ -22,6 +22,22 @@ docker compose logs --tail 100 api worker scheduler migrate
 평가용 OCR이 있는 것과 기본 서비스에 실제 OCR 공급자가 연결된 것은 다르다.
 나라장터/외부 LLM 설정과 스모크는 `source-contracts.md` 및 `evaluation.md`에 분리했다.
 
+## 요청 추적과 구조화 로그
+
+API는 각 요청에 서버가 생성한 `X-Request-ID`를 부여하고 응답 헤더에도 같은 값을 돌려준다.
+완료 로그에는 request ID, HTTP method, path, status, latency만 구조화 JSON으로 기록한다.
+예외 경로도 같은 request ID를 유지하지만 요청 body/query와 예외 메시지는 기록하지 않고 예외 클래스만 남긴다.
+
+예시:
+
+```json
+{"event":"http_request_completed","level":"INFO","request_id":"<generated>","method":"GET","path":"/health/live","duration_ms":1.23,"status":200}
+```
+
+worker/scheduler 이벤트도 같은 JSON formatter를 사용하므로 request/job/source/stage 단위로 로그를 검색할 수 있다.
+이 저장소는 외부 Sentry 같은 error-tracking SaaS 연동을 완료했다고 주장하지 않는다. 현재 증거는 구조화 로그,
+readiness, admin queue/DLQ 상태, failure drill과 release-gate 범위다.
+
 ## 격리된 최종 검증
 
 Windows PowerShell 또는 일반 터미널에서 프로젝트 루트의 명령을 실행한다.
