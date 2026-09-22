@@ -45,7 +45,11 @@
 15. Redis/ARQ queue scale
 16. PostgreSQL query plans
 17. HTTP load
-18. resume background jobs
+18. paginated source backfill
+    - bounded page budget
+    - per-page durable cursor
+    - raw ingest + normalization
+19. resume background jobs
 
 Pipeline E2E는 request interception이나 fake HTTP response를 사용하지 않고 검증 Compose의 실제 web/API에 접근한다.
 
