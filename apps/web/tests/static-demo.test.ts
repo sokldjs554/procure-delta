@@ -33,6 +33,13 @@ test("static demo serves the core product journey without an API", async () => {
   assert.equal(evaluation.routes.ocr_korean.support, 18);
   assert.equal(evaluation.routes.ocr_korean.field_accuracy, 1);
   assert.equal(evaluation.routes.ocr_korean.language, "kor+eng");
+  assert.equal(evaluation.routes.provider_contract_all.status, "measured");
+  assert.equal(evaluation.routes.provider_contract_all.hosted_calls, 10);
+  assert.equal(evaluation.routes.provider_contract_gated.hosted_calls, 5);
+  assert.equal(evaluation.provider_contract_optimization.call_reduction_rate, 0.5);
+  assert.equal(evaluation.provider_contract_optimization.token_reduction_rate, 0.5);
+  assert.equal(evaluation.routes.provider_contract_all.reported_cost, null);
+  assert.equal(evaluation.hosted_evaluated, false);
 
   assert.equal(staticDocumentUrl("doc-spec"), "#synthetic-document");
 });
