@@ -41,3 +41,28 @@ def test_summary_exposes_route_comparison_without_inventing_hosted_metrics():
     assert summary.routes['ocr'].status == 'measured'
     assert summary.routes['ocr'].support == 18
     assert summary.routes['ocr'].field_accuracy == 17 / 18
+
+
+def test_measured_hosted_route_uses_direct_metrics_shape():
+    from app.evaluation.summary import _hosted_route
+
+    route = _hosted_route({
+        'status': 'measured',
+        'expected_fields': 12,
+        'field_accuracy': 0.75,
+        'schema_failures': 1,
+        'grounded_acceptance_rate': 0.8,
+        'latency_ms': {'p50': 120.0, 'p95': 300.0},
+        'hosted_calls': 4,
+        'prompt_tokens': 80,
+        'completion_tokens': 20,
+        'reported_cost_per_document': '0.015',
+    })
+
+    assert route.status == 'measured'
+    assert route.support == 12
+    assert route.field_accuracy == 0.75
+    assert route.hosted_calls == 4
+    assert route.prompt_tokens == 80
+    assert route.completion_tokens == 20
+    assert route.reported_cost == 0.015
