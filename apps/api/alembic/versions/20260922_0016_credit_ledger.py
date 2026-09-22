@@ -93,9 +93,30 @@ def upgrade() -> None:
         "credit_ledger_entries",
         ["account_id", "created_at"],
     )
+    op.execute(
+        """
+        CREATE FUNCTION prevent_credit_ledger_mutation()
+        RETURNS trigger
+        LANGUAGE plpgsql
+        AS $
+        BEGIN
+            RAISE EXCEPTION 'credit ledger entries are immutable';
+        END;
+        $
+        """
+    )
+    op.execute(
+        """
+        CREATE TRIGGER credit_ledger_immutable
+        BEFORE UPDATE OR DELETE ON credit_ledger_entries
+        FOR EACH ROW EXECUTE FUNCTION prevent_credit_ledger_mutation()
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER IF EXISTS credit_ledger_immutable ON credit_ledger_entries")
+    op.execute("DROP FUNCTION IF EXISTS prevent_credit_ledger_mutation()")
     op.drop_table("credit_ledger_entries")
     op.drop_table("credit_reservations")
     op.drop_table("credit_accounts")
