@@ -34,6 +34,10 @@ def main() -> None:
             sys.executable, 'scripts/run_korean_ocr_eval.py', '--output',
             str(OUTPUT / 'korean-ocr.json')
         ], ROOT),
+        ('evaluation-provider-contract', [
+            sys.executable, 'scripts/run_provider_contract_eval.py', '--output',
+            str(OUTPUT / 'provider-contract.json')
+        ], ROOT),
         ('fault-drill', [sys.executable, 'scripts/failure_drill.py', '--integration',
                          '--output', str(OUTPUT / 'fault-drill.json')], ROOT),
     ]
