@@ -11,8 +11,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from re import compile as re_compile
-from re import fullmatch
+from re import compile as re_compile, fullmatch
 from typing import Any
 
 from app.extraction.deterministic import DeterministicExtractor
