@@ -9,13 +9,17 @@ python scripts/run_eval.py --output artifacts/evaluation/new-run.json
 python scripts/run_eval.py --with-ocr --output artifacts/evaluation/new-ocr.json
 # CI와 동일한 한국어 합성 OCR 회귀
 python scripts/run_korean_ocr_eval.py --output artifacts/evaluation/korean-ocr.json
+# 외부 네트워크 없이 production HostedExtractor HTTP 계약 검증
+python scripts/run_provider_contract_eval.py --output artifacts/evaluation/provider-contract.json
 # 환경 설정과 명시적인 유료 호출 허용 후에만
 python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.json
 ```
 
-기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.
+기본 명령은 네트워크/유료 LLM을 호출하지 않는다. 실제 hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로는 `--allow-hosted`를 명시했을 때만 실행한다.
 두 hosted 경로가 모두 실제 실행되면 provider 호출 수, prompt+completion token 수, provider가 직접 보고한 비용의 절감률을 별도로 기록한다.
 사용량/비용이 공급자 응답에 없으면 null이다. 모델 가격표를 추정해 비용을 채우지 않으며, 로컬 deterministic 경로를 유료 호출 수에 포함하지 않는다.
+
+`run_provider_contract_eval.py`는 별도 경로다. production `HostedExtractor`·`ResilientHttpClient`·JSON response envelope·idempotency key·schema/evidence validation을 그대로 사용하되 transport만 `httpx.MockTransport`로 바꾼다. 저장된 CI run 35761144727에서 all 10 calls / synthetic usage 1,200이 deterministic gate 후 5 calls / 600으로 줄어 **호출과 합성 usage counter가 각각 50% 감소**했다. 이 usage는 stub가 반환한 계약용 counter이며 실제 tokenizer 출력이나 과금이 아니다. monetary cost는 null이고 외부 모델 품질도 측정하지 않는다.
 CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
 
 ## 데이터와 분모
@@ -48,10 +52,12 @@ Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리
 - deterministic extraction: measured
 - OCR English: measured, 영어 합성 이미지 3장
 - OCR Korean: measured, `kor+eng` 합성 이미지 3장, 18/18 fields
+- provider contract all: measured, 10 HTTP calls, synthetic usage 1,200
+- provider contract gated: measured, 5 HTTP calls, synthetic usage 600
 - hosted all: `not_run`
 - hosted gated: `not_run`
 
-UI는 네 경로를 같은 표에 두되 hosted 경로가 실행되지 않았으면 정확도·latency·token·cost를 **미실행/미측정**으로 남긴다.
+UI는 provider-contract와 실제 hosted model 경로를 별도 행으로 둔다. provider-contract는 HTTP/JSON/validation/usage 집계 계약의 재현 측정이고, hosted 경로가 실행되지 않았으면 실제 모델 정확도·latency·token·cost를 **미실행/미측정**으로 남긴다.
 
 ## 과거 시점 재생
 
