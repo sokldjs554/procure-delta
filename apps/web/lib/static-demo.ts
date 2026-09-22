@@ -423,6 +423,22 @@ const evaluation: EvaluationSummary = {
       language: "eng",
       notice: "English rendered images only; not Korean scans, layouts or production OCR.",
     },
+    ocr_korean: {
+      status: "measured",
+      support: 18,
+      field_accuracy: 1,
+      schema_failures: null,
+      grounded_acceptance_rate: null,
+      p50_latency_ms: null,
+      p95_latency_ms: null,
+      hosted_calls: 1,
+      prompt_tokens: null,
+      completion_tokens: null,
+      reported_cost: null,
+      language: "kor+eng",
+      notice:
+        "Synthetic Korean rendered text only; not production scans, handwriting, tables, or diverse layouts.",
+    },
   },
   notice: "작은 합성 회귀셋의 저장된 측정값입니다. 실제 조달 성능을 의미하지 않습니다.",
 };
