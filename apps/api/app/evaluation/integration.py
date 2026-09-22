@@ -162,6 +162,116 @@ async def queue_load(records: int) -> dict[str, Any]:
         await engine.dispose()
 
 
+async def source_backfill_load(
+    records: int,
+    *,
+    page_size: int = 100,
+    page_budget: int = 10,
+) -> dict[str, Any]:
+    """Measure paginated discovery -> PostgreSQL raw ingest -> normalization with durable cursors."""
+    if not 1 <= records <= 50000:
+        raise ValueError('source backfill benchmark accepts 1..50000 records')
+    if not 1 <= page_size <= 1000:
+        raise ValueError('page_size must be between 1 and 1000')
+    if not 1 <= page_budget <= 100:
+        raise ValueError('page_budget must be between 1 and 100')
+
+    database_url = os.environ['BENCH_DATABASE_URL']
+    require_benchmark_database(database_url)
+
+    from sqlalchemy import func, select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.models import IngestRun, RawRecord, SourceRegistry
+    from app.sources.base import DiscoveryPage
+    from app.workers.jobs import poll_source_pages
+
+    class SyntheticPagedAdapter:
+        async def discover(self, cursor: str | None) -> DiscoveryPage:
+            start = int(cursor) if cursor is not None else 0
+            if start < 0 or start > records:
+                raise ValueError('invalid synthetic backfill cursor')
+            stop = min(start + page_size, records)
+            next_cursor = str(stop) if stop < records else None
+            return DiscoveryPage(
+                records=tuple(synthetic_record(index) for index in range(start, stop)),
+                next_cursor=next_cursor,
+            )
+
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    run_id = uuid4().hex
+    source_code = 'benchmark-collector-' + run_id
+    adapter = SyntheticPagedAdapter()
+    batches = 0
+    pages = 0
+    fetched = 0
+    started = time.perf_counter()
+    try:
+        while True:
+            outcome = await poll_source_pages(
+                {'session_factory': factory, 'source_adapters': {source_code: adapter}},
+                source_code,
+                max_pages=page_budget,
+            )
+            if outcome['status'] != 'success':
+                raise RuntimeError(f"synthetic source backfill failed: {outcome['status']}")
+            batches += 1
+            pages += int(outcome['pages'])
+            fetched += int(outcome['fetched_count'])
+            if outcome['cycle_complete']:
+                break
+            if batches > records + 1:
+                raise RuntimeError('synthetic source backfill made no bounded progress')
+
+        elapsed = time.perf_counter() - started
+        async with factory() as session:
+            source = await session.scalar(
+                select(SourceRegistry).where(SourceRegistry.code == source_code)
+            )
+            if source is None:
+                raise RuntimeError('synthetic collector source was not persisted')
+            raw_count = await session.scalar(
+                select(func.count()).select_from(RawRecord).where(RawRecord.source_id == source.id)
+            )
+            normalized_count = await session.scalar(
+                select(func.count()).select_from(RawRecord).where(
+                    RawRecord.source_id == source.id,
+                    RawRecord.normalization_status == 'normalized',
+                )
+            )
+            successful_runs = await session.scalar(
+                select(func.count()).select_from(IngestRun).where(
+                    IngestRun.source_id == source.id,
+                    IngestRun.status == 'success',
+                )
+            )
+        successful = raw_count == records and normalized_count == records and fetched == records
+        return {
+            'scope': 'source_discovery_postgresql_backfill',
+            'synthetic': True,
+            'environment': environment(),
+            'records': records,
+            'page_size': page_size,
+            'page_budget': page_budget,
+            'pages': pages,
+            'scheduler_batches': batches,
+            'successful_ingest_runs': successful_runs,
+            'raw_records': raw_count,
+            'normalized_records': normalized_count,
+            'elapsed_seconds': elapsed,
+            'records_per_second': records / elapsed if successful else None,
+            'successful': successful,
+            'resume_contract': 'cursor committed after each successful discovery page',
+            'limitation': (
+                'Synthetic source over local PostgreSQL; excludes public-network latency, '
+                'OCR, hosted LLM, and external API rate limits.'
+            ),
+        }
+    finally:
+        await engine.dispose()
+
+
 async def prepare_scale_source(source_code: str) -> dict[str, Any]:
     """Explicit benchmark setup after throughput timing: these records have no documents."""
     database_url = os.environ['BENCH_DATABASE_URL']
