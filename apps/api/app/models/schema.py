@@ -248,6 +248,66 @@ class CompanyProfile(UUIDPrimaryKey, Base):
     excluded_keywords: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
 
 
+class CreditAccount(UUIDPrimaryKey, Base):
+    __tablename__ = "credit_accounts"
+    __table_args__ = (
+        CheckConstraint("available_credits >= 0", name="ck_credit_account_available_nonnegative"),
+        CheckConstraint("reserved_credits >= 0", name="ck_credit_account_reserved_nonnegative"),
+    )
+    owner_user_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    available_credits: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    reserved_credits: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CreditReservation(UUIDPrimaryKey, Base):
+    __tablename__ = "credit_reservations"
+    __table_args__ = (
+        UniqueConstraint("account_id", "reservation_key", name="uq_credit_reservation_key"),
+        CheckConstraint("amount > 0", name="ck_credit_reservation_amount_positive"),
+        CheckConstraint(
+            "status IN ('reserved', 'committed', 'refunded')",
+            name="ck_credit_reservation_status",
+        ),
+    )
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("credit_accounts.id"), index=True)
+    reservation_key: Mapped[str] = mapped_column(String(255))
+    amount: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="reserved", server_default="reserved")
+    reference_type: Mapped[str] = mapped_column(String(100))
+    reference_key: Mapped[str] = mapped_column(String(255))
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CreditLedgerEntry(UUIDPrimaryKey, Base):
+    __tablename__ = "credit_ledger_entries"
+    __table_args__ = (
+        UniqueConstraint("account_id", "idempotency_key", name="uq_credit_ledger_idempotency"),
+        CheckConstraint("amount > 0", name="ck_credit_ledger_amount_positive"),
+        CheckConstraint(
+            "operation IN ('grant', 'reserve', 'commit', 'refund')",
+            name="ck_credit_ledger_operation",
+        ),
+        CheckConstraint("available_after >= 0", name="ck_credit_ledger_available_nonnegative"),
+        CheckConstraint("reserved_after >= 0", name="ck_credit_ledger_reserved_nonnegative"),
+        Index("ix_credit_ledger_account_created", "account_id", "created_at"),
+    )
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("credit_accounts.id"), index=True)
+    reservation_id: Mapped[UUID | None] = mapped_column(ForeignKey("credit_reservations.id"))
+    operation: Mapped[str] = mapped_column(String(20))
+    amount: Mapped[int] = mapped_column(Integer)
+    idempotency_key: Mapped[str] = mapped_column(String(255))
+    reference_type: Mapped[str] = mapped_column(String(100))
+    reference_key: Mapped[str] = mapped_column(String(255))
+    available_after: Mapped[int] = mapped_column(Integer)
+    reserved_after: Mapped[int] = mapped_column(Integer)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class EligibilityResult(UUIDPrimaryKey, Base):
     __tablename__ = "eligibility_results"
     __table_args__ = (
