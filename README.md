@@ -247,7 +247,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - **Frontend**: Next.js 16, React 19, TypeScript strict
 - **Document/AI**: PyMuPDF, OCR adapter boundary, deterministic extractor, provider-neutral structured extraction adapter
 - **Quality**: pytest, Ruff, strict mypy, ESLint, TypeScript, Playwright
-- **Infra**: Docker Compose, GitHub Actions
+- **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage
 
 ## 범위와 한계
 
@@ -258,7 +258,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - hosted LLM은 현재 평가하지 않았으므로 정확도·비용·token 수치를 주장하지 않습니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
-- 공개 Render web은 static/read-only synthetic demo이며 full cloud backend 운영 증거가 아닙니다.
+- 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
 - 내부 크레딧 원장의 grant → reserve → commit/refund와 중복 차감 방지는 구현했습니다. 외부 PG·정기구독 연동, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
 
 자세한 내용: [Limitations](docs/limitations.md)
@@ -276,6 +276,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - [Evaluation](docs/evaluation.md)
 - [Performance](docs/performance.md)
 - [Operations](docs/operations.md)
+- [Cloud deployment contract](docs/cloud-deployment.md)
 - [Verification](docs/verification.md)
 - [Limitations](docs/limitations.md)
 
