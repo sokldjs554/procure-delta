@@ -11,8 +11,9 @@ python scripts/run_eval.py --with-ocr --output artifacts/evaluation/new-ocr.json
 python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.json
 ```
 
-기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 위험 입력에만 호출하는 gated 경로를 같은 사례로 비교한다.
-사용량/비용이 공급자 응답에 없으면 null이다. 가격을 추정해 채우지 않는다. 로컬 경로를 유료 호출 수에 포함하지 않는다.
+기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.
+두 hosted 경로가 모두 실제 실행되면 provider 호출 수, prompt+completion token 수, provider가 직접 보고한 비용의 절감률을 별도로 기록한다.
+사용량/비용이 공급자 응답에 없으면 null이다. 모델 가격표를 추정해 비용을 채우지 않으며, 로컬 deterministic 경로를 유료 호출 수에 포함하지 않는다.
 CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
 
 ## 데이터와 분모
