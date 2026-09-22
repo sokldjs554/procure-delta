@@ -129,6 +129,12 @@ def main() -> None:
     measurement = result["measurement"]
     if not isinstance(measurement, dict) or measurement.get("status") != "measured":
         raise SystemExit("Korean OCR regression was not measured")
+    if measurement.get("expected_fields") != 18 or measurement.get("correct_fields") != 18:
+        raise SystemExit(
+            "Korean OCR regression failed: expected 18/18 structured fields"
+        )
+    if measurement.get("field_accuracy") != 1.0:
+        raise SystemExit("Korean OCR regression failed: field accuracy must be 1.0")
     print(f"Korean OCR artifact: {args.output}")
     print(
         "field_accuracy="
