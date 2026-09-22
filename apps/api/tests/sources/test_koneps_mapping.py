@@ -131,7 +131,8 @@ async def test_configured_factory_and_scheduler_include_official_feed_only_when_
 
     assert set(jobs.source_adapters()) == {"mock"}
     monkeypatch.setattr(jobs, "get_settings", lambda: Settings(
-        koneps_enabled=True, koneps_service_key="synthetic-key", _env_file=None))
+        koneps_enabled=True, koneps_service_key="synthetic-key",
+        koneps_pages_per_poll=1, _env_file=None))
     adapters = jobs.source_adapters()
     assert "koneps-services" in adapters
     assert hasattr(jobs, "poll_configured_sources"), "scheduler has no configured polling path"
