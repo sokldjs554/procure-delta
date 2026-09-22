@@ -72,11 +72,79 @@ def source_adapters() -> dict[str, SourceAdapter]:
     return adapters
 
 
+def _batch_cursor_complete(source_code: str, cursor: str | None) -> bool:
+    """Stop a bounded batch at a source-defined cycle boundary."""
+    if cursor is None:
+        return True
+    if source_code != SOURCE_CODE:
+        return False
+    try:
+        state = json.loads(cursor)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(state, dict) and state.get("mode") == "done"
+
+
+async def poll_source_pages(
+    ctx: dict[str, Any], source_code: str, *, page_budget: int = 1
+) -> dict[str, Any]:
+    """Process multiple source pages while preserving each page as a durable checkpoint."""
+    if not 1 <= page_budget <= 100:
+        raise ValueError("page_budget must be between 1 and 100")
+
+    pages = 0
+    records = 0
+    cursor_after: str | None = None
+    for _ in range(page_budget):
+        result = await poll_source(ctx, source_code)
+        if result["status"] != "success":
+            return {
+                "status": result["status"],
+                "source": source_code,
+                "pages": pages,
+                "records": records,
+                "cursor_after": cursor_after,
+            }
+
+        async with _session_scope(ctx) as session:
+            source = await session.scalar(
+                select(SourceRegistry).where(SourceRegistry.code == source_code)
+            )
+            if source is None:
+                raise RuntimeError("successful poll did not persist its source")
+            latest = await session.scalar(
+                select(IngestRun)
+                .where(IngestRun.source_id == source.id, IngestRun.status == "success")
+                .order_by(IngestRun.finished_at.desc())
+                .limit(1)
+            )
+            if latest is None:
+                raise RuntimeError("successful poll did not persist its ingest run")
+            pages += 1
+            records += latest.fetched_count
+            cursor_after = latest.cursor_after
+
+        if _batch_cursor_complete(source_code, cursor_after):
+            break
+
+    return {
+        "status": "success",
+        "source": source_code,
+        "pages": pages,
+        "records": records,
+        "cursor_after": cursor_after,
+    }
+
+
 async def poll_configured_sources(ctx: dict[str, Any]) -> dict[str, str]:
     results = {}
+    settings = get_settings()
     for code in source_adapters():
+        page_budget = settings.koneps_pages_per_poll if code == SOURCE_CODE else 1
         try:
-            results[code] = (await poll_source(ctx, code))["status"]
+            results[code] = (
+                await poll_source_pages(ctx, code, page_budget=page_budget)
+            )["status"]
         except Retry:
             # poll_source has already persisted its retry; other sources still get their turn.
             results[code] = "retry_pending"
