@@ -108,10 +108,14 @@ async def summarize(
             ruleset_version=eligibility.ruleset_version,
         )
         if version.effective_at <= now:
+            # Eligibility was just materialized from this profile/version in this
+            # transaction, so ranking can reuse that verified snapshot instead of
+            # rebuilding document/extraction provenance a second time.
             ranking = await materialize_ranking(
                 session,
                 eligibility.id,
                 as_of=now,
+                require_current=False,
                 evaluation_epoch=f"daily:{now.date().isoformat()}",
             )
             result.ranking = Ranking(
