@@ -11,7 +11,6 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from re import compile as re_compile, fullmatch
 from typing import Any
 
 from app.extraction.deterministic import DeterministicExtractor
@@ -21,7 +20,8 @@ from .metrics import field_metrics, rate
 from .runner import bundle, canonical
 
 
-_LANGUAGE_PATTERN = re_compile(r"^[a-z]{3}(?:\+[a-z]{3})*$")
+def _language_part(value: str) -> bool:
+    return len(value) == 3 and value.isascii() and value.isalpha() and value.islower()
 
 
 def requested_language(cases: list[dict[str, Any]]) -> str:
@@ -29,16 +29,20 @@ def requested_language(cases: list[dict[str, Any]]) -> str:
     if len(languages) != 1:
         raise ValueError("OCR evaluation batch must use one explicit language configuration")
     language = next(iter(languages))
-    if not isinstance(language, str) or not _LANGUAGE_PATTERN.fullmatch(language):
+    if (
+        not isinstance(language, str)
+        or not language
+        or any(not _language_part(part) for part in language.split("+"))
+    ):
         raise ValueError("invalid OCR evaluation language configuration")
     return language
 
 
 def available_languages(output: str) -> set[str]:
     return {
-        line.strip()
-        for line in output.splitlines()
-        if fullmatch(r"[a-z]{3}", line.strip())
+        line
+        for raw in output.splitlines()
+        if (line := raw.strip()) and _language_part(line)
     }
 
 
