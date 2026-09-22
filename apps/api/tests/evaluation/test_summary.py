@@ -159,3 +159,25 @@ def test_provider_contract_projection_separates_stub_from_model_quality(tmp_path
     assert optimization.token_reduction_rate == 0.5
     assert optimization.reported_cost_reduction_rate is None
     assert "external model quality" in (optimization.notice or "")
+
+
+def test_committed_provider_contract_projection_is_measured_without_billing_claims():
+    from app.evaluation.summary import read_provider_contract
+
+    root = Path(__file__).resolve().parents[2] / "app/evaluation/results"
+    all_route, gated_route, optimization = read_provider_contract(
+        root / "provider-contract.json"
+    )
+
+    assert all_route.status == "measured"
+    assert gated_route.status == "measured"
+    assert all_route.hosted_calls == 10
+    assert gated_route.hosted_calls == 5
+    assert all_route.prompt_tokens == 1000
+    assert gated_route.prompt_tokens == 500
+    assert all_route.reported_cost is None
+    assert gated_route.reported_cost is None
+    assert optimization.call_reduction_rate == 0.5
+    assert optimization.token_reduction_rate == 0.5
+    assert optimization.reported_cost_reduction_rate is None
+    assert "external LLM accuracy" in (optimization.notice or "")
