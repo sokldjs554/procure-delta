@@ -391,7 +391,7 @@ footer{border-top:1px solid rgba(11,59,44,.1);background:rgba(250,248,241,.72)}
 
 
 .evaluation-route-table{display:grid;gap:.35rem;margin:1rem 0 1.2rem;overflow-x:auto}
-.evaluation-route-row{display:grid;grid-template-columns:1.15fr repeat(7,minmax(90px,1fr));gap:.45rem;min-width:900px;padding:.65rem .75rem;border-radius:10px;background:#f6f4ed;align-items:center;font-size:.76rem}
+.evaluation-route-row{display:grid;grid-template-columns:1.15fr repeat(8,minmax(90px,1fr));gap:.45rem;min-width:1020px;padding:.65rem .75rem;border-radius:10px;background:#f6f4ed;align-items:center;font-size:.76rem}
 .evaluation-route-row.head{background:#0c3b2d;color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.04em}
 .evaluation-route-row>span,.evaluation-route-row>strong{overflow-wrap:anywhere}
 .evaluation-boundary{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:1rem 0 1.25rem}
