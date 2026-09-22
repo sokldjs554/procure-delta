@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 from importlib.metadata import version
+from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
