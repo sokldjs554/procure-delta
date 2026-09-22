@@ -45,11 +45,12 @@ def _write_public_summary(destination: Path, payload: dict[str, object]) -> None
 
 
 # Public destinations: artifacts/performance/queue.json, artifacts/performance/http.json,
-# artifacts/performance/query-plans.json
+# artifacts/performance/query-plans.json, artifacts/performance/source-backfill.json
 def publish_public_measurements() -> None:
     queue_raw = json.loads((OUTPUT / 'queue-load.json').read_text(encoding='utf-8'))
     http_raw = json.loads((OUTPUT / 'http-load.json').read_text(encoding='utf-8'))
     query_raw = json.loads((OUTPUT / 'query-plans.json').read_text(encoding='utf-8'))
+    source_raw = json.loads((OUTPUT / 'source-backfill.json').read_text(encoding='utf-8'))
 
     queue_summary: dict[str, object] = {
         'scope': queue_raw['scope'],
@@ -125,9 +126,27 @@ def publish_public_measurements() -> None:
         'caution': query_raw.get('caution'),
     }
 
+    source_summary: dict[str, object] = {
+        'scope': source_raw['scope'],
+        'synthetic': source_raw['synthetic'],
+        'records': source_raw['records'],
+        'page_size': source_raw['page_size'],
+        'page_budget': source_raw['page_budget'],
+        'pages': source_raw['pages'],
+        'scheduler_batches': source_raw['scheduler_batches'],
+        'successful_ingest_runs': source_raw['successful_ingest_runs'],
+        'completed_records': source_raw['normalized_records'],
+        'elapsed_seconds': source_raw['elapsed_seconds'],
+        'records_per_second': source_raw['records_per_second'],
+        'resume_contract': source_raw['resume_contract'],
+        'successful': source_raw['successful'],
+        'limitation': source_raw['limitation'],
+    }
+
     _write_public_summary(PUBLIC_PERFORMANCE / 'queue.json', queue_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'http.json', http_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'query-plans.json', query_summary)
+    _write_public_summary(PUBLIC_PERFORMANCE / 'source-backfill.json', source_summary)
 
 
 
@@ -262,6 +281,10 @@ def main() -> None:
         execute('http-load', compose + ['run', '--rm', 'checks', 'python', 'scripts/load_test.py',
                 '--mode', 'service', '--requests', '50', '--concurrency', '5', '--base-url',
                 'http://api:8000', '--output', '/workspace/artifacts/container/http-load.json'])
+        execute('source-backfill', compose + ['run', '--rm', 'checks', 'python',
+            'scripts/source_backfill_benchmark.py',
+                '--records', str(args.scale_records), '--page-size', '100', '--page-budget', '10',
+                '--output', '/workspace/artifacts/container/source-backfill.json'])
         publish_public_measurements()
         execute('resume-background-jobs', compose + ['start', 'worker', 'scheduler'])
         report.update(status='passed', passed=True, finished_at=datetime.now(UTC).isoformat())
