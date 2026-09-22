@@ -80,3 +80,82 @@ def test_committed_korean_ocr_artifact_is_projected_without_raw_text():
     assert route.language == "kor+eng"
     assert route.hosted_calls == 1
     assert "recognition_text" not in route.model_dump_json()
+
+
+def test_provider_contract_missing_artifact_stays_not_run(tmp_path):
+    from app.evaluation.summary import read_provider_contract
+
+    all_route, gated_route, optimization = read_provider_contract(
+        tmp_path / "provider-contract.json"
+    )
+
+    assert all_route.status == "not_run"
+    assert gated_route.status == "not_run"
+    assert optimization.status == "not_run"
+
+
+def test_provider_contract_projection_separates_stub_from_model_quality(tmp_path):
+    import json
+
+    from app.evaluation.summary import read_provider_contract
+
+    artifact = {
+        "schema_version": 1,
+        "synthetic": True,
+        "model_quality_measured": False,
+        "external_network": False,
+        "routes": {
+            "all": {
+                "status": "measured",
+                "expected_fields": 30,
+                "field_accuracy": 1.0,
+                "schema_failures": 4,
+                "grounded_acceptance_rate": 0.5,
+                "latency_ms": {"p50": 1.0, "p95": 2.0},
+                "hosted_calls": 10,
+                "prompt_tokens": 1000,
+                "completion_tokens": 200,
+                "reported_cost_per_document": None,
+            },
+            "gated": {
+                "status": "measured",
+                "expected_fields": 30,
+                "field_accuracy": 1.0,
+                "schema_failures": 4,
+                "grounded_acceptance_rate": 0.5,
+                "latency_ms": {"p50": 1.0, "p95": 2.0},
+                "hosted_calls": 5,
+                "prompt_tokens": 500,
+                "completion_tokens": 100,
+                "reported_cost_per_document": None,
+            },
+        },
+        "optimization": {
+            "status": "measured",
+            "all_calls": 10,
+            "gated_calls": 5,
+            "avoided_calls": 5,
+            "call_reduction_rate": 0.5,
+            "all_tokens": 1200,
+            "gated_tokens": 600,
+            "token_reduction_rate": 0.5,
+            "reported_cost_reduction_rate": None,
+            "cost_basis": None,
+        },
+        "limitation": "HTTP provider stub only; external model quality was not measured.",
+    }
+    path = tmp_path / "provider-contract.json"
+    path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    all_route, gated_route, optimization = read_provider_contract(path)
+
+    assert all_route.status == "measured"
+    assert all_route.hosted_calls == 10
+    assert all_route.prompt_tokens == 1000
+    assert gated_route.hosted_calls == 5
+    assert gated_route.prompt_tokens == 500
+    assert all_route.reported_cost is None
+    assert optimization.call_reduction_rate == 0.5
+    assert optimization.token_reduction_rate == 0.5
+    assert optimization.reported_cost_reduction_rate is None
+    assert "external model quality" in (optimization.notice or "")
