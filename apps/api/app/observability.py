@@ -4,12 +4,16 @@ import json
 import logging
 from typing import Any
 
+REQUEST_ID_HEADER = "X-Request-ID"
+
 
 class JsonFormatter(logging.Formatter):
     """Small dependency-free formatter for request and worker event fields."""
 
     _fields = (
         "request_id",
+        "method",
+        "path",
         "job_id",
         "job_key",
         "source",
@@ -19,6 +23,7 @@ class JsonFormatter(logging.Formatter):
         "duration_ms",
         "result",
         "status",
+        "error_type",
     )
 
     def format(self, record: logging.LogRecord) -> str:
