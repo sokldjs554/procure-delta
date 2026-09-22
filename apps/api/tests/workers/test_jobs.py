@@ -30,6 +30,7 @@ from app.workers.jobs import (
     ingest_record,
     job_key,
     poll_source,
+    poll_source_pages,
     reconcile_pending_normalizations,
 )
 
@@ -341,6 +342,84 @@ async def test_poll_source_persists_discovered_raw_records(session: AsyncSession
         )
         == 2
     )
+
+
+@pytest.mark.asyncio
+async def test_bounded_multi_page_poll_persists_checkpoint_per_page(
+    session: AsyncSession,
+) -> None:
+    result = await poll_source_pages({"session": session}, "mock", page_budget=10)
+
+    source = await session.scalar(select(SourceRegistry).where(SourceRegistry.code == "mock"))
+    assert source is not None
+    runs = (
+        await session.scalars(
+            select(IngestRun)
+            .where(IngestRun.source_id == source.id, IngestRun.status == "success")
+            .order_by(IngestRun.started_at)
+        )
+    ).all()
+
+    assert result["status"] == "success"
+    assert result["pages"] == 3
+    assert result["records"] == 6
+    assert result["cursor_after"] is None
+    assert [run.fetched_count for run in runs] == [2, 2, 2]
+    assert [run.cursor_after for run in runs] == ["2", "4", None]
+
+
+@pytest.mark.asyncio
+async def test_multi_page_poll_keeps_last_successful_cursor_when_next_page_fails(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_code = "mock-backfill-failure"
+
+    class FailingSecondPageAdapter:
+        async def discover(self, cursor: str | None) -> DiscoveryPage:
+            if cursor is None:
+                from app.sources.base import RawSourceRecord
+
+                return DiscoveryPage(
+                    records=(
+                        RawSourceRecord(
+                            source_record_id="page-1",
+                            raw_payload=_normalizable_payload("Page one"),
+                        ),
+                    ),
+                    next_cursor="page-2",
+                )
+            raise ValueError("synthetic second-page failure")
+
+    monkeypatch.setattr(
+        "app.workers.jobs.source_adapters",
+        lambda: {source_code: FailingSecondPageAdapter()},
+    )
+
+    result = await poll_source_pages(
+        {"session": session}, source_code, page_budget=5
+    )
+
+    source = await session.scalar(
+        select(SourceRegistry).where(SourceRegistry.code == source_code)
+    )
+    assert source is not None
+    runs = (
+        await session.scalars(
+            select(IngestRun)
+            .where(IngestRun.source_id == source.id)
+            .order_by(IngestRun.started_at)
+        )
+    ).all()
+
+    assert result["status"] == "dead_lettered"
+    assert result["pages"] == 1
+    assert result["records"] == 1
+    assert result["cursor_after"] == "page-2"
+    assert len(runs) == 2
+    assert runs[0].status == "success"
+    assert runs[0].cursor_after == "page-2"
+    assert runs[1].status == "failed"
+    assert runs[1].cursor_before == "page-2"
 
 
 @pytest.mark.asyncio
