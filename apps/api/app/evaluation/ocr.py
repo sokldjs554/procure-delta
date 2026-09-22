@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import shutil
 import tempfile
 import time
 from pathlib import Path
+from re import compile as re_compile
+from re import fullmatch
 from typing import Any
 
 from app.extraction.deterministic import DeterministicExtractor
@@ -21,7 +22,7 @@ from .metrics import field_metrics, rate
 from .runner import bundle, canonical
 
 
-_LANGUAGE_PATTERN = re.compile(r"^[a-z]{3}(?:\+[a-z]{3})*$")
+_LANGUAGE_PATTERN = re_compile(r"^[a-z]{3}(?:\+[a-z]{3})*$")
 
 
 def requested_language(cases: list[dict[str, Any]]) -> str:
@@ -38,7 +39,7 @@ def available_languages(output: str) -> set[str]:
     return {
         line.strip()
         for line in output.splitlines()
-        if re.fullmatch(r"[a-z]{3}", line.strip())
+        if fullmatch(r"[a-z]{3}", line.strip())
     }
 
 
