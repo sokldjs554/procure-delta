@@ -422,3 +422,46 @@ footer{border-top:1px solid rgba(11,59,44,.1);background:rgba(250,248,241,.72)}
 @media(max-width:560px){
   .http-endpoint-list{grid-template-columns:1fr}
 }
+
+
+/* Keep nested evidence readable inside narrow detail columns. */
+.json,
+.json dt,
+.json dd,
+.json-list,
+.json-list li{
+  min-width:0;
+}
+.json-list{
+  margin:.35rem 0;
+  padding-left:1.05rem;
+}
+.json-nested>div{
+  grid-template-columns:minmax(76px,.7fr) minmax(0,1.3fr);
+  gap:.55rem;
+  padding:.4rem 0;
+}
+.json-nested dt{
+  font-size:.74rem;
+}
+.json-inline{
+  margin:.3rem 0;
+  max-height:260px;
+  overflow:auto;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  border:1px solid #e1e4dc;
+  border-radius:9px;
+  background:#f6f4ed;
+  padding:.65rem;
+  color:#284039;
+  font:500 .72rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.detail-grid aside .json>div{
+  grid-template-columns:minmax(82px,.72fr) minmax(0,1.28fr);
+}
+.hero-data-note{
+  top:-1.5rem;
+  right:2%;
+  z-index:1;
+}
