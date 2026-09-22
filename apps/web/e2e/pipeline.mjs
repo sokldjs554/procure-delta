@@ -58,6 +58,14 @@ try {
   await stageButton(page, "delta").click();
   await page.getByText("high 영향", { exact: true }).waitFor();
   await page.getByText(/region_restriction_changed/).waitFor();
+  const technicalDetails = page.locator("details.pipeline-technical-details");
+  await technicalDetails.waitFor();
+  assert.equal(await technicalDetails.getAttribute("open"), null);
+  await technicalDetails.locator("summary").click();
+  assert.notEqual(await technicalDetails.getAttribute("open"), null);
+  await technicalDetails.getByRole("tab", { name: "출력", exact: true }).waitFor();
+  await technicalDetails.locator("summary").click();
+  assert.equal(await technicalDetails.getAttribute("open"), null);
   await page.screenshot({
     path: resolve(output, "pipeline-amendment-delta.png"),
     fullPage: true,
