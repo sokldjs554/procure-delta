@@ -136,15 +136,23 @@ async def test_configured_factory_and_scheduler_include_official_feed_only_when_
     adapters = jobs.source_adapters()
     assert "koneps-services" in adapters
     assert hasattr(jobs, "poll_configured_sources"), "scheduler has no configured polling path"
-    calls = []
+    calls: list[tuple[str, int]] = []
 
-    async def poll(ctx: Any, source_code: str = "mock") -> dict[str, str]:
-        calls.append(source_code)
-        return {"status": "success", "source": source_code}
+    async def poll_pages(
+        ctx: Any, source_code: str = "mock", *, page_budget: int = 1
+    ) -> dict[str, Any]:
+        calls.append((source_code, page_budget))
+        return {
+            "status": "success",
+            "source": source_code,
+            "pages": 1,
+            "records": 0,
+            "cursor_after": None,
+        }
 
-    monkeypatch.setattr(jobs, "poll_source", poll)
+    monkeypatch.setattr(jobs, "poll_source_pages", poll_pages)
     await jobs.poll_configured_sources({"session": session})
-    assert calls == ["mock", "koneps-services"]
+    assert calls == [("mock", 1), ("koneps-services", 1)]
 
 
 @pytest.mark.asyncio
