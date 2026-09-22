@@ -20,12 +20,16 @@ function numberMetric(value: number | null, suffix = "") {
 }
 
 const routeRows: Array<
-  ["deterministic" | "hosted_all" | "hosted_gated" | "ocr", string]
+  [
+    "deterministic" | "hosted_all" | "hosted_gated" | "ocr" | "ocr_korean",
+    string,
+  ]
 > = [
   ["deterministic", "deterministic"],
   ["hosted_all", "hosted all"],
   ["hosted_gated", "hosted gated"],
-  ["ocr", "OCR"],
+  ["ocr", "OCR · English synthetic"],
+  ["ocr_korean", "OCR · Korean synthetic"],
 ];
 
 export default function About() {
@@ -139,9 +143,15 @@ export default function About() {
                 <span>실제 공개 공고 {data.public_real_records}건</span>
               </article>
               <article>
-                <small>OCR</small>
-                <strong>{data.ocr_correct}/{data.ocr_support} 필드</strong>
-                <span>{data.ocr_language ?? "미측정"} · 영어 합성 이미지 범위</span>
+                <small>OCR · 한국어</small>
+                <strong>
+                  {data.routes.ocr_korean.status === "measured"
+                    ? `${data.routes.ocr_korean.support}/${data.routes.ocr_korean.support} 필드`
+                    : "미측정"}
+                </strong>
+                <span>
+                  {data.routes.ocr_korean.language ?? "미측정"} · 합성 한글 이미지 3장
+                </span>
               </article>
               <article>
                 <small>HOSTED LLM</small>
@@ -170,8 +180,11 @@ export default function About() {
               <dd>{data.replay_queries}개 시점 · 이후 수집·처리된 정보 제외</dd>
               <dt>별도 OCR 실험</dt>
               <dd>
-                {data.ocr_correct}/{data.ocr_support} 필드 (
-                {percent(data.ocr_accuracy)}) · 언어 {data.ocr_language ?? "미측정"}
+                영어 {data.ocr_correct}/{data.ocr_support} 필드 (
+                {percent(data.ocr_accuracy)}) · 한국어{" "}
+                {data.routes.ocr_korean.support} 필드 (
+                {percent(data.routes.ocr_korean.field_accuracy)}) · 언어{" "}
+                {data.routes.ocr_korean.language ?? "미측정"}
               </dd>
               <dt>외부 LLM 비교</dt>
               <dd>
@@ -198,8 +211,8 @@ export default function About() {
             성능을 뜻하지 않습니다.
           </li>
           <li>
-            OCR 실험은 영어 합성 이미지 3장입니다. 서비스의 합성 OCR 경로는 실제
-            인식 성능과 다릅니다.
+            OCR 실험은 영어 합성 이미지 3장과 한국어 합성 이미지 3장입니다. 실제
+            나라장터 스캔·표·필기·다양한 문서 레이아웃의 일반화 성능은 아닙니다.
           </li>
           <li>
             실제 나라장터 연동 범위는 용역 입찰공고와 관측 변경입니다.
