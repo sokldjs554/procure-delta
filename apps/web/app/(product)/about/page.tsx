@@ -146,7 +146,9 @@ export default function About() {
                 <small>OCR · 한국어</small>
                 <strong>
                   {data.routes.ocr_korean.status === "measured"
-                    ? `${data.routes.ocr_korean.support}/${data.routes.ocr_korean.support} 필드`
+                    ? `${data.routes.ocr_korean.support} 필드 · ${percent(
+                        data.routes.ocr_korean.field_accuracy,
+                      )}`
                     : "미측정"}
                 </strong>
                 <span>
