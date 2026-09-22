@@ -21,11 +21,19 @@ function numberMetric(value: number | null, suffix = "") {
 
 const routeRows: Array<
   [
-    "deterministic" | "hosted_all" | "hosted_gated" | "ocr" | "ocr_korean",
+    | "deterministic"
+    | "provider_contract_all"
+    | "provider_contract_gated"
+    | "hosted_all"
+    | "hosted_gated"
+    | "ocr"
+    | "ocr_korean",
     string,
   ]
 > = [
   ["deterministic", "deterministic"],
+  ["provider_contract_all", "provider contract · all"],
+  ["provider_contract_gated", "provider contract · gated"],
   ["hosted_all", "hosted all"],
   ["hosted_gated", "hosted gated"],
   ["ocr", "OCR · English synthetic"],
@@ -95,6 +103,7 @@ export default function About() {
                 <span role="columnheader">스키마 실패</span>
                 <span role="columnheader">p95 지연</span>
                 <span role="columnheader">호출</span>
+                <span role="columnheader">usage</span>
                 <span role="columnheader">비용</span>
               </div>
               {routeRows.map(([id, label]) => {
@@ -126,6 +135,16 @@ export default function About() {
                     </span>
                     <span role="cell">
                       {route.status === "measured"
+                        ? route.prompt_tokens === null ||
+                          route.completion_tokens === null
+                          ? "미측정"
+                          : numberMetric(
+                              route.prompt_tokens + route.completion_tokens,
+                            )
+                        : "미실행"}
+                    </span>
+                    <span role="cell">
+                      {route.status === "measured"
                         ? route.reported_cost === null
                           ? "미측정"
                           : numberMetric(route.reported_cost)
@@ -135,6 +154,12 @@ export default function About() {
                 );
               })}
             </div>
+            <p className="fine-print">
+              provider contract 행의 usage는 MockTransport가 반환한 합성 usage
+              counter입니다. 실제 모델 tokenizer·과금·외부 네트워크 지연을 뜻하지
+              않습니다. hosted all/gated는 실제 provider를 실행하지 않았으므로
+              계속 미실행으로 표시합니다.
+            </p>
 
             <div className="evaluation-boundary">
               <article>
@@ -153,6 +178,21 @@ export default function About() {
                 </strong>
                 <span>
                   {data.routes.ocr_korean.language ?? "미측정"} · 합성 한글 이미지 3장
+                </span>
+              </article>
+              <article>
+                <small>LLM PROVIDER CONTRACT</small>
+                <strong>
+                  {data.provider_contract_optimization.status === "measured"
+                    ? `${data.provider_contract_optimization.all_calls} → ${data.provider_contract_optimization.gated_calls} 호출`
+                    : "미측정"}
+                </strong>
+                <span>
+                  {data.provider_contract_optimization.call_reduction_rate === null
+                    ? "미측정"
+                    : `${percent(
+                        data.provider_contract_optimization.call_reduction_rate,
+                      )} 호출 감소`} · 외부 모델 품질 아님
                 </span>
               </article>
               <article>
@@ -188,11 +228,17 @@ export default function About() {
                 {percent(data.routes.ocr_korean.field_accuracy)}) · 언어{" "}
                 {data.routes.ocr_korean.language ?? "미측정"}
               </dd>
-              <dt>외부 LLM 비교</dt>
+              <dt>LLM provider 계약</dt>
+              <dd>
+                {data.provider_contract_optimization.status === "measured"
+                  ? `HTTP 계약 측정 · 호출 ${data.provider_contract_optimization.all_calls} → ${data.provider_contract_optimization.gated_calls} · usage ${data.provider_contract_optimization.all_tokens} → ${data.provider_contract_optimization.gated_tokens}`
+                  : "미측정"}
+              </dd>
+              <dt>외부 LLM 품질</dt>
               <dd>
                 {data.hosted_evaluated
                   ? "측정 파일 참조"
-                  : "미실행 · 비용/정확도 수치 없음"}
+                  : "미실행 · 실제 모델 정확도/토큰/비용 수치 없음"}
               </dd>
             </dl>
 
@@ -219,6 +265,10 @@ export default function About() {
           <li>
             실제 나라장터 연동 범위는 용역 입찰공고와 관측 변경입니다.
             사전규격·낙찰·계약의 실제 연동은 아직 없습니다.
+          </li>
+          <li>
+            provider contract는 HTTP/JSON·검증·usage 집계 경로의 합성 stub
+            측정입니다. 외부 LLM의 품질·실제 tokenizer·과금·가용성 측정이 아닙니다.
           </li>
           <li>공개 운영 트래픽·실제 결제·운영 인증은 검증하지 않았습니다.</li>
           <li>
