@@ -154,8 +154,10 @@ amendment
 | deterministic extraction | 측정됨 | 30/30 labeled fields, 작은 합성 회귀셋 |
 | OCR · English synthetic | 측정됨 | Tesseract 17/18 fields, 영어 합성 이미지 3장 |
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
-| hosted all | **미실행** | 정확도·latency·token·cost 없음 |
-| hosted gated | **미실행** | 정확도·latency·token·cost 없음 |
+| provider contract · all | 측정됨 | production HTTP/JSON 경로 + MockTransport, 10 calls, synthetic usage 1,200 |
+| provider contract · gated | 측정됨 | 5 calls, synthetic usage 600, 호출/usage counter 50% 감소 |
+| hosted all | **미실행** | 실제 외부 모델 정확도·latency·token·cost 없음 |
+| hosted gated | **미실행** | 실제 외부 모델 정확도·latency·token·cost 없음 |
 
 Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, lifecycle link는 합성 사례 5개 중 2개를 resolve하고 ambiguous/missing/incompatible 사례는 unresolved로 남겼습니다.
 
@@ -171,7 +173,7 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 - Compose contract / image build
 - PostgreSQL + Redis
 - Ruff / strict mypy / DB isolation regression / backend tests
-- source contracts / evaluation / **Korean OCR 18/18 regression** / fault drill
+- source contracts / evaluation / **Korean OCR 18/18 regression** / **LLM provider-contract 10→5 call gate** / fault drill
 - runtime start / full readiness
 - frontend test / typecheck / lint
 - 실제 browser lifecycle E2E
@@ -256,7 +258,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
 - HWP 내용 추출과 실제 나라장터 한국어 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 OCR은 합성 렌더 이미지 3장/18필드 회귀셋에서만 측정했습니다.
-- hosted LLM은 현재 평가하지 않았으므로 정확도·비용·token 수치를 주장하지 않습니다.
+- hosted LLM은 현재 평가하지 않았으므로 실제 모델 정확도·비용·token 수치를 주장하지 않습니다. provider-contract 측정의 1,200→600 usage는 MockTransport가 반환한 합성 counter이며 실제 tokenizer/과금이 아닙니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
