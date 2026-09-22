@@ -7,14 +7,13 @@ import os
 import random
 import re
 import socket
-import tempfile
-from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
 
+from app.documents.storage import AttachmentBlobStore, LocalBlobStore
 from app.documents.synthetic_fixtures import load_packaged_fixture
 
 ALLOWED_MEDIA_TYPES = {
@@ -122,6 +121,7 @@ async def download_attachment(
     *,
     client: httpx.AsyncClient | None = None,
     storage_root: Path | None = None,
+    blob_store: AttachmentBlobStore | None = None,
     max_bytes: int = 10 * 1024 * 1024,
 ) -> StoredAttachment:
     """Download bounded trusted-source bytes and store them by content checksum."""
@@ -202,21 +202,10 @@ async def download_attachment(
         raise ValueError("attachment actual bytes exceed configured limit")
     media_type = _detect_media_type(content, response_media or ref.declared_media_type)
     checksum = hashlib.sha256(content).hexdigest()
-    root = storage_root or Path(os.getenv("ATTACHMENT_STORAGE_PATH", "/var/lib/procure-delta"))
     storage_key = f"sha256/{checksum[:2]}/{checksum}.blob"
-    destination = root / storage_key
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if not destination.exists():
-        descriptor, temporary_name = tempfile.mkstemp(dir=destination.parent, prefix=".incoming-")
-        try:
-            with os.fdopen(descriptor, "wb") as output:
-                output.write(content)
-                output.flush()
-                os.fsync(output.fileno())
-            with suppress(FileExistsError):
-                os.link(temporary_name, destination)
-        finally:
-            Path(temporary_name).unlink(missing_ok=True)
+    root = storage_root or Path(os.getenv("ATTACHMENT_STORAGE_PATH", "/var/lib/procure-delta"))
+    store = blob_store or LocalBlobStore(root)
+    await store.put(storage_key, content)
     return StoredAttachment(
         sha256=checksum,
         byte_size=len(content),

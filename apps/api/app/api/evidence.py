@@ -12,6 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import Owner, Session
 from app.api.schemas import Document, Extraction, ExtractionSnapshot, Parse
 from app.config import get_settings
+from app.documents.storage import (
+    BlobNotFoundError,
+    BlobStoreError,
+    BlobTooLargeError,
+    configured_attachment_store,
+)
 from app.extraction.hosted import configured_extractor
 from app.extraction.service import (
     build_document_bundle,
@@ -159,16 +165,19 @@ async def original_document(identifier: UUID, session: Session, owner: Owner) ->
     if row is None or row.sha256 is None or not re.fullmatch(r"[0-9a-f]{64}", row.sha256):
         raise HTTPException(404, "Document unavailable")
     expected = f"sha256/{row.sha256[:2]}/{row.sha256}.blob"
-    root = get_settings().attachment_storage_path.resolve()
-    path = (root / expected).resolve()
-    if row.storage_key != expected or not path.is_relative_to(root):
+    if row.storage_key != expected:
         raise HTTPException(404, "Document unavailable")
+    settings = get_settings()
     try:
-        if path.stat().st_size > get_settings().attachment_max_bytes:
-            raise HTTPException(409, "Document exceeds configured size limit")
-        content = path.read_bytes()
-    except OSError as exc:
+        content = await configured_attachment_store(settings).read(
+            expected, max_bytes=settings.attachment_max_bytes
+        )
+    except BlobNotFoundError as exc:
         raise HTTPException(404, "Document unavailable") from exc
+    except BlobTooLargeError as exc:
+        raise HTTPException(409, "Document exceeds configured size limit") from exc
+    except (BlobStoreError, ValueError) as exc:
+        raise HTTPException(503, "Document storage unavailable") from exc
     if hashlib.sha256(content).hexdigest() != row.sha256:
         raise HTTPException(409, "Document integrity check failed")
     return Response(

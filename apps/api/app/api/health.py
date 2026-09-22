@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import tempfile
 from importlib.metadata import version
-from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -13,6 +11,7 @@ from sqlalchemy import text
 from app.api.auth import Redis, Session
 from app.api.schemas import DTO
 from app.config import get_settings
+from app.documents.storage import configured_attachment_store
 from app.extraction.hosted import configured_extractor
 
 router = APIRouter(tags=["health"])
@@ -77,11 +76,9 @@ async def ready(session: Session, redis: Redis, response: Response) -> Readiness
     except Exception:
         pass
     try:
-        with tempfile.TemporaryFile(dir=get_settings().attachment_storage_path) as handle:
-            handle.write(b"readiness")
-            handle.flush()
-        checks["storage"] = True
-    except OSError:
+        async with asyncio.timeout(3):
+            checks["storage"] = await configured_attachment_store(get_settings()).ready()
+    except (OSError, ValueError):
         pass
     try:
         configured_extractor(get_settings())
