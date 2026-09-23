@@ -19,6 +19,9 @@ python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.j
 
 필수 입력은 OpenAI-compatible HTTPS endpoint, provider label, model identifier이며 API key는 repository secret `PROCURE_DELTA_LLM_API_KEY`에서만 읽는다. workflow는 secret이 없거나 endpoint가 credential-free HTTPS가 아니면 provider 호출 전에 실패한다.
 
+[외부 실측 실행 절차](external-validation.md)에 고정 모델 입력 예시, 현재 데이터의
+호출 규모, 결과 확인 순서를 정리했다. 사전 계산된 호출 계획은 provider 실측이 아니다.
+
 성공 기준은 단순 HTTP 200이 아니다. `hosted_all`과 `hosted_gated`가 모두 measured이고, 각 route의 p50/p95 latency와 prompt/completion token이 존재하며, call/token reduction이 계산돼야 한다. Provider가 비용을 직접 반환하지 않으면 비용은 null로 남긴다. 실행 artifact는 업로드하지만 자동으로 공개 평가 결과를 덮어쓰지 않는다.
 
 기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.

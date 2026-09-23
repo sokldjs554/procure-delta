@@ -40,12 +40,13 @@ def test_render_blueprint_wires_database_cache_storage_and_ci_gate() -> None:
         assert BLUEPRINT.count(f"key: {key}") == 3
 
 
-def test_render_workers_wait_for_schema_and_web_requires_public_api_url() -> None:
+def test_render_workers_wait_for_schema_and_web_uses_same_origin_proxy() -> None:
     assert BLUEPRINT.count("python -m app.ops.wait_for_schema") == 2
     assert "dockerfilePath: ./apps/web/Dockerfile" in BLUEPRINT
     assert "dockerContext: ./apps/web" in BLUEPRINT
     assert "key: NEXT_PUBLIC_STATIC_DEMO" in BLUEPRINT
-    assert "key: NEXT_PUBLIC_API_URL" in BLUEPRINT
+    assert 'key: NEXT_PUBLIC_API_URL\n        value: ""' in BLUEPRINT
+    assert "key: API_PROXY_ORIGIN\n        sync: false" in BLUEPRINT
     assert BLUEPRINT.count("sync: false") >= 15
 
 

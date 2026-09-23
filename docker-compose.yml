@@ -107,9 +107,10 @@ services:
     build:
       context: ./apps/web
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL-http://localhost:8000}
+        API_PROXY_ORIGIN: ${API_PROXY_ORIGIN:-}
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL-http://localhost:8000}
       API_INTERNAL_URL: http://api:8000
     ports:
       - "3000:3000"

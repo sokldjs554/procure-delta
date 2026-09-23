@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,7 +53,10 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = False
     session_ttl_seconds: int = Field(default=86400, ge=300, le=86400)
     cors_origins: list[str] = ["http://localhost:3000"]
-    release_revision: str = "development"
+    release_revision: str = Field(
+        default="development",
+        validation_alias=AliasChoices("release_revision", "RENDER_GIT_COMMIT"),
+    )
     sentry_enabled: bool = False
     sentry_dsn: SecretStr | None = None
     sentry_environment: str = "development"

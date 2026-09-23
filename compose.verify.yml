@@ -66,10 +66,8 @@ services:
     build:
       context: ./apps/web
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:18000
-    environment:
-      API_INTERNAL_URL: http://api:8000
-      NEXT_PUBLIC_API_URL: http://localhost:18000
+        NEXT_PUBLIC_API_URL: ""
+        API_PROXY_ORIGIN: http://api:8000
     ports: ["127.0.0.1:13000:3000"]
     depends_on: [api]
   checks:
