@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.models import JobFailure, NotificationEvent, Watchlist
 from app.notifications.base import DeliveryResult, UnconfiguredChannel
+from app.notifications.email import EmailChannel, SmtpTransport
 from app.notifications.local_sink import LocalSink
 from app.notifications.preferences import get_preferences
 from app.notifications.webhook import WebhookChannel
@@ -68,6 +69,10 @@ async def _finish(
             "http_4xx",
             "http_5xx",
             "http_redirect",
+            "smtp_auth",
+            "smtp_rejected",
+            "smtp_4xx",
+            "smtp_5xx",
         }
         else "delivery_failed"
     )
@@ -140,13 +145,41 @@ async def deliver_notification(ctx: dict[str, Any], notification_event_id: str) 
         channel = ctx.get("notification_channels", {}).get(event.channel)
         if channel is None:
             destination = settings.notification_webhook_destinations.get(event.user_id)
-            channel = (
-                WebhookChannel(destination.get_secret_value())
-                if event.channel == "webhook"
+            recipient = settings.notification_email_recipients.get(event.user_id)
+            if (
+                event.channel == "webhook"
                 and settings.notification_external_enabled
                 and destination
-                else UnconfiguredChannel()
-            )
+            ):
+                channel = WebhookChannel(destination.get_secret_value())
+            elif (
+                event.channel == "email"
+                and settings.notification_external_enabled
+                and settings.notification_smtp_host
+                and settings.notification_email_sender
+                and recipient
+            ):
+                channel = EmailChannel(
+                    SmtpTransport(
+                        host=settings.notification_smtp_host,
+                        port=settings.notification_smtp_port,
+                        username=(
+                            settings.notification_smtp_username.get_secret_value()
+                            if settings.notification_smtp_username
+                            else None
+                        ),
+                        password=(
+                            settings.notification_smtp_password.get_secret_value()
+                            if settings.notification_smtp_password
+                            else None
+                        ),
+                        starttls=settings.notification_smtp_starttls,
+                    ),
+                    sender=settings.notification_email_sender,
+                    recipient=recipient.get_secret_value(),
+                )
+            else:
+                channel = UnconfiguredChannel()
         try:
             async with asyncio.timeout(20):
                 result = await channel.send(event)
