@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     koneps_service_key: SecretStr | None = None
     koneps_lookback_days: int = Field(default=1, ge=1, le=30)
     koneps_pages_per_poll: int = Field(default=5, ge=1, le=100)
+    koneps_process_enabled: bool = False
+    koneps_process_inquiry_div: str | None = None
+    koneps_process_refresh_seconds: int = Field(default=3600, ge=300, le=86400)
+    koneps_process_batch_size: int = Field(default=20, ge=1, le=100)
+    koneps_process_max_pages: int = Field(default=3, ge=1, le=10)
     extraction_mode: Literal["deterministic", "hosted"] = "deterministic"
     extraction_endpoint: str | None = None
     extraction_provider: str | None = None
