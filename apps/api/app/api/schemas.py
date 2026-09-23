@@ -97,6 +97,21 @@ class Timeline(DTO):
     historical_links: list[Link]
 
 
+class ContractProcessSnapshotSummary(DTO):
+    id: UUID
+    opportunity_version_id: UUID
+    inquiry_div: str
+    page_no: int
+    total_count: int
+    response_sha256: str
+    identifiers: PublicJSON
+    fetched_at: datetime
+
+
+class ContractProcessHistory(DTO):
+    items: list[ContractProcessSnapshotSummary]
+
+
 class Parse(DTO):
     id: UUID
     parser_kind: str
