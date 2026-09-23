@@ -10,10 +10,10 @@ from app.models import ContractProcessSnapshot, OpportunityVersion
 from app.sources.koneps_process import ContractProcessPage, ContractProcessQuery
 
 
-def query_for_service_version(
-    version: OpportunityVersion, *, inquiry_div: str
+def query_for_service_record_id(
+    source_record_id: str, *, inquiry_div: str
 ) -> ContractProcessQuery:
-    pieces = version.source_record_id.split(":")
+    pieces = source_record_id.split(":")
     if len(pieces) != 3 or pieces[0] != "services":
         raise ValueError("contract-process lookup requires a KONEPS service notice version")
     return ContractProcessQuery(
@@ -21,6 +21,12 @@ def query_for_service_version(
         bid_ntce_no=pieces[1],
         bid_ntce_ord=pieces[2],
     )
+
+
+def query_for_service_version(
+    version: OpportunityVersion, *, inquiry_div: str
+) -> ContractProcessQuery:
+    return query_for_service_record_id(version.source_record_id, inquiry_div=inquiry_div)
 
 
 async def persist_contract_process_pages(
