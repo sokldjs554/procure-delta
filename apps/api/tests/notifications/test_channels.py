@@ -119,3 +119,21 @@ async def test_email_boundary_produces_email_message_with_stable_message_id():
     assert key == "stable-key"
     assert message["Message-ID"] == "<stable-key@procure-delta.invalid>"
     assert "Synthetic" in message.get_content()
+
+
+@pytest.mark.asyncio
+async def test_smtp_transport_connection_failure_is_retryable():
+    from app.notifications.email import SmtpTransport
+
+    result = await SmtpTransport(
+        host="127.0.0.1",
+        port=1,
+        starttls=False,
+        timeout_seconds=0.2,
+    ).send_message(
+        __import__("email.message").message.EmailMessage(),
+        idempotency_key="stable-key",
+    )
+    assert result.success is False
+    assert result.retryable is True
+    assert result.error_code == "transport_error"
