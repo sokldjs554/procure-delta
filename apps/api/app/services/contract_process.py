@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +26,7 @@ def query_for_service_version(
 async def persist_contract_process_pages(
     session: AsyncSession,
     *,
-    opportunity_version_id,
+    opportunity_version_id: UUID,
     query: ContractProcessQuery,
     pages: Sequence[ContractProcessPage],
 ) -> int:
