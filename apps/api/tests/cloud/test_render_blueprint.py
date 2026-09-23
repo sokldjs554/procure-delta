@@ -47,3 +47,11 @@ def test_render_workers_wait_for_schema_and_web_requires_public_api_url() -> Non
     assert "key: NEXT_PUBLIC_STATIC_DEMO" in BLUEPRINT
     assert "key: NEXT_PUBLIC_API_URL" in BLUEPRINT
     assert BLUEPRINT.count("sync: false") >= 15
+
+
+def test_render_blueprint_wires_optional_sentry_settings() -> None:
+    assert BLUEPRINT.count("key: SENTRY_ENABLED") == 3
+    assert BLUEPRINT.count("key: SENTRY_DSN") == 3
+    assert BLUEPRINT.count("key: SENTRY_ENVIRONMENT") == 3
+    assert BLUEPRINT.count("key: SENTRY_TRACES_SAMPLE_RATE") == 3
+    assert BLUEPRINT.count("value: production") >= 3
