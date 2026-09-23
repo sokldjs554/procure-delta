@@ -165,9 +165,9 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 
 ## Release gate
 
-현재 저장된 `artifacts/verification/release-gate.json`은 **2026-09-21 GitHub Actions run 35568528869**의 격리 통합 검증 결과이며 `passed=true`입니다.
+저장소의 `artifacts/verification/release-gate.json`은 **2026-09-21 GitHub Actions run 35568528869**의 고정 reference snapshot이며 `passed=true`입니다. 이후 추가된 Korean OCR gate는 main run **35750906271**, paginated backfill gate는 branch run **35810323430**에서 별도로 통과했습니다. 최신 기능을 과거 snapshot에 소급해서 기록하지 않습니다.
 
-통과 범위:
+현재까지 확인된 통과 범위:
 
 - Compose contract / image build
 - PostgreSQL + Redis
