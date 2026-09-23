@@ -31,6 +31,7 @@ from app.documents.service import (
 )
 from app.documents.storage import configured_attachment_store
 from app.models import IngestRun, JobFailure, OpportunityVersion, RawRecord, SourceRegistry
+from app.observability import capture_tracked_exception
 from app.repositories.opportunities import upsert_opportunity_version
 from app.services.ingest import ingest_raw_record
 from app.services.normalize import normalize_raw_record
@@ -313,6 +314,7 @@ async def ingest_record(
                     dead_lettered=True,
                 )
                 await session.commit()
+            capture_tracked_exception(error)
             return {"status": "dead_lettered", "job_key": stable_key}
         async with _session_scope(ctx) as session:
             if raw_record_id is not None:
@@ -336,6 +338,7 @@ async def ingest_record(
                 failure.next_retry_at = None
             await session.commit()
         if terminal:
+            capture_tracked_exception(error)
             return {"status": "dead_lettered", "job_key": stable_key}
         raise Retry(defer=2**failure.attempts) from error
     finally:
@@ -462,6 +465,7 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
             await failure_session.commit()
         if _is_transient(error) and not terminal:
             raise Retry(defer=2**failure.attempts) from error
+        capture_tracked_exception(error)
         return {"status": "dead_lettered", "job_key": stable_key}
     logger.info(
         "source_poll",
@@ -559,6 +563,8 @@ async def _record_normalization_failure(
     if retryable and failure.attempts >= MAX_ATTEMPTS:
         failure.dead_lettered = True
         failure.next_retry_at = None
+    if failure.dead_lettered:
+        capture_tracked_exception(error)
     return failure
 
 
@@ -801,5 +807,7 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
                         },
                     )
                 await failure_session.commit()
+            if failure.dead_lettered:
+                capture_tracked_exception(error)
             failed += 1
     return {"processed": processed, "failed": failed}
