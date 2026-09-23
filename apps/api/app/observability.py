@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 import sentry_sdk
+from sentry_sdk.types import Event, Hint
 
 from app.config import Settings, get_settings
 
@@ -82,7 +83,7 @@ def _scrub_value(value: Any) -> Any:
     return value
 
 
-def scrub_sentry_event(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, Any] | None:
+def scrub_sentry_event(event: Event, hint: Hint) -> Event | None:
     """Remove request/user/exception text and secret-shaped extras before transport."""
     del hint
     event.pop("request", None)
