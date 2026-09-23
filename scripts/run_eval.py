@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -31,7 +32,22 @@ def main() -> None:
         hosted = configured_extractor(settings)
     result = asyncio.run(run_evaluation(ROOT, with_ocr=args.with_ocr, hosted=hosted))
     write_artifact(args.output, result, 'ProcureDelta synthetic evaluation')
+    if hosted is not None:
+        for name in ('hosted_all', 'hosted_gated'):
+            route = result['extraction_routes'][name]
+            # Only the runner's bounded diagnostics; no raw error bodies or exception messages.
+            errors = [
+                {key: row[key] for key in ('id', 'error_type', 'http_status',
+                                          'provider_error_type', 'provider_hint')}
+                for row in route['rows'] if row['error_type'] is not None
+            ]
+            print(json.dumps({'route': name, 'status': route['status'],
+                              'execution_errors': route['execution_errors'], 'errors': errors},
+                             ensure_ascii=False))
     if args.publish:
+        if hosted is not None:
+            from app.evaluation.hosted_artifact import validate_hosted_artifact
+            validate_hosted_artifact(result)
         import shutil
         target = ROOT / 'apps/api/app/evaluation/results/local.json'
         target.parent.mkdir(parents=True, exist_ok=True)

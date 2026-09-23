@@ -1,7 +1,9 @@
 # 외부 실측 실행 절차
 
-2026-09-23 기준 실행 준비 기록이다. Hosted LLM 평가와 전체 Render 백엔드는 아직
-실행하지 않았다. 공개 `procure-delta-demo`는 합성 데이터를 사용하는 읽기 전용 웹이다.
+2026-09-23 기준 실행 기록과 절차다. 첫 Claude 평가는 HTTP 오류로 실패했으며
+[원본과 검증 결함 수정](hosted-evaluation-attempt.md)을 보존했다. 유효한 hosted 품질
+실측과 전체 Render 백엔드 배포는 아직 완료하지 않았다. 공개 `procure-delta-demo`는
+합성 데이터를 사용하는 읽기 전용 웹이다.
 
 ## 1. Hosted LLM 비교
 
@@ -20,6 +22,23 @@
 공식 [모델 문서](https://developers.openai.com/api/docs/models/gpt-4.1-mini)에서
 Chat Completions와 고정 snapshot 지원을 확인했다. 계정의 모델 사용 권한과 API
 결제가 필요하다.
+
+이번 Claude 실행에는 다음 값을 사용했다. 이 입력에서 HTTP 오류가 났으므로
+연결 성공이 검증됐다는 뜻은 아니다.
+
+| Workflow 입력 | Claude 입력 |
+| --- | --- |
+| branch | `main` |
+| endpoint | `https://api.anthropic.com/v1/chat/completions` |
+| provider | `anthropic` |
+| model | `claude-haiku-4-5-20251001` |
+| max_completion_tokens | `4096` |
+
+[Anthropic 호환 API 문서](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk)는
+Bearer 인증, `max_completion_tokens`, prompt/completion usage를 지원한다고 명시한다.
+`response_format`은 무시하므로 JSON 출력은 프롬프트로 요청하고 기존 스키마·근거
+검증기로 검사한다. 호환 API는 모델 비교용이며 native Claude structured outputs
+어댑터를 구현·검증했다는 뜻은 아니다. 위 OpenAI 가격 예시는 Claude에 적용하지 않는다.
 
 1. [저장소 Actions secrets](https://github.com/sokldjs554/procure-delta/settings/secrets/actions)에
    해당 provider의 키를 `PROCURE_DELTA_LLM_API_KEY`로 등록한다.
@@ -130,9 +149,9 @@ Blueprint는 DB/Redis 연결값과 operator secret을 생성·주입한다. Oper
 
 ## 남은 계정 설정
 
-현재 작업 환경에는 LLM 키, S3 버킷/자격증명, Sentry DSN이 제공되지 않았다.
-GitHub secret 목록은 이 연결에서 조회할 수 없으므로 저장소에 키가 없다고 단정하지
-않는다. 연결된 GitHub 도구에는 workflow dispatch 기능도 없어서 최초 실행은 위
-Actions 화면에서 시작해야 한다. 실행 URL이 생기면 결과·CI·artifact를 이어서 확인할
-수 있다. Render Blueprint의 최초 Apply 역시 Dashboard에서 비용과 secret을 확인한
-뒤 진행한다.
+첫 Actions 실행에서 LLM secret이 비어 있지 않은 것은 확인했다. 키의 유효성은 HTTP
+실패 때문에 확인하지 못했다. 로컬 작업 환경에는 해당 키, S3 버킷/자격증명, Sentry
+DSN이 없다. GitHub secret 값이나 목록은 이 연결에서 조회하지 않는다. 연결된 GitHub
+도구에는 workflow dispatch 기능이 없어 수정된 main의 새 실행은 위 Actions 화면에서
+시작해야 한다. 과거 run의 Re-run은 이전 commit을 사용한다. Render Blueprint의 최초
+Apply는 Dashboard에서 비용과 secret을 확인한 뒤 진행한다.

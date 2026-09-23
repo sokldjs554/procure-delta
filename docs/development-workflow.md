@@ -47,7 +47,8 @@ Every public claim should be one of:
 Examples in this repository:
 
 - Korean OCR is measured on a frozen synthetic `kor+eng` regression set.
-- Hosted LLM quality remains `not_run` until the manual hosted-evaluation workflow is explicitly executed with a secret.
+- Hosted LLM quality is unvalidated until the manual workflow produces a valid measured artifact.
+  The first Claude attempt failed with HTTP errors; a green Actions badge alone is insufficient.
 - The Render Blueprint is contract-tested deployment readiness, not proof of live backend operation.
 
 ## External-cost boundary
