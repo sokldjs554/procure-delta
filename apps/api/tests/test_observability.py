@@ -22,7 +22,10 @@ def test_error_tracking_is_disabled_without_explicit_opt_in() -> None:
 
 def test_error_tracking_requires_dsn_when_enabled() -> None:
     with pytest.raises(ValueError, match="SENTRY_DSN"):
-        configure_error_tracking(Settings(_env_file=None, sentry_enabled=True), init=lambda **_: None)
+        configure_error_tracking(
+            Settings(_env_file=None, sentry_enabled=True),
+            init=lambda **_: None,
+        )
 
 
 def test_error_tracking_uses_privacy_safe_sdk_options() -> None:
