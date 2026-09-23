@@ -45,11 +45,12 @@ def _write_public_summary(destination: Path, payload: dict[str, object]) -> None
 
 
 # Public destinations: artifacts/performance/queue.json, artifacts/performance/http.json,
-# artifacts/performance/query-plans.json
+# artifacts/performance/query-plans.json, artifacts/performance/backfill.json
 def publish_public_measurements() -> None:
     queue_raw = json.loads((OUTPUT / 'queue-load.json').read_text(encoding='utf-8'))
     http_raw = json.loads((OUTPUT / 'http-load.json').read_text(encoding='utf-8'))
     query_raw = json.loads((OUTPUT / 'query-plans.json').read_text(encoding='utf-8'))
+    backfill_raw = json.loads((OUTPUT / 'backfill.json').read_text(encoding='utf-8'))
 
     queue_summary: dict[str, object] = {
         'scope': queue_raw['scope'],
@@ -125,19 +126,39 @@ def publish_public_measurements() -> None:
         'caution': query_raw.get('caution'),
     }
 
+    backfill_summary: dict[str, object] = {
+        'scope': backfill_raw['scope'],
+        'synthetic': backfill_raw['synthetic'],
+        'records': backfill_raw['records'],
+        'page_size': backfill_raw['page_size'],
+        'expected_pages': backfill_raw['expected_pages'],
+        'first_batch_pages': backfill_raw['first_batch_pages'],
+        'resumed_pages': backfill_raw['resumed_pages'],
+        'ingest_runs': backfill_raw['ingest_runs'],
+        'normalized_records': backfill_raw['normalized_records'],
+        'resumed_from_checkpoint': backfill_raw['resumed_from_checkpoint'],
+        'elapsed_seconds': backfill_raw['elapsed_seconds'],
+        'records_per_second': backfill_raw['records_per_second'],
+        'successful': backfill_raw['successful'],
+        'limitation': backfill_raw['limitation'],
+    }
+
     _write_public_summary(PUBLIC_PERFORMANCE / 'queue.json', queue_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'http.json', http_summary)
     _write_public_summary(PUBLIC_PERFORMANCE / 'query-plans.json', query_summary)
-
+    _write_public_summary(PUBLIC_PERFORMANCE / 'backfill.json', backfill_summary)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--keep-running', action='store_true')
     parser.add_argument('--scale-records', type=int, default=1000)
+    parser.add_argument('--backfill-records', type=int, default=2000)
     args = parser.parse_args()
     if not 1000 <= args.scale_records <= 50000:
         parser.error('--scale-records must be between 1000 and 50000')
+    if not 1000 <= args.backfill_records <= 10000:
+        parser.error('--backfill-records must be between 1000 and 10000')
     OUTPUT.mkdir(parents=True, exist_ok=True)
     report: dict[str, object] = {'started_at': datetime.now(UTC).isoformat(), 'passed': False,
                                 'scope': 'isolated_container_integration', 'gates': []}
@@ -262,6 +283,10 @@ def main() -> None:
         execute('http-load', compose + ['run', '--rm', 'checks', 'python', 'scripts/load_test.py',
                 '--mode', 'service', '--requests', '50', '--concurrency', '5', '--base-url',
                 'http://api:8000', '--output', '/workspace/artifacts/container/http-load.json'])
+        execute('backfill-scale', compose + ['run', '--rm', 'checks', 'python',
+                'scripts/backfill_benchmark.py', '--records', str(args.backfill_records),
+                '--page-size', '100', '--first-batch-pages', '5', '--output',
+                '/workspace/artifacts/container/backfill.json'])
         publish_public_measurements()
         execute('resume-background-jobs', compose + ['start', 'worker', 'scheduler'])
         report.update(status='passed', passed=True, finished_at=datetime.now(UTC).isoformat())
