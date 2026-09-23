@@ -53,6 +53,7 @@ async def ready(session: Session, redis: Redis, response: Response) -> Readiness
         "scheduler": False,
         "storage": False,
         "extraction_config": False,
+        "contract_process_config": False,
     }
     try:
         async with asyncio.timeout(3):
@@ -81,11 +82,21 @@ async def ready(session: Session, redis: Redis, response: Response) -> Readiness
             checks["storage"] = await configured_attachment_store(get_settings()).ready()
     except (OSError, ValueError):
         pass
+    settings = get_settings()
     try:
-        configured_extractor(get_settings())
+        configured_extractor(settings)
         checks["extraction_config"] = True
     except ValueError:
         pass
+    key = settings.koneps_service_key
+    checks["contract_process_config"] = (
+        not settings.koneps_process_enabled
+        or (
+            key is not None
+            and bool(key.get_secret_value().strip())
+            and bool((settings.koneps_process_inquiry_div or "").strip())
+        )
+    )
     okay = all(checks.values())
     response.status_code = 200 if okay else 503
     return Readiness(status="ready" if okay else "not_ready", dependencies=checks)
