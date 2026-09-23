@@ -7,6 +7,7 @@ from arq.connections import RedisSettings
 from arq.worker import func
 
 from app.config import get_settings
+from app.workers.contract_process import reconcile_contract_process
 from app.observability import configure_json_logging
 from app.workers.delta import compute_opportunity_delta, reconcile_pending_deltas
 from app.workers.eligibility import evaluate_company_opportunity, reconcile_eligibility_results
@@ -45,6 +46,7 @@ class WorkerSettings:
         reconcile_failed_jobs,
         reconcile_pending_normalizations,
         reconcile_pending_documents,
+        reconcile_contract_process,
         extract_version,
         reconcile_pending_extractions,
         link_opportunity,
@@ -74,6 +76,7 @@ class SchedulerSettings:
         reconcile_failed_jobs,
         reconcile_pending_normalizations,
         reconcile_pending_documents,
+        reconcile_contract_process,
         extract_version,
         reconcile_pending_extractions,
         link_opportunity,
@@ -101,6 +104,7 @@ class SchedulerSettings:
             minute={2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57},
         ),
         cron(reconcile_pending_documents, minute={3, 8, 13, 18, 23, 28, 33, 38, 43, 48, 53, 58}),
+        cron(reconcile_contract_process, minute={12, 42}, run_at_startup=True),
         cron(
             reconcile_pending_extractions,
             minute={4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59},
