@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from typing import Any
 
 import sentry_sdk
@@ -127,6 +128,13 @@ def scrub_sentry_event(event: Event, hint: Hint) -> Event | None:
     return event
 
 
+def error_tracking_release(settings: Settings) -> str:
+    if settings.release_revision != "development":
+        return settings.release_revision
+    render_commit = os.getenv("RENDER_GIT_COMMIT", "").strip()
+    return render_commit or settings.release_revision
+
+
 def configure_error_tracking(
     settings: Settings | None = None,
     *,
@@ -145,7 +153,7 @@ def configure_error_tracking(
     initializer(
         dsn=active.sentry_dsn.get_secret_value(),
         environment=active.sentry_environment,
-        release=active.release_revision,
+        release=error_tracking_release(active),
         send_default_pii=False,
         traces_sample_rate=active.sentry_traces_sample_rate,
         before_send=scrub_sentry_event,
