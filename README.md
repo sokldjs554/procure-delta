@@ -248,7 +248,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - **Frontend**: Next.js 16, React 19, TypeScript strict
 - **Document/AI**: PyMuPDF, OCR adapter boundary, deterministic extractor, provider-neutral structured extraction adapter
 - **Quality**: pytest, Ruff, strict mypy, ESLint, TypeScript, Playwright
-- **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage
+- **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage\n- **Development**: AI-assisted implementation with branch/PR review, static checks, regression tests, repeated release gates, and explicit measured/not_run evidence boundaries
 
 ## 범위와 한계
 
