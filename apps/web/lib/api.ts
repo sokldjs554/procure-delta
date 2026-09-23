@@ -443,6 +443,11 @@ export interface EngineeringEvidence {
     scope: string | null;
     metrics: Record<string, unknown>;
   };
+  backfill: {
+    status: "measured" | "not_run";
+    scope: string | null;
+    metrics: Record<string, unknown>;
+  };
   http: {
     status: "measured" | "not_run";
     scope: string | null;

@@ -4,7 +4,11 @@
 
 2026-09-21에 `python scripts/verify_containers.py --scale-records 1000`으로 원본 `.env`, 기존 DB/Redis 볼륨, 기존 서비스와 분리된 Compose 프로젝트에서 전체 검증을 실행했다.
 
-현재 저장된 `artifacts/verification/release-gate.json`은 GitHub Actions run **35568528869**의 성공 결과다.
+현재 저장된 `artifacts/verification/release-gate.json`은 GitHub Actions run **35568528869**의 성공 결과다. 이 파일은 고정 reference snapshot이라 이후 gate를 소급해서 덮어쓰지 않는다.
+
+후속 검증:
+- Korean OCR 실제 Tesseract `kor+eng` 합성 회귀 gate: main run **35750906271**, 18/18 fields
+- paginated backfill checkpoint/resume gate: branch run **35810323430**, 2,000건 · 20페이지 · 5→15페이지 재개
 
 - `passed: true`
 - `status: passed`
@@ -47,13 +51,26 @@
 17. HTTP load
 18. resume background jobs
 
+이후 release-contract에는 다음 gate가 추가됐다.
+
+19. Korean OCR regression
+    - Tesseract 5.5.0
+    - `kor+eng`
+    - clean / blurred / low-resolution 합성 이미지 3장
+    - 구조화 필드 18/18
+20. paginated backfill scale
+    - production `poll_source_pages()` 경로
+    - 2,000건 / page size 100 / 총 20페이지
+    - 첫 5페이지 이후 저장 cursor에서 15페이지 재개
+    - IngestRun 20/20 성공, normalized 2,000/2,000
+
 Pipeline E2E는 request interception이나 fake HTTP response를 사용하지 않고 검증 Compose의 실제 web/API에 접근한다.
 
 ## Public engineering evidence
 
 성능 카드는 CI 실행마다 변하는 timing 값을 실시간 마케팅 수치처럼 보여주지 않는다.
 
-공개 성능 숫자는 GitHub Actions run **35565162198**을 reference measurement로 고정했고 다음 위치에 동기화했다.
+기존 CPU·queue·HTTP·query-plan 숫자는 GitHub Actions run **35565162198**을 reference measurement로 고정했다. paginated backfill 수치는 run **35810323430**에서 추가 측정했고, 기존 timing을 새 실행값으로 갈아끼우지 않았다.
 
 - `artifacts/performance/*.json`
 - `apps/api/app/evaluation/results/engineering.json`

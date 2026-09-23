@@ -6,6 +6,7 @@ import os
 import time
 from collections import Counter
 from typing import Any
+from unittest.mock import patch
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -159,6 +160,145 @@ async def queue_load(records: int) -> dict[str, Any]:
             await worker.close()
         else:
             await redis.aclose()
+        await engine.dispose()
+
+
+async def backfill_load(
+    records: int = 2000, *, page_size: int = 100, first_batch_pages: int = 5
+) -> dict[str, Any]:
+    """Measure paginated polling, durable checkpoints, and resume on PostgreSQL."""
+    if not 100 <= records <= 10000:
+        raise ValueError("backfill benchmark accepts 100..10000 records")
+    if not 1 <= page_size <= 500:
+        raise ValueError("page_size must be between 1 and 500")
+    expected_pages = (records + page_size - 1) // page_size
+    if not 1 <= first_batch_pages < expected_pages:
+        raise ValueError("first_batch_pages must stop before the final page")
+    if first_batch_pages > 100:
+        raise ValueError("first_batch_pages must be between 1 and 100")
+    if expected_pages - first_batch_pages > 100:
+        raise ValueError("remaining pages must not exceed 100 for the single resume batch")
+
+    database_url = os.environ["BENCH_DATABASE_URL"]
+    require_benchmark_database(database_url)
+
+    from sqlalchemy import func, select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.models import IngestRun, RawRecord, SourceRegistry
+    from app.sources.base import AttachmentRef, DiscoveryPage, RawSourceRecord
+    from app.workers import jobs
+
+    class PagedSyntheticAdapter:
+        async def discover(self, cursor: str | None) -> DiscoveryPage:
+            start = int(cursor) if cursor is not None else 0
+            end = min(records, start + page_size)
+            return DiscoveryPage(
+                records=tuple(synthetic_record(index) for index in range(start, end)),
+                next_cursor=str(end) if end < records else None,
+            )
+
+        async def fetch_record(self, source_record_id: str) -> RawSourceRecord:
+            try:
+                index = int(source_record_id.rsplit("-", 1)[-1])
+            except ValueError as exc:
+                raise KeyError(source_record_id) from exc
+            if not 0 <= index < records:
+                raise KeyError(source_record_id)
+            return synthetic_record(index)
+
+        async def fetch_attachments(self, record: RawSourceRecord) -> list[AttachmentRef]:
+            del record
+            return []
+
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    run_id = uuid4().hex
+    source_code = "backfill-benchmark-" + run_id
+    adapter = PagedSyntheticAdapter()
+    started = time.perf_counter()
+    try:
+        with patch.object(jobs, "source_adapters", return_value={source_code: adapter}):
+            first = await jobs.poll_source_pages(
+                {"session_factory": factory},
+                source_code,
+                page_budget=first_batch_pages,
+            )
+            resume_cursor = first["cursor_after"]
+            if not isinstance(resume_cursor, str):
+                raise RuntimeError("first backfill batch did not persist a resumable cursor")
+            second = await jobs.poll_source_pages(
+                {"session_factory": factory},
+                source_code,
+                page_budget=100,
+            )
+
+        elapsed = time.perf_counter() - started
+        async with factory() as session:
+            source = await session.scalar(
+                select(SourceRegistry).where(SourceRegistry.code == source_code)
+            )
+            if source is None:
+                raise RuntimeError("backfill benchmark source was not persisted")
+            runs = list(
+                await session.scalars(
+                    select(IngestRun)
+                    .where(IngestRun.source_id == source.id)
+                    .order_by(IngestRun.started_at, IngestRun.id)
+                )
+            )
+            normalized = await session.scalar(
+                select(func.count())
+                .select_from(RawRecord)
+                .where(
+                    RawRecord.source_id == source.id,
+                    RawRecord.normalization_status == "normalized",
+                )
+            )
+
+        resume_index = first_batch_pages
+        resumed_from_checkpoint = (
+            len(runs) > resume_index
+            and runs[resume_index].cursor_before == resume_cursor
+        )
+        successful_runs = sum(run.status == "success" for run in runs)
+        complete = (
+            first["status"] == "success"
+            and second["status"] == "success"
+            and first["pages"] == first_batch_pages
+            and first["records"] == min(records, first_batch_pages * page_size)
+            and second["cursor_after"] is None
+            and normalized == records
+            and successful_runs == expected_pages
+            and len(runs) == expected_pages
+            and resumed_from_checkpoint
+        )
+        return {
+            "scope": "real_postgresql_paginated_backfill",
+            "synthetic": True,
+            "environment": environment(),
+            "records": records,
+            "page_size": page_size,
+            "expected_pages": expected_pages,
+            "first_batch_pages": first["pages"],
+            "first_batch_records": first["records"],
+            "resume_cursor": resume_cursor,
+            "resumed_pages": second["pages"],
+            "resumed_records": second["records"],
+            "final_cursor": second["cursor_after"],
+            "ingest_runs": len(runs),
+            "successful_runs": successful_runs,
+            "normalized_records": normalized,
+            "resumed_from_checkpoint": resumed_from_checkpoint,
+            "elapsed_seconds": elapsed,
+            "records_per_second": records / elapsed if complete else None,
+            "successful": complete,
+            "source_code": source_code,
+            "limitation": (
+                "Synthetic local PostgreSQL source; external network, OCR, and hosted LLM excluded."
+            ),
+        }
+    finally:
         await engine.dispose()
 
 

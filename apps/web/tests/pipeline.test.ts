@@ -113,3 +113,22 @@ test("static engineering evidence stays aligned with packaged API snapshot", asy
     true,
   );
 });
+
+test("static release evidence does not add later gates to the frozen reference", async () => {
+  const reference = JSON.parse(
+    readFileSync(
+      new URL("../../../artifacts/verification/release-gate.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { gates: { gate: string; passed: boolean }[] };
+  const evidence = await staticDemoRequest<EngineeringEvidence>(
+    "/evaluation/engineering-evidence",
+  );
+  for (const gate of evidence.release.gates) {
+    assert.ok(reference.gates.some(
+      (original) => original.gate === gate.gate && original.passed === gate.passed,
+    ), `Gate ${gate.gate} has no evidence in the frozen release reference`);
+  }
+  assert.equal(evidence.backfill.metrics.records, 2000);
+  assert.equal(evidence.backfill.metrics.resumed_from_checkpoint, true);
+});

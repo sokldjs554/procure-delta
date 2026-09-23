@@ -740,6 +740,25 @@ const engineeringEvidence: EngineeringEvidence = {
       limitation: "Local ingestion only; OCR/external LLM and attachments excluded.",
     },
   },
+  backfill: {
+    status: "measured",
+    scope: "real_postgresql_paginated_backfill",
+    metrics: {
+      records: 2000,
+      page_size: 100,
+      expected_pages: 20,
+      first_batch_pages: 5,
+      resumed_pages: 15,
+      ingest_runs: 20,
+      normalized_records: 2000,
+      resumed_from_checkpoint: true,
+      elapsed_seconds: 17.459780585000033,
+      records_per_second: 114.54897673331764,
+      successful: true,
+      limitation:
+        "Synthetic local PostgreSQL source; external network, OCR, and hosted LLM excluded.",
+    },
+  },
   http: {
     status: "measured",
     scope: "real_local_http",

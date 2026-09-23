@@ -96,8 +96,10 @@ const evidencePanels = readFileSync(
   "utf8",
 );
 
-test("engineering evidence cards surface measured queue HTTP and query-plan scope", () => {
+test("engineering evidence cards surface queue backfill HTTP and query-plan scope", () => {
   assert.match(evidencePanels, /Redis · ARQ · PostgreSQL/);
+  assert.match(evidencePanels, /페이지 수집 · cursor checkpoint · 재개/);
+  assert.match(evidencePanels, /cursor 재개/);
   assert.match(evidencePanels, /HTTP 부하/);
   assert.match(evidencePanels, /후보 인덱스는 채택하지 않음/);
   assert.match(evidencePanels, /p95/);

@@ -83,6 +83,9 @@ class EngineeringEvidence(DTO):
     failure_drill: FailureEvidence
     release: ReleaseEvidence
     queue: OptionalEvidence
+    backfill: OptionalEvidence = Field(
+        default_factory=lambda: OptionalEvidence(status="not_run")
+    )
     http: OptionalEvidence
     query_plans: OptionalEvidence
 
@@ -212,6 +215,13 @@ _OPTIONAL_KEYS = {
     "records",
     "requested_records",
     "completed_records",
+    "normalized_records",
+    "page_size",
+    "expected_pages",
+    "first_batch_pages",
+    "resumed_pages",
+    "ingest_runs",
+    "resumed_from_checkpoint",
     "elapsed_seconds",
     "records_per_second",
     "requests",
@@ -265,6 +275,7 @@ def engineering_evidence() -> EngineeringEvidence:
     failure_drill = _failures()
     release = _release()
     queue = _optional("performance/queue.json")
+    backfill = _optional("performance/backfill.json")
     http = _optional("performance/http.json")
     query_plans = _optional("performance/query-plans.json")
     if snapshot is not None:
@@ -276,6 +287,8 @@ def engineering_evidence() -> EngineeringEvidence:
             release = snapshot.release
         if queue.status == "not_run":
             queue = snapshot.queue
+        if backfill.status == "not_run":
+            backfill = snapshot.backfill
         if http.status == "not_run":
             http = snapshot.http
         if query_plans.status == "not_run":
@@ -285,6 +298,7 @@ def engineering_evidence() -> EngineeringEvidence:
         failure_drill=failure_drill,
         release=release,
         queue=queue,
+        backfill=backfill,
         http=http,
         query_plans=query_plans,
     )
