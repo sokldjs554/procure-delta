@@ -156,6 +156,7 @@ amendment
 | OCR · English synthetic | 측정됨 | Tesseract 17/18 fields, 영어 합성 이미지 3장 |
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
 | OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
+| 한국어 공고 항목 해석 v2 | 제한적 개선 | 별도 2건의 원문 텍스트 **0/6 → 3/6**, 같은 문서의 OCR은 **0/18**; [조건·실패 포함 비교](docs/korean-form-grounding.md) |
 | hosted all | **미실행** | 정확도·latency·token·cost 없음 |
 | hosted gated | **미실행** | 정확도·latency·token·cost 없음 |
 

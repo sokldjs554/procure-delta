@@ -1,0 +1,45 @@
+{
+  "suite": "korean-public-pdf-forms-v1",
+  "source_kind": "public_pdf_with_native_text",
+  "preparation": "First page rendered at 300 dpi, 300 dpi with Gaussian blur 1.2, and 150 dpi; no crops or OCR-based case exclusion.",
+  "acquired_at": "2026-09-23",
+  "selection": "Two additional convenience-sampled PDFs: a colon-labeled notice and an unsupported unlabeled table cover. Search snippets informed the parser design; these are diagnostic cases, NOT held-out or representative data. Images and native text were visually checked and annotations frozen before OCR. No OCR-driven rule tuning.",
+  "sources": [
+    {
+      "id": "yeoju-2026-43",
+      "filename": "yeoju-2026-43.pdf",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01358964&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=05",
+      "issuer": "경기도여주교육지원청",
+      "sha256": "1917b2f208eba36550d2fae50167b5afa50c3b890c210d2750e3dc167ddd55ec",
+      "page": 1,
+      "expected_fields": {
+        "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+        "buyer_name": "경기도여주교육지원청",
+        "procurement_type": "services"
+      },
+      "recognition_anchors": {
+        "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+        "buyer": "경기도여주교육지원청"
+      },
+      "annotation_note": "Page visually checked. The explicit service notice heading supplies category; title and buyer use colon labels. No dates, contact details or inferred requirements scored."
+    },
+    {
+      "id": "worker-center-cm",
+      "filename": "worker-center-cm.pdf",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01563696&bidPbancOrd=001&fileSeq=2&fileType=&prcmBsneSeCd=05",
+      "issuer": "한국노동조합총연맹",
+      "sha256": "d278ffd4e194097458b2cb2ad75469c003b52f002f0d9ec6fc7eb2ed492b37de",
+      "page": 1,
+      "expected_fields": {
+        "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+        "buyer_name": "한국노동조합총연맹",
+        "procurement_type": "services"
+      },
+      "recognition_anchors": {
+        "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+        "buyer": "한국노동조합총연맹"
+      },
+      "annotation_note": "Page visually checked. Service category refers to construction management, not the construction project itself. This table/cover has no supported complete category heading or colon-labeled title/buyer; abstention remains in the denominator."
+    }
+  ]
+}

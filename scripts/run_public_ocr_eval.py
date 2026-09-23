@@ -14,6 +14,8 @@ import pymupdf
 
 from app.evaluation.provenance import provenance
 from app.evaluation.public_documents import evaluate_public_documents
+from app.extraction.deterministic import DeterministicExtractor
+from app.extraction.validation import GROUNDING_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,6 +24,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--tessdata-dir", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path,
+                        default=ROOT / "data/eval/public_ocr_manifest.json")
     parser.add_argument("--output", type=Path,
                         default=ROOT / "artifacts/evaluation/public-ocr.json")
     args = parser.parse_args()
@@ -31,12 +35,14 @@ def main() -> None:
         for name in ("kor", "eng")
     }
     os.environ["TESSDATA_PREFIX"] = str(tessdata)
-    raw_manifest = (ROOT / "data/eval/public_ocr_manifest.json").read_bytes()
+    raw_manifest = args.manifest.read_bytes()
     manifest = json.loads(raw_manifest)
     metadata = provenance(ROOT, hashlib.sha256(raw_manifest).hexdigest(), {
         "language": "kor+eng", "page_segmentation_mode": 3,
         "preparation": manifest["preparation"], "tessdata_sha256": model_hashes,
         "pymupdf": pymupdf.VersionBind, "pillow": PIL.__version__,
+        "extractor_version": DeterministicExtractor.extractor_version,
+        "grounding_version": GROUNDING_VERSION,
     })
     metadata["synthetic"] = False
     result = {
@@ -47,10 +53,10 @@ def main() -> None:
         "public_source_documents": len(manifest["sources"]),
         "selection": manifest["selection"],
         "limitation": (
-            "Two public PDFs, one page each, rasterized into three correlated variants. "
+            "Public PDFs, one page each, rasterized into three correlated variants. "
             "Not natural scans, a representative corpus, full-page CER, or production OCR. "
             "Anchors use NFC and whitespace-insensitive exact substring matching. "
-            "Trusted fields require the unchanged production validator to accept the whole result. "
+            "Trusted fields require the versioned production validator to accept the whole result. "
             "Raw source PDFs, full native text and OCR output are not published."
         ),
         "measurement": asyncio.run(evaluate_public_documents(manifest, args.source_dir)),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -15,6 +16,8 @@ from app.extraction.schemas import (
     StructuredFields,
     ValidationReport,
 )
+
+GROUNDING_VERSION = "explicit-labels-v2"
 
 LABELS = {
     "Title": "title",
@@ -37,6 +40,8 @@ LIST_FIELDS = {
 KOREAN_LABELS = {
     "공고명": "Title",
     "사업명": "Title",
+    "용역명": "Title",
+    "입찰건명": "Title",
     "수요기관": "Buyer",
     "발주기관": "Buyer",
     "분류": "Category",
@@ -55,15 +60,65 @@ KOREAN_LABELS = {
 NEGATED_REQUIREMENT = re.compile(
     r"\b(not|no|without|optional|except)\b|미보유|불필요|제외|선택", re.I
 )
+FORM_PREFIX = re.compile(r"^(?:[ㆍ·•○ㅇ□▪-]\s*|(?:\d{1,2}|[가-하])[.)]\s*)")
+# Deliberately broader than accepted label prefixes: ambiguous section-like
+# starts must not become a value simply because a preceding label is empty.
+VALUE_BOUNDARY = re.compile(
+    r"^(?:[\[({（【〔①-⑳Ⅰ-Ⅻⅰ-ⅻ*※▷▶◆■]|[A-Za-z][.)]|[IVXLCDM]+[.)])"
+)
+NOTICE_HEADING = re.compile(
+    r"(?:(용역|물품|공사)(?:입찰공고|입찰설명서|소액수의\(견적제출\)설명서)"
+    r"|조달물자\((용역|물품|공사)\)구매입찰공고)"
+)
+PROCUREMENT_TYPES = {"용역": "services", "물품": "goods", "공사": "works"}
+
+
+def split_label(text: str) -> tuple[str, str, bool]:
+    """Normalize label typography only; keep every value and evidence quote intact."""
+    parts = re.split(r"[:：]", text, maxsplit=1)
+    if len(parts) != 2:
+        return "", "", False
+    label, value = parts
+    label = FORM_PREFIX.sub("", label.strip(), count=1).strip()
+    compact = "".join(label.split())
+    korean = compact in KOREAN_LABELS
+    return KOREAN_LABELS[compact] if korean else label, value.strip(), korean
+
+
+def evidence_spans(text: str) -> Iterator[str]:
+    """Single lines, or a colon-only label and its immediately adjacent value line.
+
+    Never cross a blank line, section marker, other label, page or attachment.
+    Longer wrapped values and unlabeled table cells remain unsupported.
+    """
+    lines = text.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        quote = line.strip()
+        label, value, _ = split_label(quote)
+        if label in {*LABELS, "Budget"} and not value and index + 1 < len(lines):
+            following = lines[index + 1].strip()
+            if (
+                following
+                and len(following) <= 300
+                and not re.search(r"[:：]", following)
+                and not FORM_PREFIX.match(following)
+                and not VALUE_BOUNDARY.match(following)
+                and "".join(following.split()) not in KOREAN_LABELS
+                and following not in {*LABELS, "Budget"}
+                and not NOTICE_HEADING.fullmatch("".join(following.split()))
+            ):
+                yield (line + lines[index + 1]).strip()
+                continue
+        yield quote
 
 
 def labeled_claims(line: str) -> dict[str, Any]:
     """Decode one complete explicit label. Never infer values from unrelated prose."""
-    label, separator, value = line.strip().partition(":")
-    korean = label in KOREAN_LABELS
-    label = KOREAN_LABELS.get(label, label)
-    value = value.strip()
-    if not separator or not value:
+    heading = NOTICE_HEADING.fullmatch("".join(line.split()))
+    if heading:
+        return {"procurement_type": PROCUREMENT_TYPES[heading[1] or heading[2]]}
+    label, value, korean = split_label(line)
+    if not label or not value:
         return {}
     if label == "Budget":
         if korean and re.fullmatch(r"[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?원", value):
@@ -121,10 +176,11 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
         return ValidationReport(valid=False, errors=[str(error)])
     errors: list[str] = []
     claims = fields.model_dump(exclude_none=True, exclude={"schema_version", "evidence"})
-    for page in document.pages:
-        for line in page.text.splitlines():
-            label, _, value = line.strip().partition(":")
-            field = LABELS.get(KOREAN_LABELS.get(label, label))
+    page_spans = [(page, list(evidence_spans(page.text))) for page in document.pages]
+    for _, spans in page_spans:
+        for quote in spans:
+            label, value, _ = split_label(quote)
+            field = LABELS.get(label)
             if field in claims and field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
                 errors.append(f"{field}: negated or qualified requirement needs review")
     for field, value in claims.items():
@@ -133,24 +189,21 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
             errors.append(f"{field}: missing evidence")
         for reference in references:
             pages = [
-                page
-                for page in document.pages
+                spans
+                for page, spans in page_spans
                 if (
                     page.attachment_sha256 == reference.attachment_sha256
                     and page.page_number == reference.page_number
                 )
             ]
-            if not any(
-                reference.quote in [line.strip() for line in page.text.splitlines()]
-                for page in pages
-            ):
+            if not any(reference.quote in spans for spans in pages):
                 errors.append(f"{field}: evidence not on referenced page")
             if labeled_claims(reference.quote).get(field) != value:
                 errors.append(f"{field}: value unsupported by labeled evidence")
         observed = [
             labeled_claims(line)[field]
-            for page in document.pages
-            for line in page.text.splitlines()
+            for _, spans in page_spans
+            for line in spans
             if field in labeled_claims(line)
         ]
         if any(item != value for item in observed):

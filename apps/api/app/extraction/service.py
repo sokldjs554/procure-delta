@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.documents.quality import assess_page_quality
 from app.extraction.base import StructuredExtractor
 from app.extraction.schemas import SCHEMA_VERSION, DocumentBundle, DocumentPage, ExtractionResult
-from app.extraction.validation import validate_extraction
+from app.extraction.validation import GROUNDING_VERSION, validate_extraction
 from app.models import Attachment, DocumentParse, OpportunityVersion, StructuredExtraction
 
 BUDGET_FIELDS = {"estimated_amount", "currency"}
@@ -75,6 +75,7 @@ def extraction_identity(document: DocumentBundle, extractor: StructuredExtractor
     identity = [
         document.fingerprint,
         SCHEMA_VERSION,
+        GROUNDING_VERSION,
         extractor.extractor_version,
         extractor.provider,
         extractor.model,
