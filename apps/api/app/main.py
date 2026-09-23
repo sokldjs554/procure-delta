@@ -17,8 +17,15 @@ from app.api import (
 from app.api.company_profiles import router as company_profiles_router
 from app.api.evaluation import router as evaluation_router
 from app.config import get_settings
+from app.observability import (
+    capture_tracked_exception,
+    configure_error_tracking,
+    configure_json_logging,
+)
 
 settings = get_settings()
+configure_json_logging()
+configure_error_tracking(settings)
 app = FastAPI(title=settings.app_name)
 app.add_middleware(
     CORSMiddleware,
@@ -59,6 +66,8 @@ async def validation_error(request: Request, exc: RequestValidationError) -> JSO
 
 @app.exception_handler(Exception)
 async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    del request
+    capture_tracked_exception(exc)
     return JSONResponse(status_code=500, content={"detail": "Request could not be completed"})
 
 
