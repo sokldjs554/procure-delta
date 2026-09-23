@@ -122,18 +122,21 @@ async def test_email_boundary_produces_email_message_with_stable_message_id():
 
 
 @pytest.mark.asyncio
-async def test_smtp_transport_connection_failure_is_retryable():
+async def test_smtp_transport_connection_failure_is_retryable(monkeypatch):
+    from email.message import EmailMessage
+
     from app.notifications.email import SmtpTransport
 
+    def unavailable(*args, **kwargs):
+        del args, kwargs
+        raise OSError("synthetic SMTP connection failure")
+
+    monkeypatch.setattr("app.notifications.email.smtplib.SMTP", unavailable)
     result = await SmtpTransport(
-        host="127.0.0.1",
-        port=1,
+        host="smtp.example.invalid",
         starttls=False,
         timeout_seconds=0.2,
-    ).send_message(
-        __import__("email.message").message.EmailMessage(),
-        idempotency_key="stable-key",
-    )
+    ).send_message(EmailMessage(), idempotency_key="stable-key")
     assert result.success is False
     assert result.retryable is True
     assert result.error_code == "transport_error"
