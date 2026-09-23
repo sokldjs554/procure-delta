@@ -7,8 +7,8 @@ from arq.connections import RedisSettings
 from arq.worker import func
 
 from app.config import get_settings
-from app.workers.contract_process import reconcile_contract_process
 from app.observability import configure_json_logging
+from app.workers.contract_process import reconcile_contract_process
 from app.workers.delta import compute_opportunity_delta, reconcile_pending_deltas
 from app.workers.eligibility import evaluate_company_opportunity, reconcile_eligibility_results
 from app.workers.extraction import extract_version, reconcile_pending_extractions
