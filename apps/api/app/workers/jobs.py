@@ -436,6 +436,8 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
                         extra={"raw_record_id": str(raw_id), "error": _safe_error_message(error)},
                     )
                     await session.commit()
+                    if failure.dead_lettered:
+                        capture_tracked_exception(error)
     except Exception as error:
         async with _session_scope(ctx) as failure_session:
             source = await failure_session.scalar(
@@ -563,8 +565,6 @@ async def _record_normalization_failure(
     if retryable and failure.attempts >= MAX_ATTEMPTS:
         failure.dead_lettered = True
         failure.next_retry_at = None
-    if failure.dead_lettered:
-        capture_tracked_exception(error)
     return failure
 
 
@@ -594,6 +594,8 @@ async def reconcile_pending_normalizations(ctx: dict[str, Any]) -> dict[str, int
                     extra={"raw_record_id": str(raw_id), "error": _safe_error_message(error)},
                 )
                 await session.commit()
+                if failure.dead_lettered:
+                    capture_tracked_exception(error)
                 failed += 1
     return {"normalized": normalized, "failed": failed}
 
