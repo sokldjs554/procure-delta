@@ -41,6 +41,7 @@ async def test_engineering_evidence_missing_artifacts_are_not_reported_as_zero(
     assert body["failure_drill"]["status"] == "not_run"
     assert body["release"]["status"] == "not_run"
     assert body["queue"]["status"] == "not_run"
+    assert body["backfill"]["status"] == "not_run"
     assert body["http"]["status"] == "not_run"
     assert body["query_plans"]["status"] == "not_run"
 
@@ -69,6 +70,13 @@ async def test_engineering_evidence_projects_committed_service_measurements() ->
     assert body["queue"]["metrics"]["completed_records"] == 1000
     assert body["queue"]["metrics"]["successful"] is True
 
+    assert body["backfill"]["status"] == "measured"
+    assert body["backfill"]["scope"] == "real_postgresql_paginated_backfill"
+    assert body["backfill"]["metrics"]["records"] == 2000
+    assert body["backfill"]["metrics"]["expected_pages"] == 20
+    assert body["backfill"]["metrics"]["normalized_records"] == 2000
+    assert body["backfill"]["metrics"]["resumed_from_checkpoint"] is True
+
     assert body["http"]["status"] == "measured"
     assert body["http"]["scope"] == "real_local_http"
     assert body["http"]["metrics"]["requests"] == 200
@@ -95,6 +103,7 @@ async def test_engineering_evidence_falls_back_to_packaged_public_snapshot(
     assert response.status_code == 200
     body = response.json()
     assert body["queue"]["status"] == "measured"
+    assert body["backfill"]["status"] == "measured"
     assert body["http"]["status"] == "measured"
     assert body["query_plans"]["status"] == "measured"
     assert body["release"]["passed"] is True
@@ -113,8 +122,16 @@ def test_packaged_snapshot_matches_committed_public_performance_artifacts() -> N
     query = json.loads(
         (root / "artifacts/performance/query-plans.json").read_text(encoding="utf-8")
     )
+    backfill = json.loads(
+        (root / "artifacts/performance/backfill.json").read_text(encoding="utf-8")
+    )
 
     assert snapshot["queue"]["metrics"]["records_per_second"] == queue["records_per_second"]
+    assert snapshot["backfill"]["metrics"]["records_per_second"] == backfill["records_per_second"]
+    assert (
+        snapshot["backfill"]["metrics"]["resumed_from_checkpoint"]
+        == backfill["resumed_from_checkpoint"]
+    )
     assert (
         snapshot["http"]["metrics"]["endpoints"]["inbox"]["p95_ms"]
         == http["endpoints"]["inbox"]["p95_ms"]
