@@ -33,11 +33,41 @@ The reference Blueprint declares:
 
 Git-backed services use `autoDeployTrigger: checksPass`.
 
-Database and Key Value connection strings are injected with Render resource references instead of being committed. S3 credentials, CORS origin, and the public API URL are entered during Blueprint setup with `sync: false`.
+Database and Key Value connection strings are injected with Render resource references instead of being committed. S3 credentials, CORS origins, and the API proxy origin are entered during Blueprint setup with `sync: false`.
+
+### Browser session routing
+
+The web service builds with `NEXT_PUBLIC_API_URL` set to the empty string and
+`API_PROXY_ORIGIN` set to the API's HTTPS origin, without an API path. Next.js
+forwards `/api/v1/*` to that fixed upstream. Browser requests and session cookies
+therefore use the web origin. This includes original document downloads.
+
+This matters on Render: `onrender.com` is in the
+[Public Suffix List](https://publicsuffix.org/list/public_suffix_list.dat), so two
+service subdomains are different sites. Direct browser calls between them cannot
+rely on the current `SameSite=Lax` session cookie. The proxy preserves the backend's
+HttpOnly cookie and Origin/CSRF checks. Keep `SESSION_COOKIE_SECURE=true` in Render
+and set `CORS_ORIGINS` to a JSON array containing the actual web origin, for example
+`["https://procure-delta-web.onrender.com"]`.
+
+Both routing values are **build-time settings**. Rebuild the web image after
+changing them. `API_PROXY_ORIGIN` must be an HTTP(S) origin with no credentials,
+path, query or fragment; a nonempty browser API URL alongside it fails the build.
+The static portfolio demo has no proxy routes. Local development can still call
+the API directly, or use an empty browser URL and `http://api:8000` as the Docker
+Compose proxy origin.
+
+The container release gate uses the same proxy route and checks browser request
+origins, session creation, rejected Origin/CSRF requests, profile writes, attachment
+checksums, operator access and logout. Its HTTP loopback run does not verify Render
+TLS or claim that the cloud stack has been deployed.
 
 Workers run `python -m app.ops.wait_for_schema` before ARQ. They do not assume the API service has already finished its migration.
 
 Render supplies Postgres connection strings in `postgresql://...` form. ProcureDelta normalizes that boundary to the installed SQLAlchemy psycopg dialect for both the application and Alembic.
+
+`RELEASE_REVISION` overrides Render's `RENDER_GIT_COMMIT`; otherwise the latter
+identifies the API release. Local environments keep the `development` default.
 
 ## What this does not prove
 
@@ -47,10 +77,13 @@ A real cloud verification would still require:
 
 1. syncing the Blueprint and reviewing any billable resources,
 2. providing the S3-compatible bucket, region, endpoint if needed, and credentials,
-3. setting the API CORS origin and the web build-time public API URL,
+3. setting the API CORS origins and the web build-time proxy origin,
 4. enabling the KONEPS source only with a real service key,
 5. waiting for /health/ready to report database, schema, redis, worker, scheduler, storage, and extraction_config as ready,
 6. inspecting logs and metrics during a real collection window,
 7. exercising rollback and redeploy behavior.
 
 CI intentionally does not create these cloud resources automatically.
+
+See [external validation steps](external-validation.md) for the dated cost
+estimate, exact inputs and evidence required after deployment.

@@ -1,5 +1,6 @@
 // Actual API + PostgreSQL/Redis demo. No request interception, fake response or timer-driven UI.
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -8,10 +9,11 @@ import { chromium } from "playwright";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const web = process.env.E2E_WEB_URL ?? "http://localhost:13000";
-const api = process.env.E2E_API_URL ?? "http://localhost:18000";
+// Browser sessions must work through the web origin, including proxied Set-Cookie.
+const api = web;
 const project = process.env.COMPOSE_PROJECT_NAME ?? "procure-delta-verify";
 if (!/^procure-delta-verify(?:-[a-z0-9-]+)?$/.test(project)) throw Error("Use an isolated verification project");
-for (const url of [web, api]) {
+for (const url of [web]) {
   if (!["localhost", "127.0.0.1"].includes(new URL(url).hostname)) throw Error("Local E2E targets only");
 }
 const secret = process.env.VERIFY_OPERATOR_SECRET;
@@ -20,6 +22,13 @@ const runId = `e2e-${Date.now()}`;
 const output = resolve(root, "artifacts/e2e");
 mkdirSync(output, { recursive: true });
 const checks = [];
+const apiRequestOrigins = new Set();
+function observeApiRequests(context) {
+  context.on("request", request => {
+    const url = new URL(request.url());
+    if (url.pathname.startsWith("/api/v1/")) apiRequestOrigins.add(url.origin);
+  });
+}
 function seed(phase) {
   const text = execFileSync("docker", ["compose", "--env-file", process.platform === "win32" ? "NUL" : "/dev/null", "-p", project, "-f", "compose.verify.yml",
     "exec", "-T", "api", "python", "-m", "app.demo.seed", "--run-id", runId, "--phase", phase],
@@ -38,6 +47,7 @@ try {
   browser = await chromium.launch({ headless: true,
     ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  observeApiRequests(context);
   page = await context.newPage();
   page.setDefaultTimeout(30000);
   await page.goto(`${web}/inbox`);
@@ -45,6 +55,21 @@ try {
   const actorResponse = await context.request.get(`${api}/api/v1/auth/session`);
   assert.equal(actorResponse.status(), 200);
   const actor = await actorResponse.json();
+  const sessionCookie = (await context.cookies(web)).find(item => item.name === "procure_delta_session");
+  assert.ok(sessionCookie);
+  assert.equal(sessionCookie.domain, new URL(web).hostname);
+  assert.equal(sessionCookie.httpOnly, true);
+  assert.equal(sessionCookie.sameSite, "Lax");
+  const rejectedOrigin = await context.request.patch(`${api}/api/v1/company-profile`, {
+    headers: { Origin: "https://untrusted.example", "X-CSRF-Token": actor.csrf_token },
+    data: { display_name: "Rejected" },
+  });
+  assert.equal(rejectedOrigin.status(), 403);
+  const rejectedCsrf = await context.request.patch(`${api}/api/v1/company-profile`, {
+    headers: { Origin: web, "X-CSRF-Token": "invalid" }, data: { display_name: "Rejected" },
+  });
+  assert.equal(rejectedCsrf.status(), 403);
+  checks.push("same-origin session cookie / proxy preserves Origin and CSRF rejection");
   const update = await context.request.patch(`${api}/api/v1/company-profile`, {
     headers: { "X-CSRF-Token": actor.csrf_token }, data: {
       regions: ["Seoul"], industries: ["services"],
@@ -63,6 +88,11 @@ try {
   assert.equal(detail.eligibility.warnings.length, 0);
   assert.equal(detail.extraction.status, "validated");
   assert.ok(detail.documents.some(doc => /^[a-f0-9]{64}$/.test(doc.sha256)));
+  const document = detail.documents.find(doc => /^[a-f0-9]{64}$/.test(doc.sha256));
+  const original = await context.request.get(`${api}/api/v1/documents/${document.id}/original`);
+  assert.equal(original.status(), 200);
+  assert.equal(createHash("sha256").update(await original.body()).digest("hex"), document.sha256);
+  checks.push("original attachment bytes retain their checksum through the web proxy");
   await page.getByRole("button", { name: "관심 공고로 추적", exact: true }).click();
   await page.getByRole("button", { name: "관심 공고 해제", exact: true }).waitFor();
   checks.push("real inbox / eligibility / evidence / watch mutation");
@@ -96,6 +126,7 @@ try {
   checks.push("prespec → tender/amendment → award → contract active graph");
   await page.screenshot({ path: resolve(output, "04-contract.png"), fullPage: true });
   const operatorContext = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  observeApiRequests(operatorContext);
   const operatorPage = await operatorContext.newPage();
   await operatorPage.goto(`${web}/admin`);
   await operatorPage.getByLabel("운영자 비밀값", { exact: true }).fill(secret);
@@ -120,6 +151,14 @@ try {
   await page.getByText(/합성 회귀 평가 ·/).waitFor();
   await page.screenshot({ path: resolve(output, "06-evaluation.png"), fullPage: true });
   checks.push("evaluation page reads committed artifact through actual API");
+  assert.deepEqual([...apiRequestOrigins], [new URL(web).origin]);
+  const logout = await context.request.post(`${api}/api/v1/auth/logout`, {
+    headers: { Origin: web, "X-CSRF-Token": actor.csrf_token },
+  });
+  assert.equal(logout.status(), 204);
+  assert.equal((await context.request.get(`${api}/api/v1/auth/session`)).status(), 401);
+  assert.ok(!(await context.cookies(web)).some(item => item.name === "procure_delta_session"));
+  checks.push("all browser API requests stay on the web origin / logout clears the session");
   passed = true;
 } catch (error) {
   if (page) await page.screenshot({ path: resolve(output, "failure.png") }).catch(() => {});
@@ -128,6 +167,8 @@ try {
 } finally {
   writeFileSync(resolve(output, "result.json"), JSON.stringify({
     passed, synthetic: true, run_id: runId, checks, network_mocking: false,
+    browser_api_same_origin: passed && apiRequestOrigins.size === 1 &&
+      apiRequestOrigins.has(new URL(web).origin),
     created_at: new Date().toISOString(), external_llm_verified: false,
   }, null, 2));
   if (browser) await browser.close();

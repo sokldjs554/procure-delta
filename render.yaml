@@ -162,6 +162,8 @@ services:
       - key: NEXT_PUBLIC_STATIC_DEMO
         value: "false"
       - key: NEXT_PUBLIC_API_URL
+        value: ""
+      - key: API_PROXY_ORIGIN
         sync: false
 
   - type: keyvalue
