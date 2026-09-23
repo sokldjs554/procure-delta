@@ -129,12 +129,13 @@ amendment
 
 ## 검증된 engineering evidence
 
-공개 performance 카드는 **GitHub Actions run 35565162198**의 격리 Docker 측정을 reference snapshot으로 고정한 것입니다. CI마다 달라지는 timing을 가장 잘 나온 값으로 계속 갈아끼우지 않습니다.
+기존 CPU·queue·HTTP·query-plan 카드는 **GitHub Actions run 35565162198**의 격리 Docker 측정을 reference snapshot으로 고정했습니다. 새 paginated backfill 측정은 수집 checkpoint/resume 경로를 추가 검증하기 위해 **GitHub Actions run 35810323430**에서 별도 측정했습니다. CI마다 달라지는 timing을 가장 잘 나온 값으로 계속 갈아끼우지 않습니다.
 
 | 영역 | 관측값 | 범위 |
 |---|---:|---|
 | CPU production functions | 50,000 normalize/rank + 5,000 Delta, 약 7,148 records/s | DB·Redis·HTTP·OCR·LLM 제외 |
 | Redis/ARQ/PostgreSQL | 1,000/1,000 완료, 46.59s, 약 21.46 records/s | 합성 ingest, 문서/OCR/외부 LLM 제외 |
+| Paginated backfill | 2,000/2,000 정규화, 20페이지, 17.46s, 약 114.55 records/s | 5페이지 후 중단 → cursor 500에서 15페이지 재개, local synthetic PostgreSQL |
 | Local HTTP | 총 200요청, 200성공, 0실패 | endpoint별 50요청, concurrency 5 |
 | inbox HTTP p95 | 약 1,219.2 ms | local container / synthetic data |
 | search HTTP p95 | 약 1,210.4 ms | local container / synthetic data |
@@ -177,6 +178,7 @@ Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, l
 - 실제 browser lifecycle E2E
 - **Pipeline Control Room desktop/mobile/reduced-motion E2E**
 - Redis/ARQ queue scale
+- **paginated backfill 2,000건 · 20페이지 · checkpoint/resume 검증**
 - PostgreSQL query-plan experiment
 - local HTTP load
 - worker/scheduler pause → resume
@@ -220,8 +222,9 @@ python scripts/verify_containers.py --scale-records 1000
 
 수집은 등록/변경 시간 창을 고정한 cursor 기반 pagination이며, 기본 한 주기에서 최대 5페이지를
 연속 처리합니다. 각 페이지를 별도 checkpoint로 커밋해 뒤 페이지 실패 시에도 마지막 성공 cursor부터
-재개합니다. 이 구조는 backlog catch-up을 위한 bounded batch 계약이며 실제 운영 대규모 처리량을
-증명한다고 표현하지 않습니다.
+재개합니다. 이 경로는 합성 local PostgreSQL benchmark에서 2,000건/20페이지를 처리하고,
+5페이지 이후 저장된 cursor에서 나머지 15페이지를 재개하는 것까지 측정했습니다. 다만 이 결과는
+실제 나라장터 네트워크·운영 규모·실문서 OCR/LLM 처리량을 증명하는 값으로 표현하지 않습니다.
 
 사전규격·낙찰·계약의 실제 collector는 아직 구현하지 않았으며, 합성 5단계 lifecycle과 구분합니다.
 
