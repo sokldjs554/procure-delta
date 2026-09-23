@@ -1,0 +1,47 @@
+{
+  "suite": "korean-public-pdf-raster-v1",
+  "source_kind": "public_pdf_with_native_text",
+  "preparation": "First page rendered at 300 dpi, 300 dpi with Gaussian blur 1.2, and 150 dpi; no crops, relabeling, or OCR-based case selection.",
+  "acquired_at": "2026-09-23",
+  "selection": "Two convenience-sampled public procurement notices with different issuing institutions and first-page layouts, frozen before OCR. Not a representative or held-out corpus.",
+  "sources": [
+    {
+      "id": "gwangju-2026-87",
+      "filename": "gwangju-2026-87.pdf",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01454418&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=03",
+      "issuer": "광주광역시",
+      "sha256": "3efcef7a673fc17026481e7f083e546634c3e1d8a26daf3fd82a213e7d7a3b9d",
+      "page": 1,
+      "expected_fields": {
+        "title": "청사 간(광주↔전남) 전용 정보통신서비스 회선사업자 선정 용역",
+        "buyer_name": "광주광역시"
+      },
+      "recognition_anchors": {
+        "title": "청사 간(광주↔전남) 전용 정보통신서비스 회선사업자 선정 용역",
+        "buyer": "광주광역시",
+        "base_amount_including_vat": "356,400,000원",
+        "estimated_price_excluding_vat": "324,000,000원"
+      },
+      "annotation_note": "First-page image visually checked. The two amounts have different meanings; neither is silently substituted for the other. Only title and buyer are scored as structured fields."
+    },
+    {
+      "id": "privacy-2026-149",
+      "filename": "privacy-2026-149.pdf",
+      "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01579024&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=03",
+      "issuer": "한국인터넷진흥원",
+      "sha256": "51d60969af1d2cae593107c8d612a6a04893e90b0f1173f56c6682bf888ead79",
+      "page": 1,
+      "expected_fields": {
+        "title": "온라인 행태정보 처리 구조 분석 및 개선방안 연구",
+        "buyer_name": "한국인터넷진흥원"
+      },
+      "recognition_anchors": {
+        "title": "온라인 행태정보 처리 구조 분석 및 개선방안 연구",
+        "buyer": "한국인터넷진흥원",
+        "budget_including_vat": "40,000,000원",
+        "submission_date": "2026. 6. 26."
+      },
+      "annotation_note": "First-page image visually checked. Title and submission date are table cells. Anchor matching is whitespace-insensitive exact substring presence, not semantic extraction or full-page character accuracy."
+    }
+  ]
+}
