@@ -148,6 +148,90 @@ async def test_configured_owner_webhook_is_selected_only_with_explicit_enable(
 
 
 @pytest.mark.asyncio
+async def test_configured_email_delivers_over_real_local_smtp(delivery_context):
+    from email import policy
+    from email.parser import BytesParser
+
+    from app.config import Settings
+    from app.workers.notifications import deliver_notification
+
+    received: list[bytes] = []
+
+    async def smtp_session(reader, writer):
+        writer.write(b"220 localhost ESMTP\r\n")
+        await writer.drain()
+        data_mode = False
+        body = bytearray()
+        try:
+            while True:
+                line = await reader.readline()
+                if not line:
+                    break
+                if data_mode:
+                    if line == b".\r\n":
+                        received.append(bytes(body))
+                        body.clear()
+                        data_mode = False
+                        writer.write(b"250 queued\r\n")
+                    else:
+                        body.extend(line[1:] if line.startswith(b"..") else line)
+                    await writer.drain()
+                    continue
+
+                command = line.decode("utf-8", errors="replace").strip()
+                verb = command.split(" ", 1)[0].upper()
+                if verb in {"EHLO", "HELO"}:
+                    writer.write(b"250-localhost\r\n250 HELP\r\n")
+                elif verb in {"MAIL", "RCPT", "RSET", "NOOP"}:
+                    writer.write(b"250 ok\r\n")
+                elif verb == "DATA":
+                    data_mode = True
+                    writer.write(b"354 end with dot\r\n")
+                elif verb == "QUIT":
+                    writer.write(b"221 bye\r\n")
+                    await writer.drain()
+                    break
+                else:
+                    writer.write(b"500 unsupported\r\n")
+                await writer.drain()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    server = await asyncio.start_server(smtp_session, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    ctx, item_id = delivery_context
+    ctx["notification_settings"] = Settings(
+        _env_file=None,
+        notification_external_enabled=True,
+        notification_smtp_host="127.0.0.1",
+        notification_smtp_port=port,
+        notification_smtp_starttls=False,
+        notification_email_sender="sender@example.invalid",
+        notification_email_recipients={
+            "synthetic-notification-owner": "recipient@example.invalid"
+        },
+    )
+    try:
+        event_id = await enqueue(ctx, item_id, "email")
+        assert (await deliver_notification(ctx, str(event_id)))["status"] == "sent"
+    finally:
+        server.close()
+        await server.wait_closed()
+
+    assert len(received) == 1
+    message = BytesParser(policy=policy.default).parsebytes(received[0])
+    assert message["From"] == "sender@example.invalid"
+    assert message["To"] == "recipient@example.invalid"
+    assert "Synthetic opportunity" in message.get_content()
+
+    async with ctx["session_factory"]() as session:
+        event = await session.get_one(NotificationEvent, event_id)
+        assert (event.status, event.attempt_count) == ("sent", 1)
+        assert message["Message-ID"] == f"<{event.dedupe_key}@procure-delta.invalid>"
+
+
+@pytest.mark.asyncio
 async def test_unknown_exception_never_persists_secret(delivery_context):
     from app.workers.notifications import deliver_notification
 
