@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "suite": "korean-public-pdf-forms-v1",
-  "measured_at": "2026-09-23T07:55:28.604250+00:00",
+  "measured_at": "2026-09-23T08:01:49.351751+00:00",
   "provenance": {
     "dataset_sha256": "9e82b6d8be68a4e8faefe4af4dca23f1cb00b201737f4dee5113913949af16ab",
-    "source_sha256": "7f2f58555d9fcb05de7f79f995b4aa18d13659895562ab5640803d21fe3f0b21",
-    "git_commit": "b5fc4a3af13f273ed625cd748684d3aa7c582ae5",
+    "source_sha256": "1ca690238d724fa8f547629c434000f1992f1f3c2fc871dcdbca55157e504a90",
+    "git_commit": "2a8aa796a62ca1d69e8922e1724e4cf361a3551e",
     "git_dirty": true,
     "configuration": {
       "language": "kor+eng",
@@ -216,7 +216,7 @@
             3505
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 1377.5079029992412,
+          "elapsed_ms": 1059.9990529990464,
           "field_metrics": {
             "correct": 0,
             "expected_fields": 3,
@@ -274,7 +274,7 @@
             3505
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 1268.6514529996202,
+          "elapsed_ms": 1148.9571290003369,
           "field_metrics": {
             "correct": 1,
             "expected_fields": 3,
@@ -330,7 +330,7 @@
             1753
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 920.7703709998896,
+          "elapsed_ms": 803.2804499998747,
           "field_metrics": {
             "correct": 1,
             "expected_fields": 3,
@@ -387,7 +387,7 @@
             3300
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 417.74721999991016,
+          "elapsed_ms": 447.9442439987906,
           "field_metrics": {
             "correct": 0,
             "expected_fields": 3,
@@ -445,7 +445,7 @@
             3300
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 479.4278370000029,
+          "elapsed_ms": 481.42867800015665,
           "field_metrics": {
             "correct": 0,
             "expected_fields": 3,
@@ -503,7 +503,7 @@
             1650
           ],
           "provider": "tesseract 5.3.4",
-          "elapsed_ms": 353.8332049993187,
+          "elapsed_ms": 374.2770549997658,
           "field_metrics": {
             "correct": 0,
             "expected_fields": 3,

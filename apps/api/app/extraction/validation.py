@@ -61,6 +61,11 @@ NEGATED_REQUIREMENT = re.compile(
     r"\b(not|no|without|optional|except)\b|미보유|불필요|제외|선택", re.I
 )
 FORM_PREFIX = re.compile(r"^(?:[ㆍ·•○ㅇ□▪-]\s*|(?:\d{1,2}|[가-하])[.)]\s*)")
+# Deliberately broader than accepted label prefixes: ambiguous section-like
+# starts must not become a value simply because a preceding label is empty.
+VALUE_BOUNDARY = re.compile(
+    r"^(?:[\[({（【〔①-⑳Ⅰ-Ⅻⅰ-ⅻ*※▷▶◆■]|[A-Za-z][.)]|[IVXLCDM]+[.)])"
+)
 NOTICE_HEADING = re.compile(
     r"(?:(용역|물품|공사)(?:입찰공고|입찰설명서|소액수의\(견적제출\)설명서)"
     r"|조달물자\((용역|물품|공사)\)구매입찰공고)"
@@ -97,6 +102,7 @@ def evidence_spans(text: str) -> Iterator[str]:
                 and len(following) <= 300
                 and not re.search(r"[:：]", following)
                 and not FORM_PREFIX.match(following)
+                and not VALUE_BOUNDARY.match(following)
                 and "".join(following.split()) not in KOREAN_LABELS
                 and following not in {*LABELS, "Budget"}
                 and not NOTICE_HEADING.fullmatch("".join(following.split()))

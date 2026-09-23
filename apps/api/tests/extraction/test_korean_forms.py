@@ -136,3 +136,21 @@ def test_label_normalization_does_not_rewrite_punctuation_inside_a_value():
 def test_bare_english_label_is_not_consumed_as_adjacent_value():
     _, _, report = extract("Title:\nBuyer\nBuyer: Agency\nCategory: services")
     assert not report.valid
+
+
+@pytest.mark.parametrize(
+    "section",
+    [
+        "(1) 입찰 사항",
+        "① 입찰 사항",
+        "Ⅰ. 입찰 사항",
+        "[입찰 사항]",
+        "A. 입찰 사항",
+        "II. 입찰 사항",
+        "1.1 입찰 사항",
+        "※ 입찰 사항",
+    ],
+)
+def test_adjacent_section_markers_are_not_a_title(section):
+    _, _, report = extract(f"공고명:\n{section}\n수요기관: 합성 기관\n분류: 용역")
+    assert not report.valid
