@@ -15,6 +15,7 @@ const importantGates = new Set([
   "real-lifecycle-e2e",
   "pipeline-demo-e2e",
   "queue-scale",
+  "backfill-scale",
   "query-plans",
   "http-load",
 ]);
@@ -166,6 +167,57 @@ export function EvidencePanels() {
               </>
             ) : (
               <p>별도 공개 queue 측정 artifact가 없어 미측정으로 남깁니다.</p>
+            )}
+          </article>
+
+          <article className="evidence-card backfill-evidence">
+            <header>
+              <span>Backfill</span>
+              <b>{statusLabel(data.backfill.status)}</b>
+            </header>
+            <h3>페이지 수집 · cursor checkpoint · 재개</h3>
+            {data.backfill.status === "measured" ? (
+              <>
+                <div className="evidence-metrics">
+                  <span>
+                    <strong>{displayMetric(numberMetric(data.backfill.metrics, "records"))}</strong>
+                    수집·정규화
+                  </span>
+                  <span>
+                    <strong>
+                      {displayMetric(numberMetric(data.backfill.metrics, "expected_pages"))}
+                    </strong>
+                    페이지
+                  </span>
+                  <span>
+                    <strong>
+                      {numberMetric(data.backfill.metrics, "records_per_second") === null
+                        ? "미측정"
+                        : numberMetric(data.backfill.metrics, "records_per_second")!.toFixed(2)}
+                    </strong>
+                    건/초
+                  </span>
+                  <span>
+                    <strong>
+                      {booleanMetric(data.backfill.metrics, "resumed_from_checkpoint")
+                        ? "확인"
+                        : "미확인"}
+                    </strong>
+                    cursor 재개
+                  </span>
+                </div>
+                <p>
+                  {displayMetric(numberMetric(data.backfill.metrics, "first_batch_pages"))}페이지 후
+                  중단 → {displayMetric(numberMetric(data.backfill.metrics, "resumed_pages"))}페이지
+                  재개 · IngestRun {displayMetric(numberMetric(data.backfill.metrics, "ingest_runs"))}개
+                </p>
+                <p>
+                  {textMetric(data.backfill.metrics, "limitation") ??
+                    "측정 범위를 확인할 수 없습니다."}
+                </p>
+              </>
+            ) : (
+              <p>별도 paginated backfill 측정 artifact가 없어 미측정으로 남깁니다.</p>
             )}
           </article>
 
