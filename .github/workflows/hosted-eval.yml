@@ -1,0 +1,93 @@
+name: Hosted LLM Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: OpenAI-compatible HTTPS chat-completions endpoint
+        required: true
+        type: string
+      provider:
+        description: Provider label recorded in evaluation identity
+        required: true
+        type: string
+      model:
+        description: Provider model identifier
+        required: true
+        type: string
+      max_completion_tokens:
+        description: Maximum completion-token budget per provider call
+        required: false
+        default: "4096"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXTRACTION_MODE: hosted
+      EXTRACTION_ENDPOINT: ${{ inputs.endpoint }}
+      EXTRACTION_PROVIDER: ${{ inputs.provider }}
+      EXTRACTION_MODEL: ${{ inputs.model }}
+      EXTRACTION_MAX_COMPLETION_TOKENS: ${{ inputs.max_completion_tokens }}
+      EXTRACTION_API_KEY: ${{ secrets.PROCURE_DELTA_LLM_API_KEY }}
+      RUN_ENVIRONMENT: github-hosted-llm-evaluation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+
+      - name: Install evaluation dependencies
+        run: pip install -e "./apps/api[dev]"
+
+      - name: Validate explicit hosted-evaluation opt-in
+        shell: bash
+        run: |
+          if [ -z "$EXTRACTION_API_KEY" ]; then
+            echo "PROCURE_DELTA_LLM_API_KEY is not configured."
+            exit 2
+          fi
+          python - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+
+          endpoint = os.environ["EXTRACTION_ENDPOINT"]
+          parsed = urlsplit(endpoint)
+          if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+              raise SystemExit("Hosted evaluation requires a credential-free HTTPS endpoint.")
+
+          value = int(os.environ["EXTRACTION_MAX_COMPLETION_TOKENS"])
+          if not 1 <= value <= 32768:
+              raise SystemExit("max_completion_tokens must be between 1 and 32768")
+          PY
+
+      - name: Run paid/network hosted evaluation
+        run: >-
+          python scripts/run_eval.py
+          --allow-hosted
+          --output artifacts/evaluation/hosted.json
+
+      - name: Validate measured hosted metrics
+        run: >-
+          python scripts/validate_hosted_eval.py
+          artifacts/evaluation/hosted.json
+          | tee artifacts/evaluation/hosted-summary.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: procure-delta-hosted-llm-evaluation
+          path: |
+            artifacts/evaluation/hosted.json
+            artifacts/evaluation/hosted.md
+            artifacts/evaluation/hosted-summary.json
+          if-no-files-found: warn
