@@ -141,6 +141,40 @@ class OpportunityVersion(UUIDPrimaryKey, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ContractProcessSnapshot(UUIDPrimaryKey, Base):
+    __tablename__ = "contract_process_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "opportunity_version_id",
+            "query_fingerprint",
+            "page_no",
+            "response_sha256",
+            name="uq_contract_process_snapshot",
+        ),
+        Index(
+            "ix_contract_process_version_fetched",
+            "opportunity_version_id",
+            "fetched_at",
+        ),
+        CheckConstraint("page_no >= 1", name="ck_contract_process_page_positive"),
+        CheckConstraint("total_count >= 0", name="ck_contract_process_total_nonnegative"),
+    )
+    opportunity_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("opportunity_versions.id"), index=True
+    )
+    inquiry_div: Mapped[str] = mapped_column(String(20))
+    query_fingerprint: Mapped[str] = mapped_column(String(64))
+    query_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    page_no: Mapped[int] = mapped_column(Integer)
+    total_count: Mapped[int] = mapped_column(Integer)
+    response_sha256: Mapped[str] = mapped_column(String(64))
+    raw_body_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    identifiers_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("clock_timestamp()")
+    )
+
+
 class LifecycleLink(UUIDPrimaryKey, Base):
     __tablename__ = "lifecycle_links"
     __table_args__ = (
