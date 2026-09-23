@@ -6,6 +6,7 @@ from app.config import Settings
 from app.observability import (
     capture_tracked_exception,
     configure_error_tracking,
+    error_tracking_release,
     scrub_sentry_event,
 )
 
@@ -120,3 +121,19 @@ def test_capture_is_noop_when_disabled_and_uses_sdk_when_enabled(monkeypatch) ->
     monkeypatch.setattr(observability, "_error_tracking_enabled", True)
     capture_tracked_exception(error)
     assert seen == [error]
+
+
+def test_error_tracking_release_prefers_explicit_revision_then_render_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "render-commit-abc")
+    assert (
+        error_tracking_release(
+            Settings(_env_file=None, release_revision="explicit-revision")
+        )
+        == "explicit-revision"
+    )
+    assert error_tracking_release(Settings(_env_file=None)) == "render-commit-abc"
+
+    monkeypatch.delenv("RENDER_GIT_COMMIT")
+    assert error_tracking_release(Settings(_env_file=None)) == "development"
