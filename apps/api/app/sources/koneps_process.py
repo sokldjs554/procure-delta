@@ -115,7 +115,9 @@ def _count(value: object, *, name: str) -> int:
     return result
 
 
-def extract_official_identifiers(value: object, *, max_nodes: int = 10_000) -> dict[str, tuple[str, ...]]:
+def extract_official_identifiers(
+    value: object, *, max_nodes: int = 10_000
+) -> dict[str, tuple[str, ...]]:
     found: dict[str, set[str]] = {key: set() for key in IDENTIFIER_KEYS}
     stack: list[object] = [value]
     seen = 0
