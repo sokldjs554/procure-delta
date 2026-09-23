@@ -81,3 +81,12 @@ def test_hosted_validator_allows_optional_provider_cost_to_remain_null() -> None
     summary = validate_hosted_artifact(artifact())
     assert summary["reported_cost_reduction_rate"] is None
     assert summary["cost_basis"] is None
+
+
+def test_hosted_validator_rejects_execution_errors_despite_measured_status_and_usage() -> None:
+    raw = artifact()
+    raw["extraction_routes"]["hosted_gated"]["rows"] = [
+        {"error_type": "HTTPStatusError", "http_status": 401},
+    ]
+    with pytest.raises(HostedEvaluationError, match="execution errors"):
+        validate_hosted_artifact(raw)

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+import httpx
 from pydantic import ValidationError
 
 from app.delta.engine import DeltaSnapshot, compute_delta
@@ -23,6 +24,40 @@ from app.models import OpportunityVersion, RawRecord
 from .metrics import field_metrics, percentile, ranking_metrics, rate, set_metrics
 from .provenance import load_dataset, provenance
 from .replay import instant, replay_at
+
+SAFE_PROVIDER_ERROR_TYPES = frozenset({
+    'invalid_request_error', 'authentication_error', 'permission_error', 'not_found_error',
+    'request_too_large', 'rate_limit_error', 'api_error', 'overloaded_error', 'billing_error',
+    'insufficient_quota',
+})
+
+
+def _http_diagnostics(error: Exception) -> dict[str, Any]:
+    """Keep bounded status/allowlisted labels, never provider text, URLs or headers."""
+    result: dict[str, Any] = {
+        'http_status': None, 'provider_error_type': None, 'provider_hint': None,
+    }
+    if not isinstance(error, httpx.HTTPStatusError):
+        return result
+    result['http_status'] = error.response.status_code
+    try:
+        envelope = error.response.json()
+    except ValueError:
+        return result
+    detail = envelope.get('error') if isinstance(envelope, dict) else None
+    if not isinstance(detail, dict):
+        return result
+    error_type = detail.get('type')
+    if isinstance(error_type, str) and error_type in SAFE_PROVIDER_ERROR_TYPES:
+        result['provider_error_type'] = error_type
+    # These are diagnostic hints, not a copy of an upstream message or a proven cause.
+    message = detail.get('message')
+    if isinstance(message, str) and len(message) <= 8192:
+        if 'credit balance is too low' in message.lower():
+            result['provider_hint'] = 'check_api_billing'
+        elif 'anthropic-workspace-id' in message.lower():
+            result['provider_hint'] = 'check_workspace_selection'
+    return result
 
 
 def bundle(text: str, kind: str = 'native_text') -> DocumentBundle:
@@ -63,6 +98,9 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
         start = time.perf_counter()
         used_hosted = extractor.provider != 'local'
         error_type = None
+        http_diagnostics: dict[str, Any] = {
+            'http_status': None, 'provider_error_type': None, 'provider_hint': None,
+        }
         call_counted = False
         usage_recorded = False
         try:
@@ -98,6 +136,7 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                 token_out.append(None)
                 costs.append(None)
             schema_ok, valid, predicted, error_type = False, False, {}, type(error).__name__
+            http_diagnostics = _http_diagnostics(error)
         elapsed = (time.perf_counter() - start) * 1000
         durations.append(elapsed)
         schema_failures += int(not schema_ok)
@@ -127,12 +166,19 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                 )
         rows.append({'id': case['id'], 'expected_valid': case['expected_valid'], 'valid': valid,
                      'schema_valid': schema_ok, 'fields': fields, 'trusted_fields': predicted,
-                     'duration_ms': elapsed, 'error_type': error_type})
+                     'duration_ms': elapsed, 'error_type': error_type, **http_diagnostics})
     n = len(cases)
     all_costs_known = bool(costs) and all(c is not None for c in costs)
     valid_gold = [r for r in rows if r['expected_valid']]
+    execution_errors = sum(r['error_type'] is not None for r in rows)
     return {
-        'status': 'measured', 'documents': n, 'field_accuracy': rate(correct_fields,
+        'status': 'failed' if execution_errors else 'measured',
+        'reason': 'execution errors; quality and savings are not validated' if execution_errors
+        else None,
+        'execution_errors': execution_errors,
+        'extractor': {'provider': extractor.provider, 'model': extractor.model,
+                      'version': extractor.extractor_version},
+        'documents': n, 'field_accuracy': rate(correct_fields,
             expected_fields),
         'correct_fields': correct_fields, 'expected_fields': expected_fields,
         'document_exact_accuracy': rate(sum(r['fields']['exact_match'] for r in valid_gold),
@@ -351,6 +397,7 @@ async def run_evaluation(root: Path, *, with_ocr: bool = False,
              'not generalization.'),
             'Outcome labels are not features and do not independently prove company suitability.',
             'Local OCR benchmark is separate from the default service fixture-fake OCR adapter.',
-            'Timings exclude live network, PostgreSQL, Redis and end-user request latency.',
+            ('Hosted route timings include provider network and retries; other timings exclude '
+             'live network, PostgreSQL, Redis and end-user request latency.'),
         ],
     }

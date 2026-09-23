@@ -24,10 +24,20 @@ python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.j
 
 성공 기준은 단순 HTTP 200이 아니다. `hosted_all`과 `hosted_gated`가 모두 measured이고, 각 route의 p50/p95 latency와 prompt/completion token이 존재하며, call/token reduction이 계산돼야 한다. Provider가 비용을 직접 반환하지 않으면 비용은 null로 남긴다. 실행 artifact는 업로드하지만 자동으로 공개 평가 결과를 덮어쓰지 않는다.
 
+HTTP/timeout 등 실행 예외가 있으면 route는 `failed`이며 절감 비교는 `not_run`이다.
+의도적으로 잘못된 문서를 모델·근거 검증기가 거절하는 경우와 실행 예외를 구분한다.
+실패 row에는 HTTP 상태와 허용 목록에 있는 provider 오류 분류만 보존한다. 키, URL,
+header, 응답 원문·오류 메시지는 보존하지 않는다. 일부 고정 문구는 청구/워크스페이스
+설정을 확인하라는 고정 hint로만 변환하며, hint만으로 원인을 확정하지 않는다.
+검증 단계는 `shell: bash`의 `pipefail`로 실패 종료 코드를 전파한다.
+[첫 Claude 실행과 결함 재현](hosted-evaluation-attempt.md)을 참조한다.
+
 기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.
 두 hosted 경로가 모두 실제 실행되면 provider 호출 수, prompt+completion token 수, provider가 직접 보고한 비용의 절감률을 별도로 기록한다.
 사용량/비용이 공급자 응답에 없으면 null이다. 모델 가격표를 추정해 비용을 채우지 않으며, 로컬 deterministic 경로를 유료 호출 수에 포함하지 않는다.
-CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
+CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. Hosted 실행은
+복사 전에 동일한 결과 검증을 통과해야 한다. 실패 diagnostic artifact는 남지만 공개
+snapshot은 유지된다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
 
 ## 데이터와 분모
 

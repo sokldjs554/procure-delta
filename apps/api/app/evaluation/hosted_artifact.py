@@ -33,6 +33,12 @@ def _route(raw: dict[str, Any], name: str) -> dict[str, Any]:
     route = routes.get(name)
     if not isinstance(route, dict) or route.get("status") != "measured":
         raise HostedEvaluationError(f"{name} was not measured")
+    rows = route.get("rows", [])
+    if route.get("execution_errors") or (
+        isinstance(rows, list)
+        and any(isinstance(row, dict) and row.get("error_type") for row in rows)
+    ):
+        raise HostedEvaluationError(f"{name} contains execution errors")
     return route
 
 
