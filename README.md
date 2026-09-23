@@ -155,6 +155,7 @@ amendment
 | deterministic extraction | 측정됨 | 30/30 labeled fields, 작은 합성 회귀셋 |
 | OCR · English synthetic | 측정됨 | Tesseract 17/18 fields, 영어 합성 이미지 3장 |
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
+| OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
 | hosted all | **미실행** | 정확도·latency·token·cost 없음 |
 | hosted gated | **미실행** | 정확도·latency·token·cost 없음 |
 
@@ -261,7 +262,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 전체 5단계 lifecycle demo는 합성입니다.
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
-- HWP 내용 추출과 실제 나라장터 한국어 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 OCR은 합성 렌더 이미지 3장/18필드 회귀셋에서만 측정했습니다.
+- HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 기본 서비스 OCR 어댑터도 fixture 전용입니다.
 - hosted LLM은 현재 평가하지 않았으므로 정확도·비용·token 수치를 주장하지 않습니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
