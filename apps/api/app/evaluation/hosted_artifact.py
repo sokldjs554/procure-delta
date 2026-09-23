@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 FORBIDDEN_KEY_PARTS = ("api_key", "authorization", "secret", "access_token", "bearer")
 
 
