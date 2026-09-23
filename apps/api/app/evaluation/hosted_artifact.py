@@ -49,7 +49,7 @@ def _positive_latency(route: dict[str, Any], key: str, name: str) -> float:
 def _nonnegative_int(value: Any, message: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise HostedEvaluationError(message)
-    return value
+    return int(value)
 
 
 def _unit_rate(value: Any, label: str) -> float:
