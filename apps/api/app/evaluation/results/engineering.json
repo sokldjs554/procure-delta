@@ -132,6 +132,11 @@
         "elapsed_seconds": 27.555093554999985
       },
       {
+        "gate": "backfill-scale",
+        "passed": true,
+        "elapsed_seconds": 19.282392245
+      },
+      {
         "gate": "resume-background-jobs",
         "passed": true,
         "elapsed_seconds": 1.8111793940000211
