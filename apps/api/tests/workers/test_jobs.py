@@ -766,3 +766,72 @@ async def test_transient_failure_reaches_terminal_dead_letter_after_max_attempts
     assert failure.attempts == 3
     assert failure.dead_lettered is True
     assert failure.next_retry_at is None
+
+
+@pytest.mark.asyncio
+async def test_terminal_worker_failures_are_captured_but_malformed_payloads_are_not(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: list[Exception] = []
+    monkeypatch.setattr("app.workers.jobs.capture_tracked_exception", captured.append)
+
+    malformed_source = SourceRegistry(
+        code="capture-malformed", display_name="Mock", base_url="https://example.invalid"
+    )
+    terminal_source = SourceRegistry(
+        code="capture-terminal", display_name="Mock", base_url="https://example.invalid"
+    )
+    session.add_all([malformed_source, terminal_source])
+    await session.commit()
+
+    malformed = await ingest_record(
+        {"session": session},
+        "capture-malformed",
+        {"source_record_id": "missing-payload"},
+    )
+    assert malformed["status"] == "dead_lettered"
+    assert captured == []
+
+    async def fail_unexpectedly(*_args: object, **_kwargs: object) -> None:
+        raise ValueError("synthetic programmer error")
+
+    monkeypatch.setattr("app.workers.jobs.ingest_raw_record", fail_unexpectedly)
+    terminal = await ingest_record(
+        {"session": session},
+        "capture-terminal",
+        {"source_record_id": "notice-1", "raw_payload": {"title": "Synthetic"}},
+    )
+    assert terminal["status"] == "dead_lettered"
+    assert len(captured) == 1
+    assert isinstance(captured[0], ValueError)
+
+
+@pytest.mark.asyncio
+async def test_transient_worker_error_is_captured_only_when_retry_budget_is_exhausted(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: list[Exception] = []
+    session.add(
+        SourceRegistry(
+            code="capture-retry", display_name="Mock", base_url="https://example.invalid"
+        )
+    )
+    await session.commit()
+
+    async def unavailable(*_args: object, **_kwargs: object) -> None:
+        raise httpx.ConnectError("synthetic outage")
+
+    monkeypatch.setattr("app.workers.jobs.ingest_raw_record", unavailable)
+    monkeypatch.setattr("app.workers.jobs.capture_tracked_exception", captured.append)
+    payload = {"source_record_id": "notice-1", "raw_payload": {"title": "Synthetic"}}
+
+    with pytest.raises(Retry):
+        await ingest_record({"session": session}, "capture-retry", payload)
+    with pytest.raises(Retry):
+        await ingest_record({"session": session}, "capture-retry", payload)
+    assert captured == []
+
+    result = await ingest_record({"session": session}, "capture-retry", payload)
+    assert result["status"] == "dead_lettered"
+    assert len(captured) == 1
+    assert isinstance(captured[0], httpx.ConnectError)

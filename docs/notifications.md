@@ -39,15 +39,22 @@ must filter `NotificationEvent.user_id` by the authenticated owner; local receip
 `LocalNotificationReceipt.notification_event_id`. Operator failures contain only the event ID
 and a bounded error code, never a recipient, destination URL or notification body.
 
-External webhook delivery requires explicit operator configuration of
-`NOTIFICATION_EXTERNAL_ENABLED=true` and an owner-keyed
-`NOTIFICATION_WEBHOOK_DESTINATIONS` JSON mapping. Values are secret HTTPS URLs, not user-editable
-profile or preference fields. Each destination is validated and DNS-pinned to a public address;
-credentials in the URL, private addresses, redirects and environment proxies are rejected or
-disabled. Configure endpoints only after external-message authorization. The email-compatible
-`EmailChannel` produces an `EmailMessage` and stable Message-ID through the `EmailTransport`
-protocol; no SMTP/provider transport is bundled. Selecting email without an installed transport
-produces an honest `channel_not_configured` terminal failure.
+External delivery requires explicit operator configuration of
+`NOTIFICATION_EXTERNAL_ENABLED=true`; no external channel is enabled by default.
+
+Webhook delivery uses an owner-keyed `NOTIFICATION_WEBHOOK_DESTINATIONS` JSON mapping.
+Values are secret HTTPS URLs, not user-editable profile or preference fields. Each destination is
+validated and DNS-pinned to a public address; credentials in the URL, private addresses, redirects
+and environment proxies are rejected or disabled.
+
+Email delivery uses `NOTIFICATION_SMTP_HOST`, optional SMTP credentials, one operator-owned
+`NOTIFICATION_EMAIL_SENDER`, and an owner-keyed `NOTIFICATION_EMAIL_RECIPIENTS` mapping.
+STARTTLS is enabled by default. `EmailChannel` emits a stable Message-ID from the notification
+dedupe key and `SmtpTransport` performs one bounded SMTP attempt. CI starts a loopback SMTP
+receiver and verifies a real TCP delivery from the durable outbox path through the worker to the
+received message. This is transport integration evidence, not proof of delivery through a public
+email provider. Selecting email without complete operator configuration still produces an honest
+`channel_not_configured` terminal failure.
 
 External attempts reserve their attempt count and a 60-second lease before I/O. Each adapter
 performs one request, with a connect timeout and bounded total duration. Retryable network,
@@ -60,7 +67,8 @@ reset the event and its associated failure in one transaction (operator admin bo
 
 Local receipts and sent status commit atomically with a unique event receipt key. External
 delivery is at least once: a receiver may accept a request before our completion commit fails.
-The same `Idempotency-Key` is reused, but external duplicate suppression requires receiver
-support; a Slack/Discord-style endpoint may not provide that guarantee. No external provider
-delivery was tested. Reconciliation currently scans current opportunities/profiles and locks
+The same webhook `Idempotency-Key` or email Message-ID is reused, but external duplicate
+suppression requires receiver/provider support. A Slack/Discord-style endpoint or SMTP provider
+may still accept the same message twice after an ambiguous success. Loopback SMTP is tested;
+no public email or webhook provider delivery is claimed. Reconciliation currently scans current opportunities/profiles and locks
 them for a consistent decision; large-dataset throughput is not measured or claimed.

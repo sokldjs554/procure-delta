@@ -41,12 +41,23 @@ class Settings(BaseSettings):
     extraction_max_completion_tokens: int = Field(default=4096, ge=1, le=32768)
     notification_external_enabled: bool = False
     notification_webhook_destinations: dict[str, SecretStr] = Field(default_factory=dict)
+    notification_smtp_host: str | None = None
+    notification_smtp_port: int = Field(default=587, ge=1, le=65535)
+    notification_smtp_starttls: bool = True
+    notification_smtp_username: SecretStr | None = None
+    notification_smtp_password: SecretStr | None = None
+    notification_email_sender: str | None = None
+    notification_email_recipients: dict[str, SecretStr] = Field(default_factory=dict)
     demo_auth_enabled: bool = True
     demo_operator_secret: SecretStr | None = None
     session_cookie_secure: bool = False
     session_ttl_seconds: int = Field(default=86400, ge=300, le=86400)
     cors_origins: list[str] = ["http://localhost:3000"]
     release_revision: str = "development"
+    sentry_enabled: bool = False
+    sentry_dsn: SecretStr | None = None
+    sentry_environment: str = "development"
+    sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
 
     @field_validator("database_url", mode="before")
     @classmethod

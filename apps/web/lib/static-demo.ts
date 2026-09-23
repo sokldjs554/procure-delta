@@ -717,7 +717,6 @@ const engineeringEvidence: EngineeringEvidence = {
       { gate: "queue-scale", passed: true, elapsed_seconds: 50.98416539200002 },
       { gate: "query-plans", passed: true, elapsed_seconds: 1.6847892979999983 },
       { gate: "http-load", passed: true, elapsed_seconds: 27.555093554999985 },
-      { gate: "backfill-scale", passed: true, elapsed_seconds: 19.282392245 },
     ],
     dependencies: {
       database: true,

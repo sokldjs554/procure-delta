@@ -61,6 +61,10 @@ API는 저장소 checkout에서는 원본 artifact를 우선 읽고, Docker 이�
 
 측정은 production `poll_source_pages()`와 실제 PostgreSQL ingest/normalize/checkpoint 경로를 사용한다. 첫 5페이지 처리 후 의도적으로 호출을 끝내고, 다음 호출이 DB에 남은 cursor에서 나머지 15페이지를 이어 처리하는지 확인한다.
 
+이 benchmark는 최초 호출과 재개 호출 두 번을 측정한다. 각 호출은 production과 동일하게 최대 100페이지이며, 최초 batch와 남은 페이지가 각각 100페이지 이하여야 한다. 이 범위를 벗어나는 조합은 DB 접근 전에 거절한다. 예를 들어 `--records 2000 --page-size 10 --first-batch-pages 5`는 재개할 195페이지가 한도를 넘으므로 허용하지 않는다. 이 제한은 두 호출을 비교하는 benchmark의 입력 계약이며 전체 수집기의 누적 처리 한도가 아니다.
+
+기존 release snapshot의 gate 목록에는 이후 backfill gate를 소급해서 넣지 않는다. 공개 UI의 별도 Backfill 카드와 이 절의 실행 번호로 후속 측정을 확인한다.
+
 이 값은 **합성 local PostgreSQL backfill** 측정이다. 실제 나라장터 HTTP 응답 지연·rate limit·실문서 다운로드·OCR·hosted LLM은 포함하지 않으므로 운영 수집 처리량으로 일반화하지 않는다.
 
 ## 실제 로컬 HTTP 부하

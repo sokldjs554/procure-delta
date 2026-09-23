@@ -251,7 +251,10 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - **Frontend**: Next.js 16, React 19, TypeScript strict
 - **Document/AI**: PyMuPDF, OCR adapter boundary, deterministic extractor, provider-neutral structured extraction adapter
 - **Quality**: pytest, Ruff, strict mypy, ESLint, TypeScript, Playwright
-- **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage\n- **Development**: AI-assisted implementation with branch/PR review, static checks, regression tests, repeated release gates, and explicit measured/not_run evidence boundaries
+- **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage
+- **Notifications**: PostgreSQL outbox, ARQ delivery, local receipt, HTTPS webhook, bounded SMTP email transport
+- **Observability**: structured JSON logs, readiness/admin diagnostics, optional privacy-scrubbed Sentry SDK integration
+- **Development**: AI-assisted implementation with branch/PR review, static checks, regression tests, repeated release gates, and explicit measured/not_run evidence boundaries
 
 ## 범위와 한계
 
@@ -264,6 +267,8 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
 - 내부 크레딧 원장의 grant → reserve → commit/refund와 중복 차감 방지는 구현했습니다. 외부 PG·정기구독 연동, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
+- SMTP email은 CI loopback 서버로 실제 TCP 전송까지 검증했습니다. 실제 Gmail/SES/SendGrid 등 public provider 전송 성공을 주장하지 않습니다.
+- Sentry SDK 경계와 redaction은 CI에서 검증하지만 실제 Sentry DSN으로 외부 이벤트 전송을 운영했다는 증거는 아닙니다.
 
 자세한 내용: [Limitations](docs/limitations.md)
 

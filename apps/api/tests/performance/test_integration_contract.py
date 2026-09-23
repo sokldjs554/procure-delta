@@ -33,3 +33,20 @@ def test_backfill_benchmark_requires_a_real_resume_boundary(monkeypatch):
         asyncio.run(backfill_load(1000, page_size=0))
     with pytest.raises(ValueError, match="stop before the final page"):
         asyncio.run(backfill_load(1000, page_size=100, first_batch_pages=10))
+
+
+@pytest.mark.asyncio
+async def test_backfill_benchmark_resumes_at_both_page_budget_limits(monkeypatch):
+    from app.evaluation.integration import backfill_load
+    from tests.conftest import TEST_DATABASE_URL
+
+    monkeypatch.setenv("BENCH_DATABASE_URL", TEST_DATABASE_URL)
+    result = await backfill_load(200, page_size=1, first_batch_pages=100)
+
+    assert result["successful"] is True
+    assert result["first_batch_pages"] == 100
+    assert result["resume_cursor"] == "100"
+    assert result["resumed_pages"] == 100
+    assert result["ingest_runs"] == result["successful_runs"] == 200
+    assert result["normalized_records"] == 200
+    assert result["resumed_from_checkpoint"] is True

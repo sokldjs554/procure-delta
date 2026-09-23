@@ -174,6 +174,10 @@ async def backfill_load(
     expected_pages = (records + page_size - 1) // page_size
     if not 1 <= first_batch_pages < expected_pages:
         raise ValueError("first_batch_pages must stop before the final page")
+    if first_batch_pages > 100:
+        raise ValueError("first_batch_pages must be between 1 and 100")
+    if expected_pages - first_batch_pages > 100:
+        raise ValueError("remaining pages must not exceed 100 for the single resume batch")
 
     database_url = os.environ["BENCH_DATABASE_URL"]
     require_benchmark_database(database_url)
