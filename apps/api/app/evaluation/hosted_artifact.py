@@ -46,12 +46,28 @@ def _positive_latency(route: dict[str, Any], key: str, name: str) -> float:
     return float(value)
 
 
+def _nonnegative_int(value: Any, message: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise HostedEvaluationError(message)
+    return value
+
+
+def _unit_rate(value: Any, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise HostedEvaluationError(f"{label} is not measured")
+    result = float(value)
+    if not 0 <= result <= 1:
+        raise HostedEvaluationError(f"{label} is outside [0, 1]")
+    return result
+
+
 def _token_total(route: dict[str, Any], name: str) -> int:
-    prompt = route.get("prompt_tokens")
-    completion = route.get("completion_tokens")
-    for label, value in (("prompt", prompt), ("completion", completion)):
-        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-            raise HostedEvaluationError(f"{name} {label} tokens are not measured")
+    prompt = _nonnegative_int(
+        route.get("prompt_tokens"), f"{name} prompt tokens are not measured"
+    )
+    completion = _nonnegative_int(
+        route.get("completion_tokens"), f"{name} completion tokens are not measured"
+    )
     return prompt + completion
 
 
@@ -96,16 +112,12 @@ def validate_hosted_artifact(raw: dict[str, Any]) -> dict[str, Any]:
     if optimization.get("all_calls") != all_calls or optimization.get("gated_calls") != gated_calls:
         raise HostedEvaluationError("hosted optimization call counts do not match routes")
 
-    call_reduction = optimization.get("call_reduction_rate")
-    token_reduction = optimization.get("token_reduction_rate")
-    for label, value in (
-        ("call reduction", call_reduction),
-        ("token reduction", token_reduction),
-    ):
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            raise HostedEvaluationError(f"{label} is not measured")
-        if not 0 <= value <= 1:
-            raise HostedEvaluationError(f"{label} is outside [0, 1]")
+    call_reduction = _unit_rate(
+        optimization.get("call_reduction_rate"), "call reduction"
+    )
+    token_reduction = _unit_rate(
+        optimization.get("token_reduction_rate"), "token reduction"
+    )
 
     if optimization.get("all_tokens") != all_tokens:
         raise HostedEvaluationError("optimization all_tokens does not match hosted_all")
@@ -118,8 +130,8 @@ def validate_hosted_artifact(raw: dict[str, Any]) -> dict[str, Any]:
         "avoided_calls": all_calls - gated_calls,
         "all_tokens": all_tokens,
         "gated_tokens": gated_tokens,
-        "call_reduction_rate": float(call_reduction),
-        "token_reduction_rate": float(token_reduction),
+        "call_reduction_rate": call_reduction,
+        "token_reduction_rate": token_reduction,
         "reported_cost_reduction_rate": optimization.get("reported_cost_reduction_rate"),
         "cost_basis": optimization.get("cost_basis"),
     }
