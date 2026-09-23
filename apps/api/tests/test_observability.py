@@ -48,6 +48,7 @@ def test_error_tracking_uses_privacy_safe_sdk_options() -> None:
     assert options["send_default_pii"] is False
     assert options["traces_sample_rate"] == 0.25
     assert options["before_send"] is scrub_sentry_event
+    assert configure_error_tracking(Settings(_env_file=None), init=init) is False
 
 
 def test_sentry_scrubber_removes_request_user_and_sensitive_details() -> None:
