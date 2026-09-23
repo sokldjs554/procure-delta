@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = Field(default=86400, ge=300, le=86400)
     cors_origins: list[str] = ["http://localhost:3000"]
     release_revision: str = "development"
+    sentry_enabled: bool = False
+    sentry_dsn: SecretStr | None = None
+    sentry_environment: str = "development"
+    sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
 
     @field_validator("database_url", mode="before")
     @classmethod

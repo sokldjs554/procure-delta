@@ -18,6 +18,11 @@ docker compose ps
 docker compose logs --tail 100 api worker scheduler migrate
 ```
 
+API와 worker/scheduler는 동일한 JSON logging formatter를 사용한다. `SENTRY_ENABLED=false`가 기본이며,
+실제 error tracking을 켜려면 `SENTRY_ENABLED=true`와 `SENTRY_DSN`을 모두 설정해야 한다.
+Sentry 전송 시 request/user는 제거하고 exception message와 secret-shaped extra/tag/breadcrumb data를
+redact한다. `SENTRY_TRACES_SAMPLE_RATE` 기본값은 0이다.
+
 기본 알림은 로컬 영수증이다. 이메일·웹훅을 실제 발송했다고 해석하지 않는다.
 평가용 OCR이 있는 것과 기본 서비스에 실제 OCR 공급자가 연결된 것은 다르다.
 나라장터/외부 LLM 설정과 스모크는 `source-contracts.md` 및 `evaluation.md`에 분리했다.
@@ -53,7 +58,7 @@ E2E는 `artifacts/e2e/result.json`과 화면 캡처를 본다. 파일이 없거�
 이 저장소는 컨테이너 실행 계약과 Render reference Blueprint를 제공하지만 full backend cloud stack을 실제 운영했다고 주장하지 않는다.
 클라우드 구성은 PostgreSQL·Key Value, 별도 API/worker/scheduler/web, S3-compatible 공용 문서 저장소, 비밀값, HTTPS/CORS, readiness와 migration 순서를 분리한다.
 worker/scheduler는 schema head가 적용될 때까지 시작을 기다리며, API와 worker는 같은 S3-compatible blob store를 사용한다. 로컬 Docker Compose는 기존 파일시스템 backend를 유지한다.
-운영 인증·기관 격리 검증·보존 정책·외부 모니터링 서비스 연결과 실제 cloud sync는 별도 운영화 과제다.
+운영 인증·기관 격리 검증·보존 정책, 실제 Sentry 프로젝트/알림 규칙 운영과 실제 cloud sync는 별도 운영화 과제다.
 
 자세한 배포 경계: [Cloud deployment contract](cloud-deployment.md)
 

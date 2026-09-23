@@ -41,6 +41,14 @@ services:
         value: "false"
       - key: EXTRACTION_MODE
         value: deterministic
+      - key: SENTRY_ENABLED
+        value: "false"
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
       - key: DEMO_AUTH_ENABLED
         value: "true"
       - key: DEMO_OPERATOR_SECRET
@@ -87,6 +95,14 @@ services:
         value: "false"
       - key: EXTRACTION_MODE
         value: deterministic
+      - key: SENTRY_ENABLED
+        value: "false"
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
 
   - type: worker
     name: procure-delta-scheduler
@@ -125,6 +141,14 @@ services:
         value: "false"
       - key: EXTRACTION_MODE
         value: deterministic
+      - key: SENTRY_ENABLED
+        value: "false"
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0"
 
   - type: web
     name: procure-delta-web
