@@ -157,6 +157,7 @@ amendment
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
 | OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
 | OCR · 공식 공고 원본 스캔 | 런타임 수정 후 2회 측정 · 품질 미달 | 원본 2건/8쪽 처리, 첫 페이지 anchor **4/8**, 검증 통과 필드 **0/6**; [메모리 실패·수정·반복 기록](docs/public-scan-ocr.md) |
+| OCR · PP-OCRv5 오프라인 후보 | 2회 측정 · 운영 미채택 | 첫 페이지 6건 중 **5건 완료·1건 실패**가 반복됨. 원본 스캔 2건 anchor **8/8**, 검증 통과 필드 **0/6**; [자원·품질·실패 포함 비교](docs/ocr-candidate-evaluation.md) |
 | 한국어 공고 항목 해석 v2 | 제한적 개선 | 별도 2건의 원문 텍스트 **0/6 → 3/6**, 같은 문서의 OCR은 **0/18**; [조건·실패 포함 비교](docs/korean-form-grounding.md) |
 | hosted all | **외부 실측 완료 · 합성 회귀** | Claude Haiku 4.5, v3 검증 통과 필드 **30/30**, 호출 10회, 22,343 tokens |
 | hosted gated | **외부 실측 완료** | **30/30은 로컬 규칙 결과**, 호출 5회, 10,149 tokens; 전체 호출 대비 호출 50%·토큰 54.6% 감소 |
@@ -277,6 +278,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
 - HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 로컬 기본값은 fixture이며, 실제 워커에는 [제한된 Tesseract 런타임](docs/runtime-ocr.md)을 선택할 수 있습니다. 런타임 연결 검증과 인식 정확도는 별개입니다.
 - [공식 사이트의 원본 스캔 2건](docs/public-scan-ocr.md)은 워커 어댑터의 페이지 간 메모리 문제를 수정한 뒤 두 번 모두 8쪽 처리를 완료했습니다. 같은 기관·유사 서식의 작은 표본이며, 첫 페이지의 검증 통과 필드는 **0/6**입니다. 추가 진단 재실측에서도 같은 결과이며, 두 건 모두 제목·발주기관·분류 누락으로 스키마 단계에서 거절됐습니다. 전체 PDF 추출 승인·DB 저장·클라우드 성능·나라장터 첨부 수집 실측을 뜻하지 않습니다.
+- [PP-OCRv5 후보 비교](docs/ocr-candidate-evaluation.md)는 같은 원본 스캔의 첫 페이지 anchor를 **4/8 → 8/8**로 개선했지만 검증 통과 필드는 **0/6**입니다. 다른 기관 문서를 포함한 6건 중 1건은 두 번 모두 실패해 해당 그룹의 정확도는 `null`입니다. 후보는 별도 1 GiB 주소 공간 제한을 사용하며, 완료 사례의 최대 RSS는 약 693~716 MiB였습니다. 전체 PDF나 현재 512 MiB 워커에서 사용할 수 있는 대안으로 검증된 것은 아닙니다.
 - hosted LLM은 합성 10건에서 v2·v3 각 1회의 외부 정확도·호출·토큰·지연시간을 실측했습니다. 최신 단독 경로는 30/30이며 gated의 30/30은 로컬 규칙 결과입니다. 같은 버전 반복 평가·실문서 일반화·LLM 추가 효용·실제 비용은 미검증입니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
