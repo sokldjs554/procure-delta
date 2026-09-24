@@ -30,7 +30,7 @@ HWP 내용 추출은 구현하지 않았다.
 
 ## 서비스와 운영
 
-크레딧 grant/reserve/commit/refund와 불변 ledger는 구현·CI 검증했지만, 외부 결제사 청구나 유료 구독 운영 증거는 아니다.
+크레딧 grant/reserve/commit/refund와 불변 ledger는 구현·CI 검증했다. [hosted 워커 연결](extraction-credits.md)은 운영자가 지정한 공유 파이프라인 예산에 한정하며, 실제 provider 비용·고객별 과금·OCR 과금·외부 결제사 청구·유료 구독 운영 증거는 아니다.
 운영용 인증, 기관별 강한 격리, 실제 DSN으로 외부 Sentry event 수신, full backend 클라우드 운영을 완료했다고 주장하지 않는다.
 CPU 5만 건 루프는 DB/Redis/HTTP 처리량이 아니며 실제 공개 문서 5만 건을 수집했다는 의미도 아니다.
 query-plan gate는 현재 쿼리의 실행 계획을 확인하는 검증 도구이며, 별도 인덱스 변경 효과를 과장하지 않는다.

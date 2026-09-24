@@ -12,6 +12,14 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.credits.extraction import (
+    ExtractionCreditPolicy,
+    ExtractionCreditReviewRequired,
+    assert_no_prior_attempt,
+    assert_open_reservation,
+    reserve_extraction,
+    settle_extraction,
+)
 from app.documents.quality import assess_page_quality
 from app.extraction.base import StructuredExtractor
 from app.extraction.schemas import SCHEMA_VERSION, DocumentBundle, DocumentPage, ExtractionResult
@@ -104,6 +112,7 @@ async def persist_extraction(
     extractor: StructuredExtractor,
     *,
     expected_key: str | None = None,
+    credit_policy: ExtractionCreditPolicy | None = None,
 ) -> StructuredExtraction | None:
     # The lock covers the external call and insert. A completed replay never calls the provider.
     version = (
@@ -117,7 +126,7 @@ async def persist_extraction(
     key = extraction_identity(document, extractor)
     if expected_key is not None and key != expected_key:
         return None  # A stale queued job must not consume a newer input under its old identity.
-    existing = await session.scalar(
+    existing: StructuredExtraction | None = await session.scalar(
         select(StructuredExtraction).where(
             StructuredExtraction.opportunity_version_id == version_id,
             StructuredExtraction.extraction_key == key,
@@ -125,6 +134,42 @@ async def persist_extraction(
     )
     if existing is not None:
         return existing
+    await assert_no_prior_attempt(session, version_id, key)
+    if credit_policy is None:
+        return await _run_and_persist(session, version, extractor, document, key)
+
+    ticket = await reserve_extraction(session, version_id, key, credit_policy)
+    try:
+        # Reservation commit released the lock. Recheck everything before I/O.
+        version = (await session.scalars(
+            select(OpportunityVersion).where(OpportunityVersion.id == version_id)
+            .with_for_update().execution_options(populate_existing=True)
+        )).one()
+        await assert_open_reservation(session, credit_policy.account, ticket)
+        current = await build_document_bundle(session, version_id)
+        existing = await session.scalar(select(StructuredExtraction).where(
+            StructuredExtraction.opportunity_version_id == version_id,
+            StructuredExtraction.extraction_key == key,
+        ))
+        if not current.pages or extraction_identity(current, extractor) != key or existing:
+            await settle_extraction(session, credit_policy.account, ticket, "refund")
+            await session.commit()
+            return existing
+        row = await _run_and_persist(session, version, extractor, current, key)
+        await settle_extraction(session, credit_policy.account, ticket, "commit")
+        # The result and debit either both commit or neither commits.
+        await session.commit()
+        return row
+    except Exception:
+        # Do not guess whether the provider ran, or expose response text in an error.
+        await session.rollback()
+        raise ExtractionCreditReviewRequired("extraction attempt requires review") from None
+
+
+async def _run_and_persist(
+    session: AsyncSession, version: OpportunityVersion, extractor: StructuredExtractor,
+    document: DocumentBundle, key: str,
+) -> StructuredExtraction:
     started = time.perf_counter()
     result = await extractor.extract(document)
     latency_ms = round((time.perf_counter() - started) * 1000)
@@ -149,7 +194,7 @@ async def persist_extraction(
                     },
                 )
     row = StructuredExtraction(
-        opportunity_version_id=version_id,
+        opportunity_version_id=version.id,
         extractor_version=extractor.extractor_version,
         provider=extractor.provider,
         model=extractor.model,
