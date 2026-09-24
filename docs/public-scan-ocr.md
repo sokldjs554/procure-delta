@@ -134,6 +134,48 @@ baseline commit `4765bc2fbe04862e421aabbfcb6cddf3ac6d6f82` has the identical ful
 tree (`04110b4d2ed5ef8a0237b8dcfd04fb2d461eee85`). Old provenance was not rewritten.
 Model content hashes and environment details are in every artifact.
 
+## Why completed recognition still earns zero trusted fields
+
+A [diagnostic rerun](../artifacts/evaluation/public-scan-diagnostics.json) on clean
+commit `6fda858d632b654ae471691ae84a3c9755cb25e8` adds the rejection stage without
+changing the runtime, extractor, validator, annotations or scoring. Both PDFs
+completed again (22.23s and 21.54s). Dataset/model/runtime identity and all
+recognized-text hashes match the earlier completed runs; anchors remain **4/8**
+and trusted fields **0/6**.
+
+Both first pages have `rejection_stage: schema` and `schema_error_fields` of
+`buyer_name`, `procurement_type`, and `title`. The deterministic proposal is
+missing those required fields. `grounding_issues` is empty because evidence
+validation is reached only after a valid schema; it does **not** mean these
+documents passed grounding. Native empty-text controls fail at the same stage.
+
+Private inspection of the recognized first-page text and original images
+separates the likely contributors:
+
+- The title's label, colon and value are split across OCR lines, with checkbox
+  bullets misrecognized. The current explicit-label extractor does not accept
+  that arrangement. An anchor can match after whitespace removal while no
+  structured title is proposed.
+- The small header names the buyer in the image, but the expected buyer anchor
+  does not match the OCR text. Even perfect recognition would still need an
+  explicitly supported interpretation of the managing-institution header.
+- The expected `services` category is a semantic annotation from the scope of
+  work. It is not an explicit supported category label on these pages.
+
+These are development diagnoses, not evidence that the original documents lack
+the fields, nor proof that one parser change would fix them. Recognition and
+layout, label coverage, and semantic extraction require separate evaluation.
+No missing buyer is guessed, no OCR characters are manually corrected, and no
+validation requirement is relaxed to obtain a passing score.
+
+New OCR scores expose only the rejection stage, known schema field names (or
+`unknown` for root/unknown locations), and existing typed grounding field/code
+pairs. They omit validation messages, rejected values and evidence quotes.
+A valid but annotation-inaccurate output has no rejection stage; accuracy is
+still reported separately. Recognition/probe failures remain separate case
+statuses and do not receive invented downstream diagnostics. Historical
+artifacts are unchanged; this additive diagnostic appears in new evaluations.
+
 ## Reproduction and remaining limits
 
 Download complete source files to the manifest filenames and install the API

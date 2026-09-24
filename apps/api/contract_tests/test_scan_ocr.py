@@ -84,6 +84,12 @@ class ScanOcrTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["native_control"]["summary"]["trusted_correct_fields"], 0)
         self.assertEqual(result["sources"][0]["native_characters_by_page"], [0, 0])
         self.assertEqual(result["runtime"]["rows"][0]["scored_page"], 2)
+        self.assertIsNone(result["runtime"]["rows"][0]["rejection_stage"])
+        native_row = result["native_control"]["rows"][0]
+        self.assertEqual(native_row["rejection_stage"], "schema")
+        self.assertEqual(native_row["schema_error_fields"],
+                         ["buyer_name", "procurement_type", "title"])
+        self.assertEqual(native_row["grounding_issues"], [])
         self.assertNotIn("Private unscored material", json.dumps(result))
         self.assertNotIn("Title: Wrong page", json.dumps(result))
 

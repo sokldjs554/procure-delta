@@ -14,7 +14,10 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from app.extraction.deterministic import DeterministicExtractor
+from app.extraction.schemas import StructuredFields
 from app.extraction.validation import validate_extraction
 
 from .metrics import field_metrics, rate
@@ -83,10 +86,32 @@ async def score_text(text: str, expected: dict[str, Any]) -> dict[str, Any]:
     document = bundle(text, "ocr_evaluation")
     proposal = await DeterministicExtractor().extract(document)
     validation = validate_extraction(proposal, document)
+    # Match hosted evaluation's publishable diagnostics: no values, quotes,
+    # arbitrary keys or Pydantic messages (which can contain source text).
+    schema_error_fields: list[str] = []
+    rejection_stage = None
+    if not validation.valid:
+        try:
+            StructuredFields.model_validate(proposal.output)
+        except ValidationError as error:
+            schema_error_fields = sorted({
+                str(item["loc"][0])
+                if item["loc"] and item["loc"][0] in StructuredFields.model_fields
+                else "unknown"
+                for item in error.errors(include_input=False, include_context=False,
+                                         include_url=False)
+            })
+            rejection_stage = "schema"
+        else:
+            rejection_stage = "grounding"
     trusted = canonical(validation.fields.model_dump(mode="json")) if validation.fields else {}
     return {
         "field_metrics": field_metrics(canonical(proposal.output), expected),
         "downstream_valid": validation.valid,
+        "rejection_stage": rejection_stage,
+        "schema_error_fields": schema_error_fields,
+        "grounding_issues": [issue.model_dump(mode="json")
+                             for issue in validation.grounding_issues],
         "trusted_field_metrics": field_metrics(trusted, expected),
     }
 
