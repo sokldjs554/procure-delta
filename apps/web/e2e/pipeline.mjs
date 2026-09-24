@@ -88,12 +88,29 @@ try {
   await page.getByRole("link", { name: "평가·한계" }).click();
   await page.getByRole("heading", { name: "추출 경로 비교" }).waitFor();
   const hostedAll = page.locator(".evaluation-route-row").filter({ hasText: "hosted all" });
-  await hostedAll.getByText("미실행", { exact: true }).first().waitFor();
+  await hostedAll.getByText("측정됨", { exact: true }).waitFor();
+  await hostedAll.getByText("60.0%", { exact: true }).waitFor();
+  const hostedEvidence = page.getByLabel("외부 Claude 실측");
+  await hostedEvidence.getByText(/15,654 → 7,317/).waitFor();
+  await hostedEvidence.getByText(/53.3% 감소/).waitFor();
+  await hostedEvidence.getByText(/로컬 규칙 처리 5건/).waitFor();
+  await page.screenshot({ path: resolve(output, "hosted-evidence-desktop.png"), fullPage: true });
   assert.deepEqual(errors, []);
   await desktop.close();
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mobileView = await openPipeline(mobile);
+  await mobileView.page.goto(`${web}/about`);
+  await mobileView.page.getByLabel("외부 Claude 실측").getByText(/15,654 → 7,317/).waitFor();
+  assert.equal(
+    await mobileView.page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+    false,
+  );
+  await mobileView.page.screenshot({
+    path: resolve(output, "hosted-evidence-mobile.png"), fullPage: true,
+  });
+  await mobileView.page.goto(`${web}/pipeline`);
+  await mobileView.page.getByRole("heading", { name: "파이프라인을 직접 재생해보세요" }).waitFor();
   assert.equal(
     await mobileView.page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
     false,

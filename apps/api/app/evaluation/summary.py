@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from app.evaluation.hosted_artifact import validate_hosted_artifact
+
 
 class EvaluationRouteSummary(BaseModel):
     status: Literal['measured', 'not_run'] = 'not_run'
@@ -202,3 +204,58 @@ def read_summary(path: Path) -> EvaluationSummary:
         hosted_optimization=optimization,
         routes=routes,
     )
+
+
+def read_published_summary(directory: Path) -> EvaluationSummary:
+    """Combine independently measured artifacts without rewriting their provenance."""
+    result = read_summary(directory / "local.json")
+    result.routes["ocr_korean"] = read_korean_ocr_route(directory / "korean-ocr.json")
+    hosted_path = directory / "hosted.json"
+    if not hosted_path.exists():
+        return result
+    raw = json.loads(hosted_path.read_text(encoding="utf-8"))
+    validate_hosted_artifact(raw)
+    hosted = read_summary(hosted_path)
+    if hosted.dataset_sha256 != result.dataset_sha256:
+        raise ValueError("published hosted and local datasets do not match")
+    for name in ("hosted_all", "hosted_gated"):
+        route = raw["extraction_routes"][name]
+        model = route["extractor"]["model"]
+        commit = raw["provenance"]["git_commit"]
+        result.routes[name] = hosted.routes[name]
+        result.routes[name].notice = (
+            f"{model} · {hosted.measured_at} · commit {commit}. "
+            f"저자 작성 합성 {route['documents']}건의 1회 실측이며 "
+            "실제 문서 일반화 성능이 아닙니다."
+        )
+        normal_rejections = sum(row["expected_valid"] and not row["valid"] for row in route["rows"])
+        result.routes[name].notice = (
+            (result.routes[name].notice or "")
+            + f" 정상 문서 중 검증 거절은 {normal_rejections}건입니다."
+        )
+    gated_rows = raw["extraction_routes"]["hosted_gated"]["rows"]
+    local_rows = [row for row in gated_rows if row["response_diagnostics"] is None]
+    local_correct = sum(row["fields"]["correct"] for row in local_rows)
+    local_support = sum(row["fields"]["expected_fields"] for row in local_rows)
+    recovered = sum(
+        row["expected_valid"] and row["valid"] and row["response_diagnostics"] is not None
+        for row in gated_rows
+    )
+    result.routes["hosted_gated"].notice = (result.routes["hosted_gated"].notice or "") + (
+        f" 로컬 규칙 처리 {len(local_rows)}건의 정답 필드는 {local_correct}/{local_support}이며, "
+        f"외부 모델이 추가로 수용한 정상 문서는 {recovered}건입니다."
+    )
+    result.hosted_evaluated = True
+    result.hosted_optimization = hosted.hosted_optimization
+    result.hosted_optimization.notice = (
+        "경로 전체 지연시간에는 gated의 로컬 처리도 포함됩니다. "
+        "호출 수는 논리 호출이며 HTTP 재시도 횟수와 다릅니다. "
+        "반환되지 않은 비용은 미측정으로 유지합니다."
+    )
+    result.notice = (
+        "서로 다른 시점에 저장한 소규모 합성 회귀 결과입니다. "
+        "아래 저장 시각과 소스 해시는 로컬·영어 OCR 실행 기준이며, "
+        "외부 Claude의 별도 실행 시각과 commit은 경로 설명에 표시합니다. "
+        "현재 운영 지표나 실제 조달 문서의 일반화 성능이 아닙니다."
+    )
+    return result

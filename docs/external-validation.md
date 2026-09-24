@@ -1,8 +1,9 @@
 # 외부 실측 실행 절차
 
 2026-09-24 기준 실행 기록과 절차다. 첫 Claude 평가는 HTTP 오류로 실패했으며
-[원본과 검증 결함 수정](hosted-evaluation-attempt.md)을 보존했다. 유효한 hosted 품질
-실측과 전체 Render 백엔드 배포는 아직 완료하지 않았다. 공개 `procure-delta-demo`는
+[원본과 검증 결함 수정](hosted-evaluation-attempt.md)을 보존했다. 수정 후
+[실제 Claude 평가](hosted-evaluation-success.md)는 측정 검증을 통과했지만 단독 추출은 18/30이다.
+전체 Render 백엔드 배포는 아직 완료하지 않았다. 공개 `procure-delta-demo`는
 합성 데이터를 사용하는 읽기 전용 웹이다.
 
 ## 1. Hosted LLM 비교
@@ -27,7 +28,8 @@ Chat Completions와 고정 snapshot 지원을 확인했다. 계정의 모델 사
 Claude 실행에는 다음 값을 사용했다. 9월 24일 연결 진단에서 최소 요청 두 개는
 성공했지만 기존 추출 요청은 HTTP 400으로 실패했다. 요청 옵션 수정 후 전체 평가는
 실행 오류 0건이었으나 schema failure와 토큰 누락으로 검증에 실패했다. 응답 처리
-수정 후 실제 외부 성공은 아직 미확인이다.
+수정 후 03:02 UTC에 시작한 전체 평가에서는 측정 검증을 통과했고, 호출 10→5회와 토큰
+15,654→7,317을 확인했다. 정확도·거절·범위는 [실측 보고서](hosted-evaluation-success.md)에 있다.
 
 | Workflow 입력 | Claude 입력 |
 | --- | --- |
@@ -188,8 +190,8 @@ Blueprint는 DB/Redis 연결값과 operator secret을 생성·주입한다. Oper
 
 ## 남은 계정 설정
 
-첫 Actions 실행에서 LLM secret이 비어 있지 않은 것은 확인했다. 키의 유효성은 HTTP
-실패 때문에 확인하지 못했다. 로컬 작업 환경에는 해당 키, S3 버킷/자격증명, Sentry
+Claude 키는 연결 진단과 실제 전체 평가에서 사용 가능함을 확인했다.
+로컬 작업 환경에는 해당 키, S3 버킷/자격증명, Sentry
 DSN이 없다. GitHub secret 값이나 목록은 이 연결에서 조회하지 않는다. 연결된 GitHub
 도구에는 workflow dispatch 기능이 없어 수정된 main의 새 실행은 위 Actions 화면에서
 시작해야 한다. 과거 run의 Re-run은 이전 commit을 사용한다. Render Blueprint의 최초

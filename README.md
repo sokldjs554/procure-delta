@@ -157,18 +157,17 @@ amendment
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
 | OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
 | 한국어 공고 항목 해석 v2 | 제한적 개선 | 별도 2건의 원문 텍스트 **0/6 → 3/6**, 같은 문서의 OCR은 **0/18**; [조건·실패 포함 비교](docs/korean-form-grounding.md) |
-| hosted all | **품질·측정 검증 실패** | 최신 실행 오류 0건, 검증 통과 필드 0/30, 토큰 합계 누락 |
-| hosted gated | **측정 검증 실패** | 30/30은 로컬 deterministic 결과; hosted 토큰 합계 누락, 절감률 실측 미확정 |
+| hosted all | **외부 실측 완료 · 품질 한계** | Claude Haiku 4.5, 검증 통과 필드 **18/30**, 호출 10회, 15,654 tokens |
+| hosted gated | **외부 실측 완료** | **30/30은 로컬 규칙 결과**, 호출 5회, 7,317 tokens; 전체 호출 대비 호출 50%·토큰 53.3% 감소 |
 
 첫 [Claude 실행 실패 기록](docs/hosted-evaluation-attempt.md)은 원본 artifact와 함께
 보존했습니다. 해당 Actions의 초록색 표시는 결과 검증 실패가 가려진 결함이었으며,
-유효한 실측으로 인정하지 않습니다. 공개 평가 패널은 기존 미측정 snapshot을 유지합니다.
-9월 24일 별도 연결 진단에서는 native·호환 API 최소 호출이 모두 HTTP 200이었고,
-추출 요청만 `response_format` 관련 HTTP 400으로 실패했습니다. Claude 공식 endpoint의
-요청 옵션 수정 후 [전체 평가](docs/hosted-evaluation-attempt.md#응답-거절과-사용량-누락)는 실행 오류
-0건이었지만 모든 hosted 출력이 스키마 검증에 실패했습니다. 거절 시 사용량을 버리는 코드
-결함을 수정하고 안전한 거절 단계 진단을 추가했습니다. 실제 응답의 세부 실패 원인은
-당시 기록만으로 복원할 수 없으며, 수정 후 외부 성공은 아직 미확인입니다.
+유효한 실측으로 인정하지 않습니다. 요청 옵션·응답 처리·사용량 보존을 수정한 뒤
+[9월 24일 실제 평가](docs/hosted-evaluation-success.md)는 외부 요청과 측정 검증을 모두 통과했습니다.
+합성 10건의 **1회 실행**이며 Claude 단독에서는 정상 2건이 근거 검증에서 거절됐습니다.
+gated의 정상 필드는 로컬 규칙에서 나왔고, 같은 셋의 순수 규칙도 30/30·외부 호출 0회입니다.
+이 결과로 LLM의 추가 효용이나 실제 문서 일반화를 주장하지 않습니다. provider 보고 비용은
+없어 **비용·비용 절감률은 미측정**입니다. API와 정적 데모는 같은 저장된 공개 projection을 사용합니다.
 
 Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, lifecycle link는 합성 사례 5개 중 2개를 resolve하고 ambiguous/missing/incompatible 사례는 unresolved로 남겼습니다.
 
@@ -274,7 +273,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
 - HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 기본 서비스 OCR 어댑터도 fixture 전용입니다.
-- hosted LLM은 HTTP 요청 수정 후에도 응답 검증·사용량 집계에서 실패했습니다. 유효한 전체 정확도·비용·token 비교는 아직 없습니다.
+- hosted LLM은 합성 10건에서 외부 정확도·호출·토큰·지연시간을 실측했습니다. 단독 경로는 18/30이며 gated의 30/30은 로컬 규칙 결과입니다. 반복 외부 평가·실문서 일반화·LLM 추가 효용·실제 비용은 미검증입니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
