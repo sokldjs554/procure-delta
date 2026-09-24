@@ -51,6 +51,31 @@ Bearer 인증, `max_completion_tokens`, prompt/completion usage를 지원한다�
 5. 저장 결과를 검토한 뒤 README와 공개 평가 패널에 반영한다. 기존 OCR 결과는
    별도 실험이므로 hosted 실행 결과로 덮어써서 소실시키지 않는다.
 
+### Playground는 응답하지만 평가 요청이 실패할 때
+
+같은 workflow에서 `diagnostics_only`를 켜면 전체 평가 대신 Claude 연결 진단만 실행한다.
+현재 이 진단은 `anthropic`과 공식 `https://api.anthropic.com/v1/chat/completions` 조합만
+허용하며, GitHub Secret의 동일한 키로 다음 순서로 요청한다.
+
+1. native Messages API 최소 요청: 출력 한도 16 tokens.
+2. OpenAI-compatible 최소 요청: 출력 한도 16 tokens.
+3. 2번의 HTTP 응답이 성공한 경우에만 기존 `HostedExtractor`로 frozen dataset 첫 사례
+   요청: workflow의 `max_completion_tokens` 한도를 그대로 사용.
+
+최대 3회 요청이고 재시도는 하지 않는다. 각 최소 요청은 총 25초, 실제 extractor
+요청은 30초 안에 종료한다. redirect를 따라가지 않으며, 키의 공백·지원하지 않는
+credential 종류·다른 endpoint를 발견하면 네트워크 요청 전에 중단한다.
+
+`hosted-probe.json`은 상태 코드, 허용 목록의 오류 분류/parameter, 사용량만 보존한다.
+오류 문장에서는 고정된 공개 프로토콜 용어의 집합만 추출한다. 원문의 단어 순서,
+임의 값, URL, header, key, 응답 본문은 저장하지 않는다. `message_terms`는 정확한 오류
+문장을 재현하지 않으므로 단독으로 원인을 확정하는 근거로 사용하지 않는다.
+
+이 진단 결과의 `quality_evaluated`는 항상 false다. HTTP 성공이나 진단 workflow의
+성공을 hosted 품질/정확도/절감률 실측으로 취급하지 않는다. 원인을 해결한 뒤
+`diagnostics_only`를 끈 일반 평가가 별도로 통과해야 한다. 기본값은 false이며,
+일반 push/PR CI에서는 진단도 외부 모델 호출도 실행하지 않는다.
+
 ### 호출 규모와 비용 해석
 
 현재 frozen dataset SHA-256:

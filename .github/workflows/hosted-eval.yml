@@ -20,6 +20,11 @@ on:
         required: false
         default: "4096"
         type: string
+      diagnostics_only:
+        description: Claude connection probe only (at most 3 requests, no quality evaluation)
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -70,13 +75,19 @@ jobs:
               raise SystemExit("max_completion_tokens must be between 1 and 32768")
           PY
 
+      - name: Diagnose Claude connection without exposing response text
+        if: ${{ inputs.diagnostics_only }}
+        run: python scripts/probe_hosted.py --allow-hosted
+
       - name: Run paid/network hosted evaluation
+        if: ${{ !inputs.diagnostics_only }}
         run: >-
           python scripts/run_eval.py
           --allow-hosted
           --output artifacts/evaluation/hosted.json
 
       - name: Validate measured hosted metrics
+        if: ${{ !inputs.diagnostics_only }}
         shell: bash
         run: >-
           python scripts/validate_hosted_eval.py
@@ -91,4 +102,5 @@ jobs:
             artifacts/evaluation/hosted.json
             artifacts/evaluation/hosted.md
             artifacts/evaluation/hosted-summary.json
+            artifacts/evaluation/hosted-probe.json
           if-no-files-found: warn
