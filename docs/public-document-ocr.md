@@ -65,10 +65,15 @@ No extraction rules or ground truth were tuned to improve this score. The next
 quality step is layout-aware grounding and independently annotated documents,
 with held-out evaluation, plus the pending real hosted-provider comparison.
 Changing only to a hosted model does not automatically bypass the current
-label-based evidence validator. Natural scanned Korean PDFs remain unverified. A subsequent
+label-based evidence validator. Natural-scan generalization remains unverified. A subsequent
 [configured Tesseract runtime](runtime-ocr.md) adds real worker recognition; these
 historical CLI measurements do not evaluate that runtime. The local default
 `FakeFixtureOcrAdapter` remains a fixture-only routing boundary.
+
+The later [original-scan diagnostic](public-scan-ocr.md) separately measures two
+image-only official PDFs with that worker runtime. It preserves the initial
+memory failures and the repeated post-fix 0/6 trusted-field result. Those sources,
+processing bounds and page-scoped metrics do not replace this historical result.
 
 ## Reproduction
 

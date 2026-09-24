@@ -15,6 +15,7 @@ from app.documents.ocr_runtime import (
     MAX_INPUT_BYTES,
     MAX_TEXT_CHARS,
     PROCESS_MEMORY_BYTES,
+    RUNTIME_ADAPTER_VERSION,
     RuntimeOcrConfig,
 )
 
@@ -28,7 +29,7 @@ def runtime_identity(config: RuntimeOcrConfig) -> str:
         with path.open("rb") as model:
             models[language] = hashlib.file_digest(model, "sha256").hexdigest()
     contract = {
-        "adapter": "pymupdf-ocr-v1", "pymupdf": pymupdf.VersionBind,
+        "adapter": RUNTIME_ADAPTER_VERSION, "pymupdf": pymupdf.VersionBind,
         "mupdf": pymupdf.VersionFitz, "models": models,
         "config": config.model_dump(mode="json", exclude={"tessdata_dir"}),
         "memory_bytes": PROCESS_MEMORY_BYTES, "text_chars": MAX_TEXT_CHARS,
@@ -53,11 +54,17 @@ def recognize(config: RuntimeOcrConfig, path: Path) -> list[dict[str, Any]]:
         pages = []
         total = 0
         for index, page in enumerate(document, 1):
+            # Prior decoded scanner images can exhaust this child's address-space
+            # limit before MuPDF's cache evicts them. Each page starts without
+            # cached resources; resolution, models and process limits stay fixed.
+            pymupdf.TOOLS.store_shrink(100)  # type: ignore[no-untyped-call]
             textpage = page.get_textpage_ocr(
                 language=config.language, dpi=config.dpi, full=True,
                 tessdata=str(config.tessdata_dir),
             )
             text = str(textpage.extractText()).strip()
+            # Do not retain the prior native TextPage while allocating the next.
+            del textpage
             total += len(text)
             if total > MAX_TEXT_CHARS:
                 raise ValueError("runtime_failed")

@@ -109,6 +109,10 @@ README에 사용되는 screenshot은 mockup이 아니라 이 검증 run의 실�
 
 실제 공개 API smoke와 public Render static demo는 release gate와 별도 증거로 관리한다.
 
+공식 원본 스캔 2건의 [로컬 워커 OCR 진단](public-scan-ocr.md)도 별도 증거다.
+첫 2회 메모리 실패와 수정 후 2회 실측을 각각 보존한다. CI의 고해상도 합성 PDF 회귀는
+페이지 간 리소스 해제를 검증하며, 공개 원본의 재다운로드나 정확도 재측정을 대신하지 않는다.
+
 ## Node standalone 배포의 정적 파일 검증
 
 2026-09-24 `60d4772` 공개 배포는 Render에서 live였지만, HTML에 포함된
