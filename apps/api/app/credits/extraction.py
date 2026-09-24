@@ -16,6 +16,11 @@ from app.credits.service import commit_credits, refund_credits, reserve_credits
 from app.models import CreditAccount, CreditReservation, OpportunityVersion
 
 REFERENCE_TYPE = "pipeline_hosted_extraction_v1"
+RESERVATION_START_GRACE = timedelta(seconds=120)
+
+
+class ExtractionCreditInProgress(RuntimeError):
+    """A recent reservation may still be owned by another worker."""
 
 
 class ExtractionCreditReviewRequired(RuntimeError):
@@ -47,12 +52,17 @@ async def assert_no_prior_attempt(
 ) -> None:
     # Caller holds the version lock. Account changes cannot evade this global fence.
     prior = await session.scalar(
-        select(CreditReservation.id).where(
+        select(CreditReservation).where(
             CreditReservation.reference_type == REFERENCE_TYPE,
             CreditReservation.reservation_key == reservation_key(version_id, extraction_key),
         )
     )
     if prior is not None:
+        if (
+            prior.status == "reserved"
+            and prior.created_at > datetime.now(UTC) - RESERVATION_START_GRACE
+        ):
+            raise ExtractionCreditInProgress("extraction reservation is in progress")
         raise ExtractionCreditReviewRequired("earlier extraction attempt requires review")
 
 
@@ -79,8 +89,8 @@ async def reserve_extraction(
 
 
 async def assert_open_reservation(session: AsyncSession, account: str, key: str) -> None:
-    status = await session.scalar(
-        select(CreditReservation.status)
+    reservation = await session.scalar(
+        select(CreditReservation)
         .join(CreditAccount)
         .where(
             CreditAccount.owner_user_id == account,
@@ -88,8 +98,12 @@ async def assert_open_reservation(session: AsyncSession, account: str, key: str)
             CreditReservation.reference_type == REFERENCE_TYPE,
         )
     )
-    if status != "reserved":
-        raise ExtractionCreditReviewRequired("extraction reservation is no longer open")
+    if (
+        reservation is None
+        or reservation.status != "reserved"
+        or reservation.created_at <= datetime.now(UTC) - RESERVATION_START_GRACE
+    ):
+        raise ExtractionCreditReviewRequired("extraction reservation is not open for a new call")
 
 
 async def settle_extraction(
@@ -138,7 +152,7 @@ async def resolve_extraction_reservation(
         .with_for_update()
     )
     await session.refresh(reservation)
-    if reservation.created_at > datetime.now(UTC) - timedelta(seconds=120):
+    if reservation.created_at > datetime.now(UTC) - RESERVATION_START_GRACE:
         raise ValueError("extraction reservation is too recent for manual resolution")
     settle = commit_credits if decision == "commit" else refund_credits
     await settle(

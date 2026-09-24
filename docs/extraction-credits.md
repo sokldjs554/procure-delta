@@ -17,14 +17,18 @@ Local OCR and deterministic extraction are not charged by this integration.
    existing result. Cached, stale and empty work consumes no credits or calls.
 2. Before a new provider call, reserve units in the existing PostgreSQL ledger
    and commit that reservation. Insufficient balance stops before network I/O.
-3. Re-lock and recheck the input after this transaction boundary. If the input
-   changed before calling the provider, refund the reservation without a call.
+3. Re-lock and recheck the input after this transaction boundary. A duplicate
+   finding a recent reservation defers without recording a failure. The owner
+   must re-lock within 120 seconds to start a call; an older hold requires review.
+   If the input changed before calling the provider, refund without a call.
 4. Persist the schema/grounding outcome and commit the reserved units in the
    same transaction. A rejected provider answer is still completed, charged work.
 5. If a call or result persistence raises, or the worker is cancelled/crashes,
    the durable reservation remains held. A repeated job cannot call again or
-   infer a refund from elapsed time. It is exposed as a terminal credit-review
-   failure through the existing operator failure surface.
+   infer a refund from elapsed time. Caught failures become terminal credit-review
+   failures immediately. After a cancellation/crash, repeats defer while the hold
+   is younger than 120 seconds, then reconciliation exposes a terminal review
+   failure. Age never authorizes a new call or an automatic refund.
 
 The fence is keyed by version plus extraction identity, independently of the
 configured account. Changing the account, units, or disabling credit mode does
@@ -37,7 +41,8 @@ retroactively charged. Operator reconciliation cannot recover a lost model answe
 Real PostgreSQL integration tests cover persisted reservation before provider I/O,
 atomic result/debit, cached and concurrent execution, insufficient balance,
 rejected output, provider timeout, cancellation, persistence failure, changed
-input refund, configuration changes, and explicit operator settlement. External
+input refund, the reservation commit/re-lock race, configuration changes,
+active-call/operator locking, and conflicting operator decisions. External
 provider responses are controlled in these tests; no paid call is made by CI.
 
 ## Deployment boundary

@@ -89,7 +89,8 @@ def main() -> None:
             command.add_argument("--reservation", required=True)
             command.add_argument("--decision", choices=("commit", "refund"), required=True)
     args = parser.parse_args()
-    if not args.account.strip() or len(args.account) > 255:
+    args.account = args.account.strip()
+    if not args.account or len(args.account) > 255:
         parser.error("account must contain 1..255 characters")
     if args.command == "grant" and (
         not 1 <= args.units <= 1_000_000 or not 1 <= len(args.request_id) <= 255

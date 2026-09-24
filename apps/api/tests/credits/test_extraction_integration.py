@@ -2,7 +2,8 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import event, func, select
+from sqlalchemy import event, func, select, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
 from app.config import Settings
@@ -221,7 +222,7 @@ async def test_insufficient_balance_blocks_provider(seeded, worker_session_facto
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("change", ["none", "disable", "account"])
+@pytest.mark.parametrize("change", ["none", "disable", "account", "units"])
 async def test_ambiguous_call_never_automatically_replays_or_refunds(
     seeded,
     worker_session_factory,
@@ -247,6 +248,8 @@ async def test_ambiguous_call_never_automatically_replays_or_refunds(
         billing.extraction_credits_enabled = False
     elif change == "account":
         billing.extraction_credit_account = "different-account"
+    elif change == "units":
+        billing.extraction_credit_units = 1
     await extract_version(ctx, str(seeded))
     assert provider.calls == 1
     assert (await balances(worker_session_factory))[:4] == (3, 2, ["reserved"], 0)
@@ -268,6 +271,12 @@ async def test_cancelled_call_keeps_durable_hold(seeded, worker_session_factory,
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
+    assert (await extract_version(ctx, str(seeded)))["status"] == "deferred"
+    async with worker_session_factory() as session:
+        assert await session.scalar(select(func.count()).select_from(JobFailure)) == 0
+        reservation = await session.scalar(select(CreditReservation))
+        reservation.created_at = datetime.now(UTC) - timedelta(minutes=5)
+        await session.commit()
     assert (await extract_version(ctx, str(seeded)))["status"] == "dead_lettered"
     assert provider.calls == 1
     assert (await balances(worker_session_factory))[:4] == (3, 2, ["reserved"], 0)
@@ -299,6 +308,47 @@ async def test_concurrent_workers_share_result_and_one_debit(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("aged", [False, True])
+async def test_duplicate_between_reservation_commit_and_owner_relock(
+    seeded, worker_session_factory, billing, monkeypatch, aged,
+):
+    from app.credits.extraction import reserve_extraction
+
+    await fund(worker_session_factory)
+    reserved, release = asyncio.Event(), asyncio.Event()
+
+    async def pause_after_commit(session, version_id, key, policy):
+        ticket = await reserve_extraction(session, version_id, key, policy)
+        reserved.set()
+        await release.wait()
+        return ticket
+
+    monkeypatch.setattr("app.extraction.service.reserve_extraction", pause_after_commit)
+    provider = ControlledProvider()
+    ctx = {"session_factory": worker_session_factory, "extractor": provider}
+    owner = asyncio.create_task(extract_version(ctx, str(seeded)))
+    try:
+        await asyncio.wait_for(reserved.wait(), 5)
+        if aged:
+            async with worker_session_factory() as session:
+                reservation = await session.scalar(select(CreditReservation))
+                reservation.created_at = datetime.now(UTC) - timedelta(minutes=5)
+                await session.commit()
+        duplicate = await asyncio.wait_for(extract_version(ctx, str(seeded)), 5)
+        assert duplicate["status"] == ("dead_lettered" if aged else "deferred")
+        async with worker_session_factory() as session:
+            assert await session.scalar(select(func.count()).select_from(JobFailure)) == int(aged)
+    finally:
+        release.set()
+        outcome = await asyncio.wait_for(owner, 5)
+    assert outcome["status"] == ("dead_lettered" if aged else "validated")
+    assert (await extract_version(ctx, str(seeded)))["status"] == outcome["status"]
+    assert provider.calls == (0 if aged else 1)
+    expected = (3, 2, ["reserved"], 0) if aged else (3, 0, ["committed"], 1)
+    assert (await balances(worker_session_factory))[:4] == expected
+
+
+@pytest.mark.asyncio
 async def test_result_and_debit_roll_back_together_on_settlement_failure(
     seeded,
     worker_session_factory,
@@ -323,6 +373,49 @@ async def test_result_and_debit_roll_back_together_on_settlement_failure(
     assert result["status"] == "dead_lettered"
     assert provider.calls == 1
     assert (await balances(worker_session_factory))[:4] == (3, 2, ["reserved"], 0)
+
+
+@pytest.mark.asyncio
+async def test_operator_cannot_refund_during_active_call_or_after_success(
+    seeded, worker_session_factory, billing,
+):
+    from app.credits.extraction import resolve_extraction_reservation
+    from app.credits.service import CreditReservationStateError
+
+    await fund(worker_session_factory)
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def pause():
+        started.set()
+        await release.wait()
+
+    provider = ControlledProvider(pause)
+    owner = asyncio.create_task(extract_version(
+        {"session_factory": worker_session_factory, "extractor": provider}, str(seeded)
+    ))
+    try:
+        await asyncio.wait_for(started.wait(), 5)
+        async with worker_session_factory() as session:
+            reservation = await session.scalar(select(CreditReservation))
+            key = reservation.reservation_key
+            reservation.created_at = datetime.now(UTC) - timedelta(minutes=5)
+            await session.commit()
+            # PostgreSQL must block the operator on the owner's version lock.
+            await session.execute(text("SET LOCAL lock_timeout = '100ms'"))
+            with pytest.raises(DBAPIError) as caught:
+                await resolve_extraction_reservation(session, "pipeline-budget", key, "refund")
+            assert caught.value.orig.sqlstate == "55P03"
+            await session.rollback()
+    finally:
+        release.set()
+        outcome = await asyncio.wait_for(owner, 5)
+    assert outcome["status"] == "validated"
+    async with worker_session_factory() as session:
+        with pytest.raises(CreditReservationStateError):
+            await resolve_extraction_reservation(session, "pipeline-budget", key, "refund")
+        await session.rollback()
+    assert provider.calls == 1
+    assert (await balances(worker_session_factory))[:4] == (3, 0, ["committed"], 1)
 
 
 @pytest.mark.asyncio
@@ -356,6 +449,12 @@ async def test_operator_settlement_requires_aged_hold_and_does_not_enable_recall
         await session.commit()
         await resolve_extraction_reservation(session, "pipeline-budget", key, decision)
         await session.commit()
+        from app.credits.service import CreditReservationStateError
+
+        other_decision = "refund" if decision == "commit" else "commit"
+        with pytest.raises(CreditReservationStateError):
+            await resolve_extraction_reservation(session, "pipeline-budget", key, other_decision)
+        await session.rollback()
         failure = await session.scalar(select(JobFailure))
         failure.attempts, failure.dead_lettered = 0, False
         await session.commit()

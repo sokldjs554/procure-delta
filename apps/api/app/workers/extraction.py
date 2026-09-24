@@ -9,7 +9,7 @@ from arq.connections import ArqRedis
 from sqlalchemy import select, update
 
 from app.config import get_settings
-from app.credits.extraction import ExtractionCreditPolicy
+from app.credits.extraction import ExtractionCreditInProgress, ExtractionCreditPolicy
 from app.extraction.hosted import configured_extractor
 from app.extraction.service import build_document_bundle, extraction_identity, persist_extraction
 from app.models import JobFailure, OpportunityVersion, StructuredExtraction
@@ -70,6 +70,11 @@ async def extract_version(
             )
             await session.commit()
             return {"status": status, "job_key": stable_key}
+        except ExtractionCreditInProgress:
+            # The owner released its version lock when making the hold durable.
+            # A duplicate in that gap must not leave a false terminal failure.
+            await session.rollback()
+            return {"status": "deferred", "job_key": stable_key}
         except Exception as error:
             # Snapshot only primitive identifiers above: rollback expires loaded ORM objects.
             await session.rollback()
