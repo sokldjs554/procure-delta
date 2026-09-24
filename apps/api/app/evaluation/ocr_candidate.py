@@ -26,12 +26,17 @@ class CandidateReply(BaseModel):
 
 async def evaluate_candidate(
     manifest: dict[str, Any], directory: Path, python: Path, models: Path,
+    *, probe_failed: bool = False,
 ) -> dict[str, Any]:
     sources = verified_sources(manifest, directory)
     rows: list[dict[str, Any]] = []
     for source, _ in sources:
         row: dict[str, Any] = {"id": source["id"], "status": "failed",
                                "scored_page": source["page"]}
+        if probe_failed:
+            row.update(reason="probe_failed", elapsed_ms=None)
+            rows.append(row)
+            continue
         started = time.perf_counter()
         try:
             raw = await run_ocr_process([

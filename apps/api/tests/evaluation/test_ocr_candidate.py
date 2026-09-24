@@ -3,6 +3,10 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
+import runpy
+import subprocess
+import sys
 import venv
 from pathlib import Path
 
@@ -102,3 +106,47 @@ def test_real_child_preserves_the_selected_virtual_environment(tmp_path, monkeyp
     ))
     assert result["summary"]["status"] == "measured"
     assert result["summary"]["trusted_correct_fields"] == 3
+
+
+def test_cli_unavailable_candidate_keeps_all_cases_and_writes_failed_artifact(tmp_path):
+    environment = tmp_path / "unavailable-env"
+    venv.EnvBuilder(with_pip=False, symlinks=True).create(environment)
+    sources = [source(tmp_path, name) for name in ("a", "b")]
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"suite": "test-suite", "sources": sources,
+                                   "source_kind": "public_pdf_with_native_text",
+                                   "selection": "generated test cases"}))
+    root = Path(__file__).resolve().parents[4]
+    output = tmp_path / "result.json"
+    result = subprocess.run([
+        sys.executable, str(root / "scripts/run_ocr_candidate_eval.py"),
+        "--source-dir", str(tmp_path), "--manifest", str(manifest),
+        "--candidate-python", str(environment / "bin/python"),
+        "--models", str(tmp_path), "--output", str(output),
+    ], capture_output=True, timeout=10, check=False,
+        env={**os.environ, "PYTHONPATH": str(root / "apps/api")})
+    assert result.returncode != 0
+    assert output.exists()
+    measured = json.loads(output.read_text())["groups"][0]["measurement"]
+    assert measured["summary"]["status"] == "incomplete"
+    assert measured["summary"]["expected_fields"] == 6
+    assert measured["summary"]["expected_anchors"] == 2
+    assert measured["summary"]["trusted_field_accuracy"] is None
+    assert all(row["reason"] == "probe_failed" for row in measured["rows"])
+
+
+def test_colliding_suite_names_cannot_hide_an_incomplete_group(tmp_path, monkeypatch):
+    script = Path(__file__).resolve().parents[4] / "scripts/run_ocr_candidate_eval.py"
+    module = runpy.run_path(str(script))
+    result = {"groups": [
+        {"suite": "same", "measurement": {"summary": {"status": status}}}
+        for status in ("incomplete", "measured")
+    ]}
+    monkeypatch.setitem(module["main"].__globals__, "evaluate", lambda args: result)
+    monkeypatch.setattr(asyncio, "run", lambda value: value)
+    monkeypatch.setattr(sys, "argv", [
+        str(script), "--source-dir", ".", "--models", ".", "--candidate-python", "python",
+        "--manifest", "test.json", "--output", str(tmp_path / "result.json"),
+    ])
+    with pytest.raises(SystemExit, match="incomplete"):
+        module["main"]()

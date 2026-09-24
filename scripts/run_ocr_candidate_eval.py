@@ -26,13 +26,19 @@ async def evaluate(args):
         manifest = json.loads(raw)
         verified_sources(manifest, args.source_dir)
         datasets.append((manifest, hashlib.sha256(raw).hexdigest()))
-    described = await run_ocr_process([
-        str(args.candidate_python.absolute()), str(ROOT / "scripts/rapid_ocr_candidate.py"),
-        "--describe",
-    ], timeout=5)
-    config = json.loads(described)
-    if not isinstance(config, dict) or "error" in config:
-        raise ValueError("Candidate environment is unavailable or not pinned")
+    probe_failed = False
+    try:
+        described = await run_ocr_process([
+            str(args.candidate_python.absolute()), str(ROOT / "scripts/rapid_ocr_candidate.py"),
+            "--describe",
+        ], timeout=5)
+        config = json.loads(described)
+        if (not isinstance(config, dict)
+                or config.get("candidate_version") != "ppocr-v5-offline-v1"):
+            raise ValueError("Candidate environment is unavailable or not pinned")
+    except (ValueError, OSError, RuntimeError, TimeoutError) as error:
+        probe_failed = True
+        config = {"environment_status": "unavailable", "error_type": type(error).__name__}
     config.update(extractor_version=DeterministicExtractor.extractor_version,
                   grounding_version=GROUNDING_VERSION, wall_timeout_seconds=40)
     groups = []
@@ -41,6 +47,7 @@ async def evaluate(args):
         metadata["synthetic"] = False
         measurement = await evaluate_candidate(
             manifest, args.source_dir, args.candidate_python, args.models,
+            probe_failed=probe_failed,
         )
         groups.append({"suite": manifest["suite"], "source_kind": manifest["source_kind"],
                        "selection": manifest["selection"], "sources": manifest["sources"],
@@ -77,9 +84,10 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)
                            + "\n", encoding="utf-8")
-    summaries = {group["suite"]: group["measurement"]["summary"] for group in result["groups"]}
+    summaries = [{"suite": group["suite"], **group["measurement"]["summary"]}
+                 for group in result["groups"]]
     print(json.dumps(summaries, ensure_ascii=False))
-    if any(value["status"] != "measured" for value in summaries.values()):
+    if any(value["status"] != "measured" for value in summaries):
         raise SystemExit("Candidate evaluation incomplete; no partial aggregate score")
 
 
