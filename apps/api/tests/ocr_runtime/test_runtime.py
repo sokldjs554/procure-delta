@@ -81,6 +81,36 @@ async def test_real_ocr_recognizes_image_only_pdf_with_stable_provenance():
 
 
 @pytest.mark.asyncio
+async def test_distinct_high_resolution_pages_fit_the_bounded_child():
+    # Three distinct 600 dpi RGB scans: each decoded source is about 100 MiB,
+    # although the PDF and 300 dpi recognition pages are within existing limits.
+    # Reusing one image xref would hide accumulation in MuPDF's image cache.
+    with pymupdf.open() as scan:
+        for index in range(1, 4):
+            with pymupdf.open() as source:
+                page = source.new_page(width=595.68, height=842.4)
+                page.insert_text((40, 70), f"Runtime page {index}", fontsize=24)
+                page.insert_text((40, 120), "\n".join(
+                    f"Service document item {line}: review the procurement requirements."
+                    for line in range(1, 25)
+                ), fontsize=13)
+                image = page.get_pixmap(dpi=600).tobytes("jpg", jpg_quality=60)
+                target = scan.new_page(width=595.68, height=842.4)
+                xref = target.insert_image(target.rect, stream=image, keep_proportion=False)
+                # Match a scanner's direct RGB image rather than a shared ICC profile.
+                scan.xref_set_key(xref, "ColorSpace", "/DeviceRGB")
+        content = scan.tobytes()
+    document = document_from_bytes(content)
+    assert not document.native_parse.extracted_text.strip()
+    adapter = await TesseractOcrAdapter.create(RuntimeOcrConfig(tessdata_dir=model_directory()))
+    result = await adapter.recognize(document)
+    assert result.status == "recognized"
+    assert [page.page_number for page in result.pages] == [1, 2, 3]
+    for index, page in enumerate(result.pages, 1):
+        assert f"Runtime page {index}" in page.text
+
+
+@pytest.mark.asyncio
 async def test_missing_language_data_fails_startup_without_fixture_fallback(tmp_path):
     with pytest.raises(RuntimeError, match="missing_language_data"):
         await configured_ocr_adapter(Settings(_env_file=None, ocr_backend="tesseract",

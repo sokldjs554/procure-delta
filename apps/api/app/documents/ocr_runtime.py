@@ -21,6 +21,7 @@ MAX_INPUT_BYTES = 10 * 1024 * 1024
 MAX_REPLY_BYTES = 2 * 1024 * 1024
 MAX_TEXT_CHARS = 250_000
 PROCESS_MEMORY_BYTES = 512 * 1024 * 1024
+RUNTIME_ADAPTER_VERSION = "pymupdf-ocr-v2"
 
 
 class RuntimeOcrConfig(BaseModel):
@@ -66,7 +67,7 @@ class TesseractOcrAdapter:
     def __init__(self, config: RuntimeOcrConfig, identity: str) -> None:
         self.config = config
         self.identity = identity
-        self.provider_version = "pymupdf-ocr-v1-" + identity
+        self.provider_version = RUNTIME_ADAPTER_VERSION + "-" + identity
         self._slot = asyncio.Semaphore(1)
 
     @classmethod

@@ -1,4 +1,4 @@
-"""Measure checksum-pinned original public scans with the unchanged worker OCR adapter."""
+"""Measure checksum-pinned original public scans with the configured worker OCR adapter."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pymupdf
 
-from app.documents.ocr_runtime import RuntimeOcrConfig
+from app.documents.ocr_runtime import (
+    PROCESS_MEMORY_BYTES,
+    RUNTIME_ADAPTER_VERSION,
+    RuntimeOcrConfig,
+)
 from app.evaluation.provenance import provenance
 from app.evaluation.scan_documents import evaluate_scans
 from app.extraction.deterministic import DeterministicExtractor
@@ -37,6 +41,8 @@ def main() -> None:
         **config.model_dump(mode="json", exclude={"tessdata_dir"}),
         "tessdata_sha256": models, "pymupdf": pymupdf.VersionBind,
         "mupdf": pymupdf.VersionFitz,
+        "adapter_version": RUNTIME_ADAPTER_VERSION,
+        "process_memory_bytes": PROCESS_MEMORY_BYTES,
         "extractor_version": DeterministicExtractor.extractor_version,
         "grounding_version": GROUNDING_VERSION,
     })
