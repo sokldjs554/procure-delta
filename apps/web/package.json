@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node --experimental-strip-types scripts/prepare-standalone.ts",
     "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:browser": "node tests/product.browser.mjs",
-    "test:e2e": "node e2e/lifecycle.mjs"
+    "test:e2e": "node e2e/lifecycle.mjs",
+    "test:standalone": "node scripts/check-standalone.mjs"
   },
   "dependencies": {
     "next": "16.3.5",
