@@ -47,8 +47,9 @@ Every public claim should be one of:
 Examples in this repository:
 
 - Korean OCR is measured on a frozen synthetic `kor+eng` regression set.
-- Hosted LLM quality is unvalidated until the manual workflow produces a valid measured artifact.
-  The first Claude attempt failed with HTTP errors; a green Actions badge alone is insufficient.
+- The manual hosted workflow has a valid [Claude measurement](hosted-evaluation-success.md).
+  It is a small synthetic run with documented quality limits; a green Actions badge alone is
+  insufficient, and the revised grounding prompt still needs a new external measurement.
 - The Render Blueprint is contract-tested deployment readiness, not proof of live backend operation.
 
 ## External-cost boundary

@@ -1,8 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     extraction_model: str | None = None
     extraction_api_key: SecretStr | None = None
     extraction_max_completion_tokens: int = Field(default=4096, ge=1, le=32768)
+    extraction_credits_enabled: bool = False
+    extraction_credit_account: str | None = Field(default=None, max_length=255)
+    extraction_credit_units: int = Field(default=1, ge=1, le=1_000_000)
     notification_external_enabled: bool = False
     notification_webhook_destinations: dict[str, SecretStr] = Field(default_factory=dict)
     notification_smtp_host: str | None = None
@@ -68,6 +71,28 @@ class Settings(BaseSettings):
     sentry_dsn: SecretStr | None = None
     sentry_environment: str = "development"
     sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @field_validator("extraction_credit_units", mode="before")
+    @classmethod
+    def whole_credit_units(cls, value: object) -> int:
+        if isinstance(value, str) and value.isascii() and value.isdecimal():
+            return int(value)
+        if type(value) is not int:
+            raise ValueError("extraction credit units must be a whole integer")
+        return value
+
+    @field_validator("extraction_credit_account")
+    @classmethod
+    def normalize_credit_account(cls, value: str | None) -> str | None:
+        return value.strip() or None if value is not None else None
+
+    @model_validator(mode="after")
+    def require_credit_policy(self) -> Self:
+        if self.extraction_credits_enabled and (
+            self.extraction_mode != "hosted" or not self.extraction_credit_account
+        ):
+            raise ValueError("extraction credits require hosted mode and an explicit account")
+        return self
 
     @field_validator("database_url", mode="before")
     @classmethod

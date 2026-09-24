@@ -9,6 +9,7 @@ from arq.connections import ArqRedis
 from sqlalchemy import select, update
 
 from app.config import get_settings
+from app.credits.extraction import ExtractionCreditPolicy
 from app.extraction.hosted import configured_extractor
 from app.extraction.service import build_document_bundle, extraction_identity, persist_extraction
 from app.models import JobFailure, OpportunityVersion, StructuredExtraction
@@ -27,7 +28,9 @@ async def extract_version(
     version_id: str,
     expected_key: str | None = None,
 ) -> dict[str, str]:
-    extractor = ctx.get("extractor") or configured_extractor(get_settings())
+    settings = get_settings()
+    extractor = ctx.get("extractor") or configured_extractor(settings)
+    credit_policy = ExtractionCreditPolicy.from_settings(settings)
     stable_key = job_key(
         "extract_version", "attachment", {"version_id": version_id, "key": expected_key}
     )
@@ -53,7 +56,9 @@ async def extract_version(
                     return {"status": "dead_lettered", "job_key": stable_key}
                 if failure.next_retry_at is not None and failure.next_retry_at > datetime.now(UTC):
                     return {"status": "deferred", "job_key": stable_key}
-            result = await persist_extraction(session, identifier, extractor, expected_key=key)
+            result = await persist_extraction(
+                session, identifier, extractor, expected_key=key, credit_policy=credit_policy,
+            )
             status = result.validation_status if result is not None else "stale"
             await session.execute(
                 update(JobFailure)
