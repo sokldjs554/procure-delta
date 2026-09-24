@@ -108,3 +108,17 @@ README에 사용되는 screenshot은 mockup이 아니라 이 검증 run의 실�
 - 실제 외부 notification delivery
 
 실제 공개 API smoke와 public Render static demo는 release gate와 별도 증거로 관리한다.
+
+## Node standalone 배포의 정적 파일 검증
+
+2026-09-24 `60d4772` 공개 배포는 Render에서 live였지만, HTML에 포함된
+`/_next/static/chunks/19mx3mg6lkumu.js`가 HTTP 404여서 세션 준비 화면에 머물렀다.
+Dockerfile은 `.next/static`과 `public`을 복사하지만 기존 Node build/start는 이 단계를
+빠뜨렸다. 따라서 컨테이너 gate 통과와 Render live만으로 브라우저 준비를 판단할 수 없다.
+
+`npm run build`의 `postbuild`는 생성된 `.next/standalone`에 static/public을 복사한다.
+`npm run test:standalone`은 그 `server.js`를 직접 시작하고 `/about`의 실제 HTML에서
+찾은 모든 JS/CSS 파일이 HTTP 200·올바른 content-type·비어 있지 않은 내용인지 확인한다.
+수정 전 빌드에서는 CSS 404를 재현했고 복사 후 같은 검사에서 10개 JS/CSS가 통과했다.
+이 검사는 frontend CI의 production build 다음에 실행된다. 파일 복사 unit test,
+컨테이너 브라우저 E2E, 배포 후 실제 공개 브라우저 확인은 각각 별도 검증이다.

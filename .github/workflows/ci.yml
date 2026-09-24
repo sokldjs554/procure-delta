@@ -66,6 +66,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Verify Node standalone serves browser assets
+        run: npm run test:standalone
 
   release-contract:
     runs-on: ubuntu-latest
