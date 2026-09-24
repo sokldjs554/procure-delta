@@ -57,6 +57,7 @@ def test_request_explains_grounding_rules_and_keeps_document_separate(endpoint):
     assert "optional" in system and "qualified" in system
     assert "source language" in system and "source order" in system
     assert "complete" in system and "exact" in system and "attachment_sha256" in system
+    assert "business field (excluding schema_version and evidence)" in system
     assert "공고명" in system and "buyer_name" in system and "필수인증" in system
     assert "contradict" in system and "{}" in system
     assert "untrusted" in system
