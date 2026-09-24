@@ -136,6 +136,38 @@ export default function About() {
               })}
             </div>
 
+            {data.hosted_evaluated && (
+              <div className="honesty" style={{ overflowWrap: "anywhere" }} aria-label="외부 Claude 실측">
+                <h3>외부 Claude 실측 · 합성 회귀</h3>
+                <p>{data.routes.hosted_all.notice}</p>
+                <p>{data.routes.hosted_gated.notice}</p>
+                <p>
+                  필드 정확도는 근거 검증까지 통과한 결과입니다.
+                  정상 문서가 거절되면 해당 필드는 오답으로 집계합니다.
+                </p>
+                <dl>
+                  <dt>전체 호출 → 규칙 우선 호출</dt>
+                  <dd>
+                    {numberMetric(data.hosted_optimization.all_calls)}회 →{" "}
+                    {numberMetric(data.hosted_optimization.gated_calls)}회 ·{" "}
+                    {percent(data.hosted_optimization.call_reduction_rate)} 감소
+                  </dd>
+                  <dt>입력 + 출력 토큰</dt>
+                  <dd>
+                    {numberMetric(data.hosted_optimization.all_tokens)} →{" "}
+                    {numberMetric(data.hosted_optimization.gated_tokens)} ·{" "}
+                    {percent(data.hosted_optimization.token_reduction_rate)} 감소
+                  </dd>
+                  <dt>provider 보고 비용 절감률</dt>
+                  <dd>{percent(data.hosted_optimization.reported_cost_reduction_rate)}</dd>
+                </dl>
+                <p>{data.hosted_optimization.notice}</p>
+                <a href="https://github.com/sokldjs554/procure-delta/blob/main/docs/hosted-evaluation-success.md">
+                  원본·실행 출처와 품질 한계 확인
+                </a>
+              </div>
+            )}
+
             <div className="evaluation-boundary">
               <article>
                 <small>DATASET</small>

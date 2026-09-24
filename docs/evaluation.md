@@ -35,9 +35,13 @@ header, 응답 원문·오류 메시지는 보존하지 않는다. 일부 고정
 기본 명령은 네트워크/유료 LLM을 호출하지 않는다. hosted 전체 호출과 deterministic 검증을 먼저 통과시키고 필요한 입력에만 provider를 호출하는 gated 경로를 같은 사례로 비교한다.
 두 hosted 경로가 모두 실제 실행되면 provider 호출 수, prompt+completion token 수, provider가 직접 보고한 비용의 절감률을 별도로 기록한다.
 사용량/비용이 공급자 응답에 없으면 null이다. 모델 가격표를 추정해 비용을 채우지 않으며, 로컬 deterministic 경로를 유료 호출 수에 포함하지 않는다.
-CLI에서 `--publish`를 주면 해당 실행의 JSON을 공개 평가 패널에 복사한다. Hosted 실행은
+CLI에서 `--publish`를 주면 해당 실행의 JSON을 로컬 평가 패널 파일에 복사한다. Hosted 실행은
 복사 전에 동일한 결과 검증을 통과해야 한다. 실패 diagnostic artifact는 남지만 공개
-snapshot은 유지된다. OCR 없이 재평가하면 OCR은 '미측정'이 된다.
+snapshot은 유지된다. OCR 없이 이 파일을 덮어쓰면 OCR은 '미측정'이 되므로 현재 공개
+결과는 이 경로를 쓰지 않고, 검토한 외부 원본을 별도 `results/hosted.json`으로 보존한다.
+`read_published_summary`는 측정 validator·동일 dataset 확인 후 hosted 두 경로만 합친다.
+`python scripts/publish_evaluation_snapshot.py`가 동일한 API projection에서 정적 데모 데이터를
+생성하며 OCR 원본·기존 provenance를 유지한다. 실패한 외부 결과를 게시하지 않는다.
 
 ## 데이터와 분모
 
@@ -69,10 +73,12 @@ Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리
 - deterministic extraction: measured
 - OCR English: measured, 영어 합성 이미지 3장
 - OCR Korean: measured, `kor+eng` 합성 이미지 3장, 18/18 fields
-- hosted all: `not_run`
-- hosted gated: `not_run`
+- hosted all: measured, Claude Haiku 4.5, 검증 통과 필드 18/30
+- hosted gated: measured, 30/30은 로컬 규칙 결과, 외부 정상 문서 추가 수용 0건
 
-UI는 네 경로를 같은 표에 두되 hosted 경로가 실행되지 않았으면 정확도·latency·token·cost를 **미실행/미측정**으로 남긴다.
+UI는 다섯 경로를 같은 표에 두며, 누락한 측정은 **미실행/미측정**으로 남긴다.
+[실제 외부 평가](hosted-evaluation-success.md)는 1회 합성 실험에서 호출 50%·토큰 53.3%
+감소를 기록했다. provider 비용은 미측정이며, 순수 규칙 대비 LLM 추가 효용은 증명하지 못했다.
 
 ## 과거 시점 재생
 

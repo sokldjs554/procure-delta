@@ -498,6 +498,19 @@ export interface EvaluationSummary {
   ocr_support: number;
   ocr_language: string | null;
   hosted_evaluated: boolean;
+  hosted_optimization: {
+    status: "measured" | "not_run";
+    all_calls: number | null;
+    gated_calls: number | null;
+    avoided_calls: number | null;
+    call_reduction_rate: number | null;
+    all_tokens: number | null;
+    gated_tokens: number | null;
+    token_reduction_rate: number | null;
+    reported_cost_reduction_rate: number | null;
+    cost_basis: string | null;
+    notice: string | null;
+  };
   routes: Record<
     "deterministic" | "hosted_all" | "hosted_gated" | "ocr" | "ocr_korean",
     EvaluationRouteSummary

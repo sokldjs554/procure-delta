@@ -128,4 +128,5 @@ validator가 통과해도 품질 합격을 뜻하지 않는다. 사용량이 측
 수정본 main에서 새 **Run workflow**로 같은 입력을 지정하고 `diagnostics_only`를
 끄고 전체 평가를 실행한다. 과거 run의 Re-run은 과거 commit을 사용하므로 새 수정이
 적용되지 않는다. 실제 품질 평가·token 집계·validator 통과를 확인한 뒤에만 결과를
-발표한다. 수정 후 외부 성공은 아직 미확인이다.
+발표한다. 이후 [실제 평가 35949777404](hosted-evaluation-success.md)는 측정 검증을
+통과했다. 이 문서의 과거 실패 기록은 변경하지 않으며 새 측정과 구분한다.
