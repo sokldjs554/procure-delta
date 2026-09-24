@@ -10,14 +10,15 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.documents.download import AttachmentDownloadRef, StoredAttachment, download_attachment
 from app.documents.ocr import (
-    FakeFixtureOcrAdapter,
     OcrAdapter,
     OcrDocument,
     ocr_parser_version,
     should_use_ocr,
 )
+from app.documents.ocr_runtime import configured_ocr_adapter
 from app.documents.parsers import PARSER_VERSION, ParsedDocument, ParsedPage, parse_document
 from app.documents.quality import assess_text_quality
 from app.documents.storage import AttachmentBlobStore, LocalBlobStore
@@ -243,7 +244,7 @@ async def persist_and_parse_attachments(
     await session.flush()
     processed = 0
     store = blob_store or LocalBlobStore(storage_root)
-    selected_ocr_adapter = ocr_adapter or FakeFixtureOcrAdapter()
+    selected_ocr_adapter = ocr_adapter or await configured_ocr_adapter(get_settings())
     for ref in refs:
         attachment = await session.scalar(
             select(Attachment).where(

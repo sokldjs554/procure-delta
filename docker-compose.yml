@@ -6,6 +6,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      OCR_BACKEND: ${OCR_BACKEND:-fixture}
+      OCR_TESSDATA_DIR: ${OCR_TESSDATA_DIR:-/usr/share/tesseract-ocr/5/tessdata}
+      OCR_LANGUAGE: ${OCR_LANGUAGE:-kor+eng}
+      OCR_DPI: ${OCR_DPI:-300}
+      OCR_MAX_PAGES: ${OCR_MAX_PAGES:-10}
+      OCR_MAX_PIXELS_PER_PAGE: ${OCR_MAX_PIXELS_PER_PAGE:-12000000}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-40}
       KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
       KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
       KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}
@@ -60,6 +67,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      OCR_BACKEND: ${OCR_BACKEND:-fixture}
+      OCR_TESSDATA_DIR: ${OCR_TESSDATA_DIR:-/usr/share/tesseract-ocr/5/tessdata}
+      OCR_LANGUAGE: ${OCR_LANGUAGE:-kor+eng}
+      OCR_DPI: ${OCR_DPI:-300}
+      OCR_MAX_PAGES: ${OCR_MAX_PAGES:-10}
+      OCR_MAX_PIXELS_PER_PAGE: ${OCR_MAX_PIXELS_PER_PAGE:-12000000}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-40}
       KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
       KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
       KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}
@@ -85,6 +99,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://procure_delta:procure_delta@postgres:5432/procure_delta}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ATTACHMENT_STORAGE_PATH: /var/lib/procure-delta
+      OCR_BACKEND: ${OCR_BACKEND:-fixture}
+      OCR_TESSDATA_DIR: ${OCR_TESSDATA_DIR:-/usr/share/tesseract-ocr/5/tessdata}
+      OCR_LANGUAGE: ${OCR_LANGUAGE:-kor+eng}
+      OCR_DPI: ${OCR_DPI:-300}
+      OCR_MAX_PAGES: ${OCR_MAX_PAGES:-10}
+      OCR_MAX_PIXELS_PER_PAGE: ${OCR_MAX_PIXELS_PER_PAGE:-12000000}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-40}
       KONEPS_ENABLED: ${KONEPS_ENABLED:-false}
       KONEPS_SERVICE_KEY: ${KONEPS_SERVICE_KEY:-}
       KONEPS_LOOKBACK_DAYS: ${KONEPS_LOOKBACK_DAYS:-1}

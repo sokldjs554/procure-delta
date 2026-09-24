@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     attachment_s3_access_key_id: SecretStr | None = None
     attachment_s3_secret_access_key: SecretStr | None = None
     attachment_max_bytes: int = 10 * 1024 * 1024
+    ocr_backend: Literal["fixture", "tesseract"] = "fixture"
+    ocr_tessdata_dir: Path = Path("/usr/share/tesseract-ocr/5/tessdata")
+    ocr_language: Literal["kor+eng", "kor", "eng"] = "kor+eng"
+    ocr_dpi: int = Field(default=300, ge=72, le=300)
+    ocr_max_pages: int = Field(default=10, ge=1, le=30)
+    ocr_max_pixels_per_page: int = Field(default=12_000_000, ge=1, le=20_000_000)
+    ocr_timeout_seconds: float = Field(default=40, ge=1, le=45)
     koneps_enabled: bool = False
     koneps_service_key: SecretStr | None = None
     koneps_lookback_days: int = Field(default=1, ge=1, le=30)

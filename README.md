@@ -272,7 +272,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 전체 5단계 lifecycle demo는 합성입니다.
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
-- HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 기본 서비스 OCR 어댑터도 fixture 전용입니다.
+- HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 로컬 기본값은 fixture이며, 실제 워커에는 [제한된 Tesseract 런타임](docs/runtime-ocr.md)을 선택할 수 있습니다. 런타임 연결 검증과 인식 정확도는 별개입니다.
 - hosted LLM은 합성 10건에서 외부 정확도·호출·토큰·지연시간을 실측했습니다. 단독 경로는 18/30이며 gated의 30/30은 로컬 규칙 결과입니다. 반복 외부 평가·실문서 일반화·LLM 추가 효용·실제 비용은 미검증입니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
