@@ -71,6 +71,9 @@ credential 종류·다른 endpoint를 발견하면 네트워크 요청 전에 �
 임의 값, URL, header, key, 응답 본문은 저장하지 않는다. `message_terms`는 정확한 오류
 문장을 재현하지 않으므로 단독으로 원인을 확정하는 근거로 사용하지 않는다.
 
+기존 extractor는 성공 응답의 원래 HTTP 상태 코드를 반환하지 않으므로 해당 단계는
+`http_success: true`로만 기록하고 `200`이라는 값을 추정해서 채우지 않는다.
+
 이 진단 결과의 `quality_evaluated`는 항상 false다. HTTP 성공이나 진단 workflow의
 성공을 hosted 품질/정확도/절감률 실측으로 취급하지 않는다. 원인을 해결한 뒤
 `diagnostics_only`를 끈 일반 평가가 별도로 통과해야 한다. 기본값은 false이며,

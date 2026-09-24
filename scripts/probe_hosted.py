@@ -132,7 +132,7 @@ async def run_probe(
             try:
                 proposal = await extractor.extract(document)
                 probes["project_extraction"] = {
-                    "status": "received", "http_status": 200,
+                    "status": "received", "http_success": True,
                     "grounded_valid": validate_extraction(proposal, document).valid,
                     "prompt_tokens": proposal.prompt_tokens,
                     "completion_tokens": proposal.completion_tokens,
@@ -145,7 +145,9 @@ async def run_probe(
                 probes["project_extraction"] = {"transport_error": "http_transport_error"}
 
     result["status"] = "completed" if all(
-        isinstance(p.get("http_status"), int) and 200 <= p["http_status"] < 300
+        p.get("http_success") is True or (
+            isinstance(p.get("http_status"), int) and 200 <= p["http_status"] < 300
+        )
         for p in probes.values()
     ) else "failed"
     return result

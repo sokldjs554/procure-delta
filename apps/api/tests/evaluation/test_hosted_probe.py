@@ -137,6 +137,21 @@ def test_probe_success_records_usage_but_is_never_a_quality_evaluation():
     assert result["probes"]["project_extraction"]["prompt_tokens"] == 10
 
 
+def test_probe_does_not_invent_status_200_for_an_extractor_response():
+    def handler(request):
+        payload = json.loads(request.content)
+        if payload.get("max_completion_tokens") == 4096:
+            return httpx.Response(204)
+        return httpx.Response(200, json={})
+
+    result = probe(handler)
+    extraction = result["probes"]["project_extraction"]
+    assert extraction.get("http_status") is None
+    assert extraction["http_success"] is True
+    assert extraction["grounded_valid"] is False
+    assert result["quality_evaluated"] is False
+
+
 @pytest.mark.parametrize("body", [
     [SECRET], {"error": SECRET}, {"error": {"type": [SECRET], "message": {"key": SECRET}}},
     {"error": {"type": SECRET, "message": "required " + SECRET + " field"}},
