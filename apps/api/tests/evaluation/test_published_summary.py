@@ -13,16 +13,16 @@ def test_published_hosted_measures_preserve_separate_ocr_and_provenance():
     local = read_summary(RESULTS / "local.json")
     result = read_published_summary(RESULTS)
     assert result.hosted_evaluated is True
-    assert result.routes["hosted_all"].field_accuracy == 18 / 30
+    assert result.routes["hosted_all"].field_accuracy == 1
     assert result.routes["hosted_gated"].field_accuracy == 1
-    assert result.hosted_optimization.all_tokens == 15654
-    assert result.hosted_optimization.gated_tokens == 7317
+    assert result.hosted_optimization.all_tokens == 22343
+    assert result.hosted_optimization.gated_tokens == 10149
     assert result.routes["hosted_all"].reported_cost is None
     assert result.ocr_correct == 17 and result.ocr_support == 18
     assert result.routes["ocr_korean"].field_accuracy == 1
     assert result.source_sha256 == local.source_sha256
     assert result.measured_at == local.measured_at
-    assert "fe6b8357" in result.routes["hosted_all"].notice
+    assert "ae63b047" in result.routes["hosted_all"].notice
     assert "로컬 규칙" in result.routes["hosted_gated"].notice
     for private in ("trusted_fields", "response_diagnostics", "recognition_text"):
         assert private not in result.model_dump_json()

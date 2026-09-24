@@ -5,12 +5,13 @@ two passed JSON/schema validation and failed grounding. The saved artifact does
 not contain field-level grounding reasons, so their exact causes remain unknown.
 The frozen dataset and historical measurements must remain unchanged.
 
-The request currently gives a schema and asks for labeled quotes. It does not
+The v2 request gave a schema and asked for labeled quotes. It did not
 explain several rules enforced locally: Korean date-only publication values use
 KST, list values retain their original language and order, qualified requirements
 are omitted, and evidence quotes must be exact complete spans on the given page.
-These rules belong in the request contract. This is a prompt clarification, not
-evidence of improved model accuracy or a reason to loosen validation.
+The v3 request now explains these rules. Validation criteria remain unchanged.
+The code change alone was not evidence of improved accuracy; the subsequent
+external measurement is described below.
 
 New evaluations will record `grounding_issues`: deduplicated field/code pairs
 produced by the validator. Fields are restricted to known business fields (or
@@ -27,10 +28,13 @@ Keep endpoint-specific JSON mode, strict parsing, token accounting and retry
 bounds unchanged. No repair calls or new paid workflow triggers are added.
 
 Verification requires privacy and grounding regressions, request identity tests,
-the complete CI/release contract, and a separate review before merge. A later
-manual hosted evaluation must compare the same frozen cases, inspect normal
-rejections and these codes, and retain usage for all rejected responses. Until
-then, the published 18/30 versus 30/30 result is the only live quality evidence.
+the complete CI/release contract, and a separate review before merge. These passed.
+The [subsequent v3 measurement](hosted-evaluation-success.md), run 36016974477,
+accepted 5/5 normal cases (30/30 fields), versus 3/5 (18/30) in the preserved v2 run.
+It retained usage for all rejected responses. Total tokens and hosted-all p95
+increased. Each version has one run, so neither repeatability nor a causal
+prompt effect has been established. Gated unstructured prose was still rejected
+for evidence absent from the page and unsupported values.
 
 The deterministic baseline already obtains 30/30 on this synthetic dataset.
 Neither this change nor a higher hosted score would establish incremental LLM

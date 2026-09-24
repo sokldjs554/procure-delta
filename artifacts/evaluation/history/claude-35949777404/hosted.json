@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "created_at": "2026-09-24T15:02:01.497536+00:00",
+  "created_at": "2026-09-24T03:03:51.325613+00:00",
   "provenance": {
     "dataset_sha256": "60915644e3d3d36a7aca72a410d40a3075eb472809ed014e50c77f8ecab78116",
-    "source_sha256": "c22db758569713764e07828700caf93906aa560dfd0001365f7d5a16ad4f60f3",
-    "git_commit": "ae63b0474800067ebc2c3432c5ade0b7f754a7cc",
+    "source_sha256": "8757a392b2d09fb0bca74812d75669df48cbbdf1a46d4ec82aac2b7797a1b861",
+    "git_commit": "fe6b8357b575a2b6b1c41e72e4cb2997533e77ad",
     "git_dirty": false,
     "configuration": {
       "with_ocr": false,
@@ -73,8 +73,8 @@
       "reported_cost_per_document": null,
       "cost_basis": null,
       "latency_ms": {
-        "p50": 0.17148550000101181,
-        "p95": 1.1281736500002641
+        "p50": 0.18591099999554217,
+        "p95": 1.1466947000052132
       },
       "rows": [
         {
@@ -123,11 +123,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 1.3340679999984673,
+          "duration_ms": 1.2693440000077771,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -175,11 +174,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.8765250000024594,
+          "duration_ms": 0.9967900000020791,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -210,11 +208,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.17810500000337015,
+          "duration_ms": 0.18233400000156053,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -249,11 +246,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.2373239999968746,
+          "duration_ms": 0.26923899999076184,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -284,11 +280,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.16486599999865348,
+          "duration_ms": 0.18948799998952381,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -313,11 +308,10 @@
           "schema_error_fields": [
             "buyer_name"
           ],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.08066000000184204,
+          "duration_ms": 0.08675299999083563,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -342,11 +336,10 @@
           "schema_error_fields": [
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.1106449999994652,
+          "duration_ms": 0.12793199999805438,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -369,20 +362,10 @@
           "trusted_fields": {},
           "rejection_stage": "grounding",
           "schema_error_fields": [],
-          "grounding_issues": [
-            {
-              "field": "estimated_amount",
-              "code": "unsupported_value"
-            },
-            {
-              "field": "estimated_amount",
-              "code": "contradictory_claims"
-            }
-          ],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.3084789999974191,
+          "duration_ms": 0.32136599999432747,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -407,11 +390,10 @@
           "schema_error_fields": [
             "estimated_amount"
           ],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.10054999999908887,
+          "duration_ms": 0.10342499999183019,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -438,11 +420,10 @@
             "procurement_type",
             "title"
           ],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.0420529999942687,
+          "duration_ms": 0.04931299999100247,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -457,50 +438,50 @@
       "extractor": {
         "provider": "anthropic",
         "model": "claude-haiku-4-5-20251001",
-        "version": "chat-prompt-json-v3-a522d812a6f15e65"
+        "version": "chat-prompt-json-v2-b8c1273e927806c1"
       },
       "documents": 10,
-      "field_accuracy": 1.0,
-      "correct_fields": 30,
+      "field_accuracy": 0.6,
+      "correct_fields": 18,
       "expected_fields": 30,
-      "document_exact_accuracy": 1.0,
+      "document_exact_accuracy": 0.6,
       "exact_document_support": 5,
-      "date_accuracy": 1.0,
+      "date_accuracy": 0.5,
       "date_support": 4,
-      "amount_accuracy": 1.0,
+      "amount_accuracy": 0.6666666666666666,
       "amount_support": 3,
       "required_conditions": {
-        "tp": 5,
+        "tp": 3,
         "fp": 0,
-        "fn": 0,
-        "predicted_support": 5,
+        "fn": 2,
+        "predicted_support": 3,
         "expected_support": 5,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0
+        "recall": 0.6,
+        "f1": 0.75
       },
       "rejection_detection": {
         "tp": 5,
-        "fp": 0,
+        "fp": 2,
         "fn": 0,
-        "predicted_support": 5,
+        "predicted_support": 7,
         "expected_support": 5,
-        "precision": 1.0,
+        "precision": 0.7142857142857143,
         "recall": 1.0,
-        "f1": 1.0
+        "f1": 0.8333333333333334
       },
-      "schema_violation_rate": 0.5,
-      "schema_failures": 5,
-      "grounded_accepted_documents": 5,
-      "grounded_acceptance_rate": 0.5,
+      "schema_violation_rate": 0.3,
+      "schema_failures": 3,
+      "grounded_accepted_documents": 3,
+      "grounded_acceptance_rate": 0.3,
       "hosted_calls": 10,
-      "prompt_tokens": 18788,
-      "completion_tokens": 3555,
+      "prompt_tokens": 10058,
+      "completion_tokens": 5596,
       "reported_cost_per_document": null,
       "cost_basis": null,
       "latency_ms": {
-        "p50": 2545.8487630000022,
-        "p95": 10864.448594750009
+        "p50": 2612.005914000008,
+        "p95": 4396.148211599995
       },
       "rows": [
         {
@@ -549,7 +530,6 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -557,9 +537,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1935,
+          "prompt_tokens": 1062,
           "completion_tokens": 1078,
-          "duration_ms": 10308.250521000005,
+          "duration_ms": 4723.812863999996,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -568,46 +548,40 @@
         {
           "id": "korean-labels",
           "expected_valid": true,
-          "valid": true,
+          "valid": false,
           "schema_valid": true,
           "fields": {
-            "correct": 9,
+            "correct": 0,
             "expected_fields": 9,
-            "accuracy": 1.0,
+            "accuracy": 0.0,
             "per_field": {
-              "title": true,
-              "buyer_name": true,
-              "procurement_type": true,
-              "estimated_amount": true,
-              "currency": true,
-              "published_at": true,
-              "closes_at": true,
-              "regions": true,
-              "required_capabilities": true
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false,
+              "estimated_amount": false,
+              "currency": false,
+              "published_at": false,
+              "closes_at": false,
+              "regions": false,
+              "required_capabilities": false
             },
-            "missing": [],
-            "unexpected": [],
-            "exact_match": true
-          },
-          "trusted_fields": {
-            "buyer_name": "합성기관",
-            "title": "문서 검색 시스템",
-            "procurement_type": "services",
-            "estimated_amount": "210000000",
-            "currency": "KRW",
-            "published_at": "2026-08-31T15:00:00+00:00",
-            "closes_at": "2026-09-30T09:00:00+00:00",
-            "regions": [
-              "Seoul"
+            "missing": [
+              "buyer_name",
+              "closes_at",
+              "currency",
+              "estimated_amount",
+              "procurement_type",
+              "published_at",
+              "regions",
+              "required_capabilities",
+              "title"
             ],
-            "required_capabilities": [
-              "OCR",
-              "Python"
-            ]
+            "unexpected": [],
+            "exact_match": false
           },
-          "rejection_stage": null,
+          "trusted_fields": {},
+          "rejection_stage": "grounding",
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -615,9 +589,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1931,
-          "completion_tokens": 959,
-          "duration_ms": 7417.799442000003,
+          "prompt_tokens": 1058,
+          "completion_tokens": 956,
+          "duration_ms": 3995.669191999994,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -648,7 +622,6 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -656,9 +629,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1855,
+          "prompt_tokens": 982,
           "completion_tokens": 316,
-          "duration_ms": 2926.2162269999976,
+          "duration_ms": 1796.8785290000114,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -693,7 +666,6 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -701,9 +673,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1867,
+          "prompt_tokens": 994,
           "completion_tokens": 511,
-          "duration_ms": 3783.960383999997,
+          "duration_ms": 2566.177420999992,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -712,29 +684,28 @@
         {
           "id": "qualified-omission",
           "expected_valid": true,
-          "valid": true,
+          "valid": false,
           "schema_valid": true,
           "fields": {
-            "correct": 3,
+            "correct": 0,
             "expected_fields": 3,
-            "accuracy": 1.0,
+            "accuracy": 0.0,
             "per_field": {
-              "title": true,
-              "buyer_name": true,
-              "procurement_type": true
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
             },
-            "missing": [],
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
             "unexpected": [],
-            "exact_match": true
+            "exact_match": false
           },
-          "trusted_fields": {
-            "buyer_name": "Test Buyer",
-            "title": "Unknown requirement",
-            "procurement_type": "services"
-          },
-          "rejection_stage": null,
+          "trusted_fields": {},
+          "rejection_stage": "grounding",
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -742,9 +713,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1860,
-          "completion_tokens": 297,
-          "duration_ms": 2165.481299000007,
+          "prompt_tokens": 987,
+          "completion_tokens": 405,
+          "duration_ms": 2108.4285529999815,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -774,7 +745,6 @@
             "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "invalid_json",
@@ -782,9 +752,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1847,
-          "completion_tokens": 53,
-          "duration_ms": 1585.8828319999957,
+          "prompt_tokens": 974,
+          "completion_tokens": 264,
+          "duration_ms": 1808.4326240000053,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -805,26 +775,20 @@
             "exact_match": true
           },
           "trusted_fields": {},
-          "rejection_stage": "response",
+          "rejection_stage": "schema",
           "schema_error_fields": [
-            "buyer_name",
-            "evidence",
-            "procurement_type",
-            "schema_version",
-            "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
-            "status": "invalid_json",
-            "content_format": "plain",
+            "status": "parsed",
+            "content_format": "json_fence",
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1893,
-          "completion_tokens": 68,
-          "duration_ms": 11319.51974600001,
+          "prompt_tokens": 1020,
+          "completion_tokens": 551,
+          "duration_ms": 2650.30654200001,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -834,7 +798,7 @@
           "id": "contradictory-money",
           "expected_valid": false,
           "valid": false,
-          "schema_valid": false,
+          "schema_valid": true,
           "fields": {
             "correct": 0,
             "expected_fields": 0,
@@ -845,26 +809,18 @@
             "exact_match": true
           },
           "trusted_fields": {},
-          "rejection_stage": "response",
-          "schema_error_fields": [
-            "buyer_name",
-            "evidence",
-            "procurement_type",
-            "schema_version",
-            "title",
-            "unknown"
-          ],
-          "grounding_issues": [],
+          "rejection_stage": "grounding",
+          "schema_error_fields": [],
           "response_diagnostics": {
             "http_status": 200,
-            "status": "invalid_json",
-            "content_format": "plain",
+            "status": "parsed",
+            "content_format": "json_fence",
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1880,
-          "completion_tokens": 75,
-          "duration_ms": 1628.002398999996,
+          "prompt_tokens": 1007,
+          "completion_tokens": 529,
+          "duration_ms": 2604.74540300001,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -894,7 +850,6 @@
             "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "invalid_json",
@@ -902,9 +857,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1865,
-          "completion_tokens": 75,
-          "duration_ms": 1628.0538259999985,
+          "prompt_tokens": 992,
+          "completion_tokens": 469,
+          "duration_ms": 3030.1557870000124,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -914,7 +869,7 @@
           "id": "unstructured-prose",
           "expected_valid": false,
           "valid": false,
-          "schema_valid": false,
+          "schema_valid": true,
           "fields": {
             "correct": 0,
             "expected_fields": 0,
@@ -925,26 +880,18 @@
             "exact_match": true
           },
           "trusted_fields": {},
-          "rejection_stage": "response",
-          "schema_error_fields": [
-            "buyer_name",
-            "evidence",
-            "procurement_type",
-            "schema_version",
-            "title",
-            "unknown"
-          ],
-          "grounding_issues": [],
+          "rejection_stage": "grounding",
+          "schema_error_fields": [],
           "response_diagnostics": {
             "http_status": 200,
-            "status": "invalid_json",
-            "content_format": "plain",
+            "status": "parsed",
+            "content_format": "json_fence",
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1855,
-          "completion_tokens": 123,
-          "duration_ms": 2117.022363999993,
+          "prompt_tokens": 982,
+          "completion_tokens": 517,
+          "duration_ms": 2619.266425000006,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -959,7 +906,7 @@
       "extractor": {
         "provider": "anthropic",
         "model": "claude-haiku-4-5-20251001",
-        "version": "chat-prompt-json-v3-a522d812a6f15e65"
+        "version": "chat-prompt-json-v2-b8c1273e927806c1"
       },
       "documents": 10,
       "field_accuracy": 1.0,
@@ -996,13 +943,13 @@
       "grounded_accepted_documents": 5,
       "grounded_acceptance_rate": 0.5,
       "hosted_calls": 5,
-      "prompt_tokens": 9340,
-      "completion_tokens": 809,
+      "prompt_tokens": 4975,
+      "completion_tokens": 2342,
       "reported_cost_per_document": null,
       "cost_basis": null,
       "latency_ms": {
-        "p50": 607.092579499998,
-        "p95": 3058.340194000005
+        "p50": 1050.3907960000022,
+        "p95": 3547.6992639000096
       },
       "rows": [
         {
@@ -1051,11 +998,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 1.3213619999987714,
+          "duration_ms": 1.3898150000102305,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1103,11 +1049,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 1.1808739999992213,
+          "duration_ms": 1.3229189999890423,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1138,11 +1083,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.2342859999941993,
+          "duration_ms": 0.27882700001669036,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1177,11 +1121,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.38304600001026756,
+          "duration_ms": 0.42069500000252447,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1212,11 +1155,10 @@
           },
           "rejection_stage": null,
           "schema_error_fields": [],
-          "grounding_issues": [],
           "response_diagnostics": null,
           "prompt_tokens": null,
           "completion_tokens": null,
-          "duration_ms": 0.2564090000021224,
+          "duration_ms": 0.2881850000164832,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1246,7 +1188,6 @@
             "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "invalid_json",
@@ -1254,9 +1195,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1847,
-          "completion_tokens": 57,
-          "duration_ms": 1212.8637969999972,
+          "prompt_tokens": 974,
+          "completion_tokens": 266,
+          "duration_ms": 2099.391776999994,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1277,26 +1218,20 @@
             "exact_match": true
           },
           "trusted_fields": {},
-          "rejection_stage": "response",
+          "rejection_stage": "schema",
           "schema_error_fields": [
-            "buyer_name",
-            "evidence",
-            "procurement_type",
-            "schema_version",
-            "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
-            "status": "invalid_json",
-            "content_format": "plain",
+            "status": "parsed",
+            "content_format": "json_fence",
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1893,
-          "completion_tokens": 66,
-          "duration_ms": 1583.6133250000016,
+          "prompt_tokens": 1020,
+          "completion_tokens": 551,
+          "duration_ms": 2661.4889950000133,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1326,7 +1261,6 @@
             "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
             "status": "invalid_json",
@@ -1334,9 +1268,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1880,
-          "completion_tokens": 93,
-          "duration_ms": 1546.6669999999995,
+          "prompt_tokens": 1007,
+          "completion_tokens": 587,
+          "duration_ms": 4272.780393000005,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1357,26 +1291,20 @@
             "exact_match": true
           },
           "trusted_fields": {},
-          "rejection_stage": "response",
+          "rejection_stage": "schema",
           "schema_error_fields": [
-            "buyer_name",
-            "evidence",
-            "procurement_type",
-            "schema_version",
-            "title",
             "unknown"
           ],
-          "grounding_issues": [],
           "response_diagnostics": {
             "http_status": 200,
-            "status": "invalid_json",
-            "content_format": "plain",
+            "status": "parsed",
+            "content_format": "json_fence",
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1865,
-          "completion_tokens": 70,
-          "duration_ms": 1407.9667609999974,
+          "prompt_tokens": 992,
+          "completion_tokens": 420,
+          "duration_ms": 2204.7768150000024,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1399,48 +1327,6 @@
           "trusted_fields": {},
           "rejection_stage": "grounding",
           "schema_error_fields": [],
-          "grounding_issues": [
-            {
-              "field": "buyer_name",
-              "code": "evidence_not_on_page"
-            },
-            {
-              "field": "buyer_name",
-              "code": "unsupported_value"
-            },
-            {
-              "field": "title",
-              "code": "evidence_not_on_page"
-            },
-            {
-              "field": "title",
-              "code": "unsupported_value"
-            },
-            {
-              "field": "procurement_type",
-              "code": "evidence_not_on_page"
-            },
-            {
-              "field": "procurement_type",
-              "code": "unsupported_value"
-            },
-            {
-              "field": "estimated_amount",
-              "code": "evidence_not_on_page"
-            },
-            {
-              "field": "estimated_amount",
-              "code": "unsupported_value"
-            },
-            {
-              "field": "currency",
-              "code": "evidence_not_on_page"
-            },
-            {
-              "field": "currency",
-              "code": "unsupported_value"
-            }
-          ],
           "response_diagnostics": {
             "http_status": 200,
             "status": "parsed",
@@ -1448,9 +1334,9 @@
             "finish_reason": "stop",
             "usage_status": "reported"
           },
-          "prompt_tokens": 1855,
-          "completion_tokens": 523,
-          "duration_ms": 4264.934905000004,
+          "prompt_tokens": 982,
+          "completion_tokens": 518,
+          "duration_ms": 2621.534765999996,
           "error_type": null,
           "http_status": null,
           "provider_error_type": null,
@@ -1465,9 +1351,9 @@
     "gated_calls": 5,
     "avoided_calls": 5,
     "call_reduction_rate": 0.5,
-    "all_tokens": 22343,
-    "gated_tokens": 10149,
-    "token_reduction_rate": 0.5457637738889137,
+    "all_tokens": 15654,
+    "gated_tokens": 7317,
+    "token_reduction_rate": 0.5325795323878881,
     "reported_cost_reduction_rate": null,
     "cost_basis": null
   },
@@ -2109,7 +1995,7 @@
       ]
     }
   ],
-  "total_elapsed_ms": 54951.620736,
+  "total_elapsed_ms": 41852.568899000005,
   "limitations": [
     "Tiny hand-authored synthetic regression set, not unseen real procurement data.",
     "Labels authored for this system, so these are smoke/regression scores, not generalization.",
