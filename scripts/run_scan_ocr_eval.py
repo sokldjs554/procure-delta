@@ -9,7 +9,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pymupdf
-
 from app.documents.ocr_runtime import (
     PROCESS_MEMORY_BYTES,
     RUNTIME_ADAPTER_VERSION,
@@ -54,7 +53,8 @@ def main() -> None:
         "measurement": asyncio.run(evaluate_scans(manifest, args.source_dir, config)),
         "limitation": (
             "Original image-only PDFs; no page rewriting, rerasterization, blur or crop before "
-            "the worker adapter. All pages recognized; only pre-annotated pages scored. "
+            "the worker adapter. All pages requested for recognition; only pre-annotated "
+            "pages scored when recognition completes. "
             "Field validation is page-scoped, not full-PDF worker extraction acceptance. "
             "Elapsed time covers whole-PDF recognition, excluding the startup probe and scoring. "
             "Small convenience sample, not a representative/independently annotated corpus, "

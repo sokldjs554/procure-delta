@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "suite": "korean-public-original-scans-v1",
+  "measured_at": "2026-09-24T17:09:12.123042+00:00",
+  "provenance": {
+    "dataset_sha256": "251804ff21e4cf8347873d147b5f77e2f9006c7c36c8bdf2d10d45006f073700",
+    "source_sha256": "063be20ec10d4809e71124f3fdbd038478d9ffad54e2e15843fd5ad9a0d5dab7",
+    "git_commit": "f8f958247fb43f5998c11d1d7c4b896b589ffd6e",
+    "git_dirty": false,
+    "configuration": {
+      "language": "kor+eng",
+      "dpi": 300,
+      "max_pages": 10,
+      "max_pixels_per_page": 12000000,
+      "timeout_seconds": 40.0,
+      "tessdata_sha256": {
+        "kor": "6b85e11d9bbf07863b97b3523b1b112844c43e713df8b66418a081fd1060b3b2",
+        "eng": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+      },
+      "pymupdf": "1.28.2",
+      "mupdf": "1.28.2",
+      "adapter_version": "pymupdf-ocr-v2",
+      "process_memory_bytes": 536870912,
+      "extractor_version": "deterministic-labels-v2",
+      "grounding_version": "explicit-labels-v2"
+    },
+    "environment": {
+      "python": "3.12.14",
+      "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+      "cpu_logical_count": 9,
+      "machine": "x86_64",
+      "cpu_model": "x86_64",
+      "environment_label": "local-public-original-scan-evaluation",
+      "cpu_quota": "800000 100000"
+    },
+    "synthetic": false
+  },
+  "source_kind": "image_only_public_pdf",
+  "selection": "Two convenience-sampled 2020 notices from the same official issuer and similar form template. The first pages were visually inspected and annotations frozen before OCR. Search snippets were used for discovery, not ground truth. This is not an independently annotated, representative or held-out generalization corpus. No extractor rules, OCR models or runtime settings were tuned on these documents.",
+  "measurement": {
+    "sources": [
+      {
+        "id": "nongshinbo-2020-npl",
+        "filename": "nongshinbo-2020-npl.pdf",
+        "url": "https://nongshinbo.nonghyup.com/common/downLoad.do?siteId=nongshinbo&fileSeq=5075698",
+        "landing_url": "https://nongshinbo.nonghyup.com/user/boardList.do?boardId=4482573&boardSeq=5075697&command=view&id=&page=1",
+        "issuer": "농림수산업자신용보증기금 관리기관 농협중앙회",
+        "sha256": "8a691ac1743634a9c36e9519a65db88c261441be6222d890db10887f34ae5c33",
+        "page": 1,
+        "expected_fields": {
+          "title": "2020년 농신보 부실채권 매각자문사 선정",
+          "buyer_name": "농협중앙회",
+          "procurement_type": "services"
+        },
+        "recognition_anchors": {
+          "title": "2020년 농신보 부실채권 매각자문사 선정",
+          "buyer": "농협중앙회",
+          "budget_text": "50백만원",
+          "notice_number": "2020-003"
+        },
+        "annotation_note": "Title transcribed from 입찰건명, with enclosing quotation marks excluded. Buyer is the explicitly named managing/contracting institution, not an inferred name from the website. Services category follows the stated valuation/advisory scope. No person names or contact details scored. Official attachment is named 입찰공고(스캔).pdf; creator/producer is DocuCentre-V C2265; visually scanned text and full-page rasters support scan origin, without independent physical-chain attestation.",
+        "byte_size": 89166,
+        "page_count": 4,
+        "native_characters_by_page": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "largest_image_coverage_by_page": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "inspection_grayscale_range_by_page": [
+          237,
+          235,
+          253,
+          238
+        ],
+        "pdf_creator": "DocuCentre-V C2265",
+        "pdf_producer": "DocuCentre-V C2265",
+        "native_quality_status": "needs_ocr"
+      },
+      {
+        "id": "nongshinbo-2020-digital",
+        "filename": "nongshinbo-2020-digital.pdf",
+        "url": "https://nongshinbo.nonghyup.com/common/downLoad.do?siteId=nongshinbo&fileSeq=5071892",
+        "landing_url": "https://nongshinbo.nonghyup.com/user/boardList.do?boardId=4482573&boardSeq=5071891&categoryDepth=&categoryId=&column=&command=view&id=&page=1&parent=&search=&siteId=nongshinbo",
+        "issuer": "농림수산업자신용보증기금 관리기관 농협중앙회",
+        "sha256": "a778aeb1ee05f31a9eac62a4d36ac6d86239ce70ce4a92991a0a43e502cf613f",
+        "page": 1,
+        "expected_fields": {
+          "title": "디지털 농신보 마스터플랜 연구용역",
+          "buyer_name": "농협중앙회",
+          "procurement_type": "services"
+        },
+        "recognition_anchors": {
+          "title": "디지털 농신보 마스터플랜 연구용역",
+          "buyer": "농협중앙회",
+          "budget_text": "200백만원",
+          "notice_number": "2020-001"
+        },
+        "annotation_note": "Title transcribed from 입찰건명, with enclosing quotation marks excluded; the webpage's 재공고 suffix is not added to the page title. Buyer is the explicit managing/contracting institution. Services category follows 연구용역. Official attachment is named 입찰공고(스캔).pdf; creator/producer is DocuCentre-V C2265; visual scan defects and full-page rasters support scan origin. No person names or contact details scored.",
+        "byte_size": 5306594,
+        "page_count": 4,
+        "native_characters_by_page": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "largest_image_coverage_by_page": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "inspection_grayscale_range_by_page": [
+          201,
+          197,
+          190,
+          189
+        ],
+        "pdf_creator": "DocuCentre-V C2265",
+        "pdf_producer": "DocuCentre-V C2265",
+        "native_quality_status": "needs_ocr"
+      }
+    ],
+    "image_only_documents": 2,
+    "original_pdf_pages": 8,
+    "annotated_pages": 2,
+    "runtime_identity": "5e0d402cc04f207467b1e5340d56b77c47fad0272f42fe92625f0175d009a26b",
+    "real_pdf_recognition_attempts": 2,
+    "native_control": {
+      "summary": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 0,
+        "expected_anchors": 8,
+        "recognition_anchor_recall": 0.0,
+        "proposed_correct_fields": 0,
+        "trusted_correct_fields": 0,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      },
+      "rows": [
+        {
+          "id": "nongshinbo-2020-npl",
+          "status": "measured",
+          "scored_page": 1,
+          "text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "anchors": {
+            "correct": 0,
+            "support": 4,
+            "recall": 0.0,
+            "per_anchor": {
+              "title": false,
+              "buyer": false,
+              "budget_text": false,
+              "notice_number": false
+            }
+          },
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          }
+        },
+        {
+          "id": "nongshinbo-2020-digital",
+          "status": "measured",
+          "scored_page": 1,
+          "text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "anchors": {
+            "correct": 0,
+            "support": 4,
+            "recall": 0.0,
+            "per_anchor": {
+              "title": false,
+              "buyer": false,
+              "budget_text": false,
+              "notice_number": false
+            }
+          },
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          }
+        }
+      ]
+    },
+    "runtime": {
+      "summary": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 4,
+        "expected_anchors": 8,
+        "recognition_anchor_recall": 0.5,
+        "proposed_correct_fields": 0,
+        "trusted_correct_fields": 0,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      },
+      "rows": [
+        {
+          "id": "nongshinbo-2020-npl",
+          "status": "measured",
+          "scored_page": 1,
+          "expected_field_count": 3,
+          "elapsed_ms": 22536.45291999419,
+          "provider": "tesseract_pymupdf",
+          "provider_version": "pymupdf-ocr-v2-5e0d402cc04f207467b1e5340d56b77c47fad0272f42fe92625f0175d009a26b",
+          "synthetic": false,
+          "recognized_pages": 4,
+          "document_text_sha256": "62b125bdb49f88296381ce6fa50a99ed3f441cf8b06e699659b4d319357da820",
+          "scored_page_text_sha256": "395572e5517151a6d81800d75b170ba295ef838cb4c462058be02b8dc69a772e",
+          "scored_page_characters": 510,
+          "anchors": {
+            "correct": 2,
+            "support": 4,
+            "recall": 0.5,
+            "per_anchor": {
+              "title": true,
+              "buyer": false,
+              "budget_text": true,
+              "notice_number": false
+            }
+          },
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          }
+        },
+        {
+          "id": "nongshinbo-2020-digital",
+          "status": "measured",
+          "scored_page": 1,
+          "expected_field_count": 3,
+          "elapsed_ms": 23602.04024399718,
+          "provider": "tesseract_pymupdf",
+          "provider_version": "pymupdf-ocr-v2-5e0d402cc04f207467b1e5340d56b77c47fad0272f42fe92625f0175d009a26b",
+          "synthetic": false,
+          "recognized_pages": 4,
+          "document_text_sha256": "2ea02e6366944f611dc51e22950842b6daa78a6e5397cbc831d328f0be437e0d",
+          "scored_page_text_sha256": "a996540352c2a7489c4c694c29a6f5c6bfd5a974826d2f6f54b6a42972744f9e",
+          "scored_page_characters": 560,
+          "anchors": {
+            "correct": 2,
+            "support": 4,
+            "recall": 0.5,
+            "per_anchor": {
+              "title": true,
+              "buyer": false,
+              "budget_text": true,
+              "notice_number": false
+            }
+          },
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          }
+        }
+      ]
+    }
+  },
+  "limitation": "Original image-only PDFs; no page rewriting, rerasterization, blur or crop before the worker adapter. All pages recognized; only pre-annotated pages scored. Field validation is page-scoped, not full-PDF worker extraction acceptance. Elapsed time covers whole-PDF recognition, excluding the startup probe and scoring. Small convenience sample, not a representative/independently annotated corpus, full-page CER, hosted-LLM evaluation, worker DB persistence or cloud throughput. Source PDFs and recognized text are not published."
+}

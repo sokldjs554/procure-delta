@@ -36,6 +36,13 @@ raise bounded error messages into the existing retry/DLQ path. Timeout and calle
 cancellation kill and reap the child; temporary files are removed afterwards.
 Raw document text, paths and native-library diagnostics are not put in errors.
 
+Runtime v2 clears MuPDF's cached resources before each page and releases the
+native TextPage after copying its text. This fixes a cross-page memory failure
+found with an original high-resolution public scan and reproduced with distinct
+dense generated scans. The 512 MiB limit and recognition settings are unchanged;
+in-budget PDFs can still exceed available process memory. The version is part of
+both the durable identity and provider version.
+
 The durable OCR identity includes adapter version, PyMuPDF/MuPDF versions,
 language-file SHA-256 values, language, resolution and limits. Results from a
 changed runtime cannot silently reuse the prior identity. Native parse, attachment
@@ -65,5 +72,9 @@ OCR_BACKEND=tesseract python -m app.ops.check_ocr
 
 The historical Korean synthetic 18/18 and public-document diagnostics use a
 separate CLI evaluation path and remain unchanged. They are not measurements of
-this new integrated runtime. Natural-scan generalization, complex layouts,
-handwriting, production throughput and full cloud operation remain unverified.
+the integrated runtime. A subsequent [original-scan diagnostic](public-scan-ocr.md)
+uses this runtime on two official image-only PDFs. After the v2 memory fix, both
+four-page files complete in two local repeats, but first-page trusted fields are
+0/6 and anchors are 4/8. These page-scoped scores are not full-PDF worker acceptance
+or persistence. Natural-scan generalization, complex layouts, handwriting,
+production throughput and full cloud operation remain unverified.
