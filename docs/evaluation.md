@@ -73,12 +73,14 @@ Delta는 (case-id,field) 쌍의 precision/recall과 high-impact 탐지를 분리
 - deterministic extraction: measured
 - OCR English: measured, 영어 합성 이미지 3장
 - OCR Korean: measured, `kor+eng` 합성 이미지 3장, 18/18 fields
-- hosted all: measured, Claude Haiku 4.5, 검증 통과 필드 18/30
+- hosted all: measured, Claude Haiku 4.5 v3, 검증 통과 필드 30/30
 - hosted gated: measured, 30/30은 로컬 규칙 결과, 외부 정상 문서 추가 수용 0건
 
 UI는 다섯 경로를 같은 표에 두며, 누락한 측정은 **미실행/미측정**으로 남긴다.
-[실제 외부 평가](hosted-evaluation-success.md)는 1회 합성 실험에서 호출 50%·토큰 53.3%
-감소를 기록했다. provider 비용은 미측정이며, 순수 규칙 대비 LLM 추가 효용은 증명하지 못했다.
+[최신 외부 평가](hosted-evaluation-success.md)는 v3의 1회 합성 실험에서 전체 호출 경로 대비
+gated 호출 50%·토큰 54.6% 감소를 기록했다. v2·v3 간에는 단독 경로 정확도가 18/30에서
+30/30으로 바뀌었지만 전체 토큰과 p95는 증가했다. provider 비용은 미측정이며,
+순수 규칙 대비 LLM 추가 효용은 증명하지 못했다.
 
 ## 과거 시점 재생
 

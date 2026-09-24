@@ -30,9 +30,9 @@ export const evaluationSnapshot: EvaluationSummary = {
     "gated_calls": 5,
     "avoided_calls": 5,
     "call_reduction_rate": 0.5,
-    "all_tokens": 15654,
-    "gated_tokens": 7317,
-    "token_reduction_rate": 0.5325795323878881,
+    "all_tokens": 22343,
+    "gated_tokens": 10149,
+    "token_reduction_rate": 0.5457637738889137,
     "reported_cost_reduction_rate": null,
     "cost_basis": null,
     "notice": "경로 전체 지연시간에는 gated의 로컬 처리도 포함됩니다. 호출 수는 논리 호출이며 HTTP 재시도 횟수와 다릅니다. 반환되지 않은 비용은 미측정으로 유지합니다."
@@ -56,17 +56,17 @@ export const evaluationSnapshot: EvaluationSummary = {
     "hosted_all": {
       "status": "measured",
       "support": 30,
-      "field_accuracy": 0.6,
-      "schema_failures": 3,
-      "grounded_acceptance_rate": 0.3,
-      "p50_latency_ms": 2612.005914000008,
-      "p95_latency_ms": 4396.148211599995,
+      "field_accuracy": 1.0,
+      "schema_failures": 5,
+      "grounded_acceptance_rate": 0.5,
+      "p50_latency_ms": 2545.8487630000022,
+      "p95_latency_ms": 10864.448594750009,
       "hosted_calls": 10,
-      "prompt_tokens": 10058,
-      "completion_tokens": 5596,
+      "prompt_tokens": 18788,
+      "completion_tokens": 3555,
       "reported_cost": null,
       "language": null,
-      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T03:03:51.325613+00:00 · commit fe6b8357b575a2b6b1c41e72e4cb2997533e77ad. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 2건입니다."
+      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 0건입니다."
     },
     "hosted_gated": {
       "status": "measured",
@@ -74,14 +74,14 @@ export const evaluationSnapshot: EvaluationSummary = {
       "field_accuracy": 1.0,
       "schema_failures": 4,
       "grounded_acceptance_rate": 0.5,
-      "p50_latency_ms": 1050.3907960000022,
-      "p95_latency_ms": 3547.6992639000096,
+      "p50_latency_ms": 607.092579499998,
+      "p95_latency_ms": 3058.340194000005,
       "hosted_calls": 5,
-      "prompt_tokens": 4975,
-      "completion_tokens": 2342,
+      "prompt_tokens": 9340,
+      "completion_tokens": 809,
       "reported_cost": null,
       "language": null,
-      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T03:03:51.325613+00:00 · commit fe6b8357b575a2b6b1c41e72e4cb2997533e77ad. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 0건입니다. 로컬 규칙 처리 5건의 정답 필드는 30/30이며, 외부 모델이 추가로 수용한 정상 문서는 0건입니다."
+      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 0건입니다. 로컬 규칙 처리 5건의 정답 필드는 30/30이며, 외부 모델이 추가로 수용한 정상 문서는 0건입니다."
     },
     "ocr": {
       "status": "measured",

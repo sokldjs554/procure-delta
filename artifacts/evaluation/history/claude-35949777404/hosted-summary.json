@@ -1,11 +1,11 @@
 {
-  "all_tokens": 22343,
+  "all_tokens": 15654,
   "avoided_calls": 5,
   "call_reduction_rate": 0.5,
   "cost_basis": null,
-  "gated_tokens": 10149,
+  "gated_tokens": 7317,
   "hosted_all_calls": 10,
   "hosted_gated_calls": 5,
   "reported_cost_reduction_rate": null,
-  "token_reduction_rate": 0.5457637738889137
+  "token_reduction_rate": 0.5325795323878881
 }

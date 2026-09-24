@@ -157,14 +157,16 @@ amendment
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
 | OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
 | 한국어 공고 항목 해석 v2 | 제한적 개선 | 별도 2건의 원문 텍스트 **0/6 → 3/6**, 같은 문서의 OCR은 **0/18**; [조건·실패 포함 비교](docs/korean-form-grounding.md) |
-| hosted all | **외부 실측 완료 · 품질 한계** | Claude Haiku 4.5, 검증 통과 필드 **18/30**, 호출 10회, 15,654 tokens |
-| hosted gated | **외부 실측 완료** | **30/30은 로컬 규칙 결과**, 호출 5회, 7,317 tokens; 전체 호출 대비 호출 50%·토큰 53.3% 감소 |
+| hosted all | **외부 실측 완료 · 합성 회귀** | Claude Haiku 4.5, v3 검증 통과 필드 **30/30**, 호출 10회, 22,343 tokens |
+| hosted gated | **외부 실측 완료** | **30/30은 로컬 규칙 결과**, 호출 5회, 10,149 tokens; 전체 호출 대비 호출 50%·토큰 54.6% 감소 |
 
 첫 [Claude 실행 실패 기록](docs/hosted-evaluation-attempt.md)은 원본 artifact와 함께
 보존했습니다. 해당 Actions의 초록색 표시는 결과 검증 실패가 가려진 결함이었으며,
 유효한 실측으로 인정하지 않습니다. 요청 옵션·응답 처리·사용량 보존을 수정한 뒤
-[9월 24일 실제 평가](docs/hosted-evaluation-success.md)는 외부 요청과 측정 검증을 모두 통과했습니다.
-합성 10건의 **1회 실행**이며 Claude 단독에서는 정상 2건이 근거 검증에서 거절됐습니다.
+[9월 24일 v3 실제 평가](docs/hosted-evaluation-success.md)는 외부 요청과 측정 검증을 모두 통과했습니다.
+같은 합성 10건에서 단독 경로의 검증 통과 필드는 v2 **18/30 → v3 30/30**,
+정상 문서 거절은 **2건 → 0건**이었습니다. 각 버전 1회 관측이며 반복성·인과 효과는 미확인입니다.
+단독 경로 전체 토큰은 **15,654 → 22,343**, p95는 **4.40s → 10.86s**로 늘었습니다.
 gated의 정상 필드는 로컬 규칙에서 나왔고, 같은 셋의 순수 규칙도 30/30·외부 호출 0회입니다.
 이 결과로 LLM의 추가 효용이나 실제 문서 일반화를 주장하지 않습니다. provider 보고 비용은
 없어 **비용·비용 절감률은 미측정**입니다. API와 정적 데모는 같은 저장된 공개 projection을 사용합니다.
@@ -273,7 +275,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
 - HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 로컬 기본값은 fixture이며, 실제 워커에는 [제한된 Tesseract 런타임](docs/runtime-ocr.md)을 선택할 수 있습니다. 런타임 연결 검증과 인식 정확도는 별개입니다.
-- hosted LLM은 합성 10건에서 외부 정확도·호출·토큰·지연시간을 실측했습니다. 단독 경로는 18/30이며 gated의 30/30은 로컬 규칙 결과입니다. 반복 외부 평가·실문서 일반화·LLM 추가 효용·실제 비용은 미검증입니다.
+- hosted LLM은 합성 10건에서 v2·v3 각 1회의 외부 정확도·호출·토큰·지연시간을 실측했습니다. 최신 단독 경로는 30/30이며 gated의 30/30은 로컬 규칙 결과입니다. 같은 버전 반복 평가·실문서 일반화·LLM 추가 효용·실제 비용은 미검증입니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
