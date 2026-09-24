@@ -107,7 +107,7 @@ def test_probe_exercises_real_extractor_only_after_minimal_compat_success():
         if payload["max_completion_tokens"] == 16:
             return httpx.Response(200, json={"usage": {"prompt_tokens": 9,
                                                        "completion_tokens": 1}})
-        assert payload["response_format"] == {"type": "json_object"}
+        assert "response_format" not in payload
         assert payload["messages"][0]["role"] == "system"
         document = json.loads(payload["messages"][1]["content"])
         assert document["pages"][0]["text"]

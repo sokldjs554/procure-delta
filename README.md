@@ -163,6 +163,9 @@ amendment
 첫 [Claude 실행 실패 기록](docs/hosted-evaluation-attempt.md)은 원본 artifact와 함께
 보존했습니다. 해당 Actions의 초록색 표시는 결과 검증 실패가 가려진 결함이었으며,
 유효한 실측으로 인정하지 않습니다. 공개 평가 패널은 기존 미측정 snapshot을 유지합니다.
+9월 24일 별도 연결 진단에서는 native·호환 API 최소 호출이 모두 HTTP 200이었고,
+추출 요청만 `response_format` 관련 HTTP 400으로 실패했습니다. Claude 공식 endpoint의
+요청 옵션을 수정했으며, 수정 후 전체 hosted 품질 평가는 아직 확인되지 않았습니다.
 
 Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, lifecycle link는 합성 사례 5개 중 2개를 resolve하고 ambiguous/missing/incompatible 사례는 unresolved로 남겼습니다.
 
