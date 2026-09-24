@@ -1,0 +1,637 @@
+{
+  "schema_version": 1,
+  "measured_at": "2026-09-24T18:54:04.244110+00:00",
+  "suite": "korean-ocr-candidate-v1",
+  "groups": [
+    {
+      "suite": "korean-public-original-scans-v1",
+      "source_kind": "image_only_public_pdf",
+      "selection": "Two convenience-sampled 2020 notices from the same official issuer and similar form template. The first pages were visually inspected and annotations frozen before OCR. Search snippets were used for discovery, not ground truth. This is not an independently annotated, representative or held-out generalization corpus. No extractor rules, OCR models or runtime settings were tuned on these documents.",
+      "sources": [
+        {
+          "id": "nongshinbo-2020-npl",
+          "filename": "nongshinbo-2020-npl.pdf",
+          "url": "https://nongshinbo.nonghyup.com/common/downLoad.do?siteId=nongshinbo&fileSeq=5075698",
+          "landing_url": "https://nongshinbo.nonghyup.com/user/boardList.do?boardId=4482573&boardSeq=5075697&command=view&id=&page=1",
+          "issuer": "농림수산업자신용보증기금 관리기관 농협중앙회",
+          "sha256": "8a691ac1743634a9c36e9519a65db88c261441be6222d890db10887f34ae5c33",
+          "page": 1,
+          "expected_fields": {
+            "title": "2020년 농신보 부실채권 매각자문사 선정",
+            "buyer_name": "농협중앙회",
+            "procurement_type": "services"
+          },
+          "recognition_anchors": {
+            "title": "2020년 농신보 부실채권 매각자문사 선정",
+            "buyer": "농협중앙회",
+            "budget_text": "50백만원",
+            "notice_number": "2020-003"
+          },
+          "annotation_note": "Title transcribed from 입찰건명, with enclosing quotation marks excluded. Buyer is the explicitly named managing/contracting institution, not an inferred name from the website. Services category follows the stated valuation/advisory scope. No person names or contact details scored. Official attachment is named 입찰공고(스캔).pdf; creator/producer is DocuCentre-V C2265; visually scanned text and full-page rasters support scan origin, without independent physical-chain attestation."
+        },
+        {
+          "id": "nongshinbo-2020-digital",
+          "filename": "nongshinbo-2020-digital.pdf",
+          "url": "https://nongshinbo.nonghyup.com/common/downLoad.do?siteId=nongshinbo&fileSeq=5071892",
+          "landing_url": "https://nongshinbo.nonghyup.com/user/boardList.do?boardId=4482573&boardSeq=5071891&categoryDepth=&categoryId=&column=&command=view&id=&page=1&parent=&search=&siteId=nongshinbo",
+          "issuer": "농림수산업자신용보증기금 관리기관 농협중앙회",
+          "sha256": "a778aeb1ee05f31a9eac62a4d36ac6d86239ce70ce4a92991a0a43e502cf613f",
+          "page": 1,
+          "expected_fields": {
+            "title": "디지털 농신보 마스터플랜 연구용역",
+            "buyer_name": "농협중앙회",
+            "procurement_type": "services"
+          },
+          "recognition_anchors": {
+            "title": "디지털 농신보 마스터플랜 연구용역",
+            "buyer": "농협중앙회",
+            "budget_text": "200백만원",
+            "notice_number": "2020-001"
+          },
+          "annotation_note": "Title transcribed from 입찰건명, with enclosing quotation marks excluded; the webpage's 재공고 suffix is not added to the page title. Buyer is the explicit managing/contracting institution. Services category follows 연구용역. Official attachment is named 입찰공고(스캔).pdf; creator/producer is DocuCentre-V C2265; visual scan defects and full-page rasters support scan origin. No person names or contact details scored."
+        }
+      ],
+      "provenance": {
+        "dataset_sha256": "251804ff21e4cf8347873d147b5f77e2f9006c7c36c8bdf2d10d45006f073700",
+        "source_sha256": "df6f9b1a44000004971117623ac84c414a2ccf7cfab5d025fe1e63bc3577b879",
+        "git_commit": "b9bb80d51c6eaafdc1c96ea970c441dc3da22b05",
+        "git_dirty": false,
+        "configuration": {
+          "packages": {
+            "rapidocr": "3.9.2",
+            "onnxruntime": "1.23.2",
+            "pymupdf": "1.28.2",
+            "numpy": "2.5.3",
+            "opencv-python": "5.0.0.93",
+            "Pillow": "12.3.0",
+            "omegaconf": "2.3.1",
+            "PyYAML": "6.0.3",
+            "shapely": "2.1.2"
+          },
+          "python": "3.12.14",
+          "model_sha256": {
+            "ch_PP-OCRv5_det_mobile.onnx": "4d97c44a20d30a81aad087d6a396b08f786c4635742afc391f6621f5c6ae78ae",
+            "korean_PP-OCRv5_rec_mobile.onnx": "cd6e2ea50f6943ca7271eb8c56a877a5a90720b7047fe9c41a2e541a25773c9b",
+            "ch_ppocr_mobile_v2.0_cls_mobile.onnx": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c"
+          },
+          "address_space_limit_bytes": 1073741824,
+          "dpi": 300,
+          "page_scope": "annotated_page_only",
+          "threads": 1,
+          "angle_classification": false,
+          "max_side_len": 2000,
+          "det_limit_side_len": 736,
+          "det_limit_type": "min",
+          "text_score": 0.5,
+          "candidate_version": "ppocr-v5-offline-v1",
+          "extractor_version": "deterministic-labels-v2",
+          "grounding_version": "explicit-labels-v2",
+          "wall_timeout_seconds": 40
+        },
+        "environment": {
+          "python": "3.12.14",
+          "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "cpu_logical_count": 9,
+          "machine": "x86_64",
+          "cpu_model": "x86_64",
+          "environment_label": "local-korean-ocr-candidate",
+          "cpu_quota": "800000 100000"
+        },
+        "synthetic": false
+      },
+      "measurement": {
+        "summary": {
+          "status": "measured",
+          "cases": 2,
+          "measured_cases": 2,
+          "recognized_anchors": 8,
+          "expected_anchors": 8,
+          "recognition_anchor_recall": 1.0,
+          "proposed_correct_fields": 0,
+          "trusted_correct_fields": 0,
+          "expected_fields": 6,
+          "trusted_field_accuracy": 0.0,
+          "valid_documents": 0
+        },
+        "rows": [
+          {
+            "id": "nongshinbo-2020-npl",
+            "status": "measured",
+            "scored_page": 1,
+            "text_sha256": "2128d9f8ca3f1c254dc0e9806cf84fa709fd77d57048728b6e51b6ce681bb482",
+            "peak_rss_kib": 719432,
+            "characters": 571,
+            "anchors": {
+              "correct": 4,
+              "support": 4,
+              "recall": 1.0,
+              "per_anchor": {
+                "title": true,
+                "buyer": true,
+                "budget_text": true,
+                "notice_number": true
+              }
+            },
+            "field_metrics": {
+              "correct": 0,
+              "expected_fields": 3,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false,
+                "procurement_type": false
+              },
+              "missing": [
+                "buyer_name",
+                "procurement_type"
+              ],
+              "unexpected": [
+                "contract_period"
+              ],
+              "exact_match": false
+            },
+            "downstream_valid": false,
+            "rejection_stage": "schema",
+            "schema_error_fields": [
+              "buyer_name",
+              "procurement_type"
+            ],
+            "grounding_issues": [],
+            "trusted_field_metrics": {
+              "correct": 0,
+              "expected_fields": 3,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false,
+                "procurement_type": false
+              },
+              "missing": [
+                "buyer_name",
+                "procurement_type",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "elapsed_ms": 6391.809699998703
+          },
+          {
+            "id": "nongshinbo-2020-digital",
+            "status": "measured",
+            "scored_page": 1,
+            "text_sha256": "76ae1d56d6d6b5b6ac3ac4ebcb3d25c685ef2592a0891e4403563b4be467b2d6",
+            "peak_rss_kib": 721720,
+            "characters": 601,
+            "anchors": {
+              "correct": 4,
+              "support": 4,
+              "recall": 1.0,
+              "per_anchor": {
+                "title": true,
+                "buyer": true,
+                "budget_text": true,
+                "notice_number": true
+              }
+            },
+            "field_metrics": {
+              "correct": 0,
+              "expected_fields": 3,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false,
+                "procurement_type": false
+              },
+              "missing": [
+                "buyer_name",
+                "procurement_type"
+              ],
+              "unexpected": [
+                "contract_period"
+              ],
+              "exact_match": false
+            },
+            "downstream_valid": false,
+            "rejection_stage": "schema",
+            "schema_error_fields": [
+              "buyer_name",
+              "procurement_type"
+            ],
+            "grounding_issues": [],
+            "trusted_field_metrics": {
+              "correct": 0,
+              "expected_fields": 3,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false,
+                "procurement_type": false
+              },
+              "missing": [
+                "buyer_name",
+                "procurement_type",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "elapsed_ms": 6547.486666000623
+          }
+        ]
+      }
+    },
+    {
+      "suite": "korean-public-pdf-raster-v1",
+      "source_kind": "public_pdf_with_native_text",
+      "selection": "Two convenience-sampled public procurement notices with different issuing institutions and first-page layouts, frozen before OCR. Not a representative or held-out corpus.",
+      "sources": [
+        {
+          "id": "gwangju-2026-87",
+          "filename": "gwangju-2026-87.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01454418&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=03",
+          "issuer": "광주광역시",
+          "sha256": "3efcef7a673fc17026481e7f083e546634c3e1d8a26daf3fd82a213e7d7a3b9d",
+          "page": 1,
+          "expected_fields": {
+            "title": "청사 간(광주↔전남) 전용 정보통신서비스 회선사업자 선정 용역",
+            "buyer_name": "광주광역시"
+          },
+          "recognition_anchors": {
+            "title": "청사 간(광주↔전남) 전용 정보통신서비스 회선사업자 선정 용역",
+            "buyer": "광주광역시",
+            "base_amount_including_vat": "356,400,000원",
+            "estimated_price_excluding_vat": "324,000,000원"
+          },
+          "annotation_note": "First-page image visually checked. The two amounts have different meanings; neither is silently substituted for the other. Only title and buyer are scored as structured fields."
+        },
+        {
+          "id": "privacy-2026-149",
+          "filename": "privacy-2026-149.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01579024&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=03",
+          "issuer": "한국인터넷진흥원",
+          "sha256": "51d60969af1d2cae593107c8d612a6a04893e90b0f1173f56c6682bf888ead79",
+          "page": 1,
+          "expected_fields": {
+            "title": "온라인 행태정보 처리 구조 분석 및 개선방안 연구",
+            "buyer_name": "한국인터넷진흥원"
+          },
+          "recognition_anchors": {
+            "title": "온라인 행태정보 처리 구조 분석 및 개선방안 연구",
+            "buyer": "한국인터넷진흥원",
+            "budget_including_vat": "40,000,000원",
+            "submission_date": "2026. 6. 26."
+          },
+          "annotation_note": "First-page image visually checked. Title and submission date are table cells. Anchor matching is whitespace-insensitive exact substring presence, not semantic extraction or full-page character accuracy."
+        }
+      ],
+      "provenance": {
+        "dataset_sha256": "0680e8b2046bfeb8aea1c19026dd36b241dddeb87f4f668803b2fe169e4ba911",
+        "source_sha256": "df6f9b1a44000004971117623ac84c414a2ccf7cfab5d025fe1e63bc3577b879",
+        "git_commit": "b9bb80d51c6eaafdc1c96ea970c441dc3da22b05",
+        "git_dirty": false,
+        "configuration": {
+          "packages": {
+            "rapidocr": "3.9.2",
+            "onnxruntime": "1.23.2",
+            "pymupdf": "1.28.2",
+            "numpy": "2.5.3",
+            "opencv-python": "5.0.0.93",
+            "Pillow": "12.3.0",
+            "omegaconf": "2.3.1",
+            "PyYAML": "6.0.3",
+            "shapely": "2.1.2"
+          },
+          "python": "3.12.14",
+          "model_sha256": {
+            "ch_PP-OCRv5_det_mobile.onnx": "4d97c44a20d30a81aad087d6a396b08f786c4635742afc391f6621f5c6ae78ae",
+            "korean_PP-OCRv5_rec_mobile.onnx": "cd6e2ea50f6943ca7271eb8c56a877a5a90720b7047fe9c41a2e541a25773c9b",
+            "ch_ppocr_mobile_v2.0_cls_mobile.onnx": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c"
+          },
+          "address_space_limit_bytes": 1073741824,
+          "dpi": 300,
+          "page_scope": "annotated_page_only",
+          "threads": 1,
+          "angle_classification": false,
+          "max_side_len": 2000,
+          "det_limit_side_len": 736,
+          "det_limit_type": "min",
+          "text_score": 0.5,
+          "candidate_version": "ppocr-v5-offline-v1",
+          "extractor_version": "deterministic-labels-v2",
+          "grounding_version": "explicit-labels-v2",
+          "wall_timeout_seconds": 40
+        },
+        "environment": {
+          "python": "3.12.14",
+          "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "cpu_logical_count": 9,
+          "machine": "x86_64",
+          "cpu_model": "x86_64",
+          "environment_label": "local-korean-ocr-candidate",
+          "cpu_quota": "800000 100000"
+        },
+        "synthetic": false
+      },
+      "measurement": {
+        "summary": {
+          "status": "measured",
+          "cases": 2,
+          "measured_cases": 2,
+          "recognized_anchors": 6,
+          "expected_anchors": 8,
+          "recognition_anchor_recall": 0.75,
+          "proposed_correct_fields": 0,
+          "trusted_correct_fields": 0,
+          "expected_fields": 4,
+          "trusted_field_accuracy": 0.0,
+          "valid_documents": 0
+        },
+        "rows": [
+          {
+            "id": "gwangju-2026-87",
+            "status": "measured",
+            "scored_page": 1,
+            "text_sha256": "1513e0707cacbc5e3107615566910f0736d932fc842f69d24ac3194990e44273",
+            "peak_rss_kib": 713176,
+            "characters": 1151,
+            "anchors": {
+              "correct": 3,
+              "support": 4,
+              "recall": 0.75,
+              "per_anchor": {
+                "title": false,
+                "buyer": true,
+                "base_amount_including_vat": true,
+                "estimated_price_excluding_vat": true
+              }
+            },
+            "field_metrics": {
+              "correct": 0,
+              "expected_fields": 2,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false
+              },
+              "missing": [
+                "buyer_name"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "downstream_valid": false,
+            "rejection_stage": "schema",
+            "schema_error_fields": [
+              "buyer_name",
+              "procurement_type"
+            ],
+            "grounding_issues": [],
+            "trusted_field_metrics": {
+              "correct": 0,
+              "expected_fields": 2,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false
+              },
+              "missing": [
+                "buyer_name",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "elapsed_ms": 7483.540296001593
+          },
+          {
+            "id": "privacy-2026-149",
+            "status": "measured",
+            "scored_page": 1,
+            "text_sha256": "eebea6ff5334f36320aba1bbe2849779fee8863b800d6fa90c91cbead37d16fd",
+            "peak_rss_kib": 720232,
+            "characters": 1359,
+            "anchors": {
+              "correct": 3,
+              "support": 4,
+              "recall": 0.75,
+              "per_anchor": {
+                "title": false,
+                "buyer": true,
+                "budget_including_vat": true,
+                "submission_date": true
+              }
+            },
+            "field_metrics": {
+              "correct": 0,
+              "expected_fields": 2,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false
+              },
+              "missing": [
+                "buyer_name",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "downstream_valid": false,
+            "rejection_stage": "schema",
+            "schema_error_fields": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "grounding_issues": [],
+            "trusted_field_metrics": {
+              "correct": 0,
+              "expected_fields": 2,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false
+              },
+              "missing": [
+                "buyer_name",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "elapsed_ms": 9515.28781199886
+          }
+        ]
+      }
+    },
+    {
+      "suite": "korean-public-pdf-forms-v1",
+      "source_kind": "public_pdf_with_native_text",
+      "selection": "Two additional convenience-sampled PDFs: a colon-labeled notice and an unsupported unlabeled table cover. Search snippets informed the parser design; these are diagnostic cases, NOT held-out or representative data. Images and native text were visually checked and annotations frozen before OCR. No OCR-driven rule tuning.",
+      "sources": [
+        {
+          "id": "yeoju-2026-43",
+          "filename": "yeoju-2026-43.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01358964&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=05",
+          "issuer": "경기도여주교육지원청",
+          "sha256": "1917b2f208eba36550d2fae50167b5afa50c3b890c210d2750e3dc167ddd55ec",
+          "page": 1,
+          "expected_fields": {
+            "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+            "buyer_name": "경기도여주교육지원청",
+            "procurement_type": "services"
+          },
+          "recognition_anchors": {
+            "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+            "buyer": "경기도여주교육지원청"
+          },
+          "annotation_note": "Page visually checked. The explicit service notice heading supplies category; title and buyer use colon labels. No dates, contact details or inferred requirements scored."
+        },
+        {
+          "id": "worker-center-cm",
+          "filename": "worker-center-cm.pdf",
+          "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01563696&bidPbancOrd=001&fileSeq=2&fileType=&prcmBsneSeCd=05",
+          "issuer": "한국노동조합총연맹",
+          "sha256": "d278ffd4e194097458b2cb2ad75469c003b52f002f0d9ec6fc7eb2ed492b37de",
+          "page": 1,
+          "expected_fields": {
+            "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+            "buyer_name": "한국노동조합총연맹",
+            "procurement_type": "services"
+          },
+          "recognition_anchors": {
+            "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+            "buyer": "한국노동조합총연맹"
+          },
+          "annotation_note": "Page visually checked. Service category refers to construction management, not the construction project itself. This table/cover has no supported complete category heading or colon-labeled title/buyer; abstention remains in the denominator."
+        }
+      ],
+      "provenance": {
+        "dataset_sha256": "9e82b6d8be68a4e8faefe4af4dca23f1cb00b201737f4dee5113913949af16ab",
+        "source_sha256": "df6f9b1a44000004971117623ac84c414a2ccf7cfab5d025fe1e63bc3577b879",
+        "git_commit": "b9bb80d51c6eaafdc1c96ea970c441dc3da22b05",
+        "git_dirty": false,
+        "configuration": {
+          "packages": {
+            "rapidocr": "3.9.2",
+            "onnxruntime": "1.23.2",
+            "pymupdf": "1.28.2",
+            "numpy": "2.5.3",
+            "opencv-python": "5.0.0.93",
+            "Pillow": "12.3.0",
+            "omegaconf": "2.3.1",
+            "PyYAML": "6.0.3",
+            "shapely": "2.1.2"
+          },
+          "python": "3.12.14",
+          "model_sha256": {
+            "ch_PP-OCRv5_det_mobile.onnx": "4d97c44a20d30a81aad087d6a396b08f786c4635742afc391f6621f5c6ae78ae",
+            "korean_PP-OCRv5_rec_mobile.onnx": "cd6e2ea50f6943ca7271eb8c56a877a5a90720b7047fe9c41a2e541a25773c9b",
+            "ch_ppocr_mobile_v2.0_cls_mobile.onnx": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c"
+          },
+          "address_space_limit_bytes": 1073741824,
+          "dpi": 300,
+          "page_scope": "annotated_page_only",
+          "threads": 1,
+          "angle_classification": false,
+          "max_side_len": 2000,
+          "det_limit_side_len": 736,
+          "det_limit_type": "min",
+          "text_score": 0.5,
+          "candidate_version": "ppocr-v5-offline-v1",
+          "extractor_version": "deterministic-labels-v2",
+          "grounding_version": "explicit-labels-v2",
+          "wall_timeout_seconds": 40
+        },
+        "environment": {
+          "python": "3.12.14",
+          "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+          "cpu_logical_count": 9,
+          "machine": "x86_64",
+          "cpu_model": "x86_64",
+          "environment_label": "local-korean-ocr-candidate",
+          "cpu_quota": "800000 100000"
+        },
+        "synthetic": false
+      },
+      "measurement": {
+        "summary": {
+          "status": "incomplete",
+          "cases": 2,
+          "measured_cases": 1,
+          "recognition_anchor_recall": null,
+          "trusted_field_accuracy": null,
+          "expected_fields": 6,
+          "expected_anchors": 4
+        },
+        "rows": [
+          {
+            "id": "yeoju-2026-43",
+            "status": "measured",
+            "scored_page": 1,
+            "text_sha256": "324aa7713f899a4ad90caae6bff3475f6731a5e5d111ebe6ecb1565a30831deb",
+            "peak_rss_kib": 714964,
+            "characters": 490,
+            "anchors": {
+              "correct": 2,
+              "support": 2,
+              "recall": 1.0,
+              "per_anchor": {
+                "title": true,
+                "buyer": true
+              }
+            },
+            "field_metrics": {
+              "correct": 1,
+              "expected_fields": 3,
+              "accuracy": 0.3333333333333333,
+              "per_field": {
+                "title": false,
+                "buyer_name": true,
+                "procurement_type": false
+              },
+              "missing": [
+                "procurement_type"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "downstream_valid": false,
+            "rejection_stage": "schema",
+            "schema_error_fields": [
+              "procurement_type"
+            ],
+            "grounding_issues": [],
+            "trusted_field_metrics": {
+              "correct": 0,
+              "expected_fields": 3,
+              "accuracy": 0.0,
+              "per_field": {
+                "title": false,
+                "buyer_name": false,
+                "procurement_type": false
+              },
+              "missing": [
+                "buyer_name",
+                "procurement_type",
+                "title"
+              ],
+              "unexpected": [],
+              "exact_match": false
+            },
+            "elapsed_ms": 5447.115151997423
+          },
+          {
+            "id": "worker-center-cm",
+            "status": "failed",
+            "scored_page": 1,
+            "error_type": "ValidationError",
+            "elapsed_ms": 3668.654285997036
+          }
+        ]
+      }
+    }
+  ],
+  "limitation": "Development diagnostic on known convenience samples, not a holdout. One annotated page per source rendered in RGB at 300 dpi; RapidOCR then uses its version-pinned defaults including max_side_len=2000. No crops, manual corrections or label-specific preprocessing. Native PDFs are raster controls, not natural scans. Page-scoped unchanged deterministic extraction and grounding; not whole-PDF recognition/worker acceptance. 1 GiB address-space limit differs from the 512 MiB production worker. Elapsed time includes a cold single-page child, imports, model/source hashing, rendering, recognition and parent scoring. Not comparable with whole-PDF worker timings. RSS is Linux child high-water mark, not cloud capacity. Raw PDFs, text, values, quotes and confidences are not published. No production dependency, backend selection or validation rule changes."
+}
