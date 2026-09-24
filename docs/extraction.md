@@ -18,6 +18,8 @@ Set `EXTRACTION_MODE=hosted`, `EXTRACTION_ENDPOINT`, `EXTRACTION_PROVIDER`, and 
 
 The adapter POSTs `model`, `max_completion_tokens`, `response_format: {"type":"json_object"}`, and `messages`. Fixed system instructions contain the JSON schema; the separate user message contains only the serialized untrusted document pages. An API key uses a Bearer authorization header. Never put credentials in document text or an endpoint URL. This intentionally uses JSON-object mode for compatibility, not the provider's strict Structured Outputs subset; schema and grounding enforcement occur locally. The wire format and JSON-mode distinction follow the [official Chat Completions reference](https://developers.openai.com/api/reference/python/resources/chat/subresources/completions/methods/create) and [JSON-mode guide](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode).
 
+For the official HTTPS `api.anthropic.com/v1/chat/completions` endpoint, the adapter omits `response_format`: the [recorded Claude probe](hosted-evaluation-attempt.md#claude-연결-진단과-요청-수정) succeeded for minimal requests but rejected the extraction request with HTTP 400 and `response_format`/`type` error terms. JSON schema instructions and local schema/grounding checks still apply. Malformed JSON, refusals, truncated responses and unsupported claims remain rejected. This endpoint uses the `chat-prompt-json-v1` extractor version so persisted extraction identities and idempotency keys differ from the old request. Other endpoints retain JSON mode; the provider label remains metadata. The changed request still needs a successful external quality evaluation.
+
 Successful response shape:
 
 ```json

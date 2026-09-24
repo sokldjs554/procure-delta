@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "quality_evaluated": false,
+  "status": "failed",
+  "probes": {
+    "native_minimal": {
+      "http_status": 200,
+      "input_tokens": 11,
+      "output_tokens": 5
+    },
+    "compatible_minimal": {
+      "http_status": 200,
+      "prompt_tokens": 11,
+      "completion_tokens": 5
+    },
+    "project_extraction": {
+      "http_status": 400,
+      "provider_error_type": "invalid_request_error",
+      "provider_error_code": null,
+      "provider_error_param": null,
+      "message_terms": [
+        "input",
+        "response_format",
+        "type"
+      ]
+    }
+  },
+  "request_limit": 3,
+  "dataset_sha256": "60915644e3d3d36a7aca72a410d40a3075eb472809ed014e50c77f8ecab78116"
+}

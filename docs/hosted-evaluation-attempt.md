@@ -43,9 +43,43 @@ ZIP 다운로드 후 digest를 대조하고 원본 JSON을 그대로 보존했�
 HTTP 요청 실패는 `failed`로 기록하고, 허용 목록의 상태/오류 분류와 고정 진단 hint만
 남긴다. 응답 원문은 기록하지 않는다. CLI 공개 반영도 동일한 validator로 차단한다.
 
+## Claude 연결 진단과 요청 수정
+
+- [Actions run 35938774940](https://github.com/sokldjs554/procure-delta/actions/runs/35938774940)
+- 실행: 2026-09-24 00:31:06 UTC, `diagnostics_only=true`
+- source commit: `7d60d8ddb425da4c02e67087d7ec4d3623169bee`
+- 위와 같은 provider/model/endpoint 및 frozen dataset 사용
+- [변경하지 않은 진단 JSON](../artifacts/evaluation/failed/claude-probe-35938774940.json)
+- JSON SHA-256: `ace45359379b09f9275279a06f846900be14dcc8b84fbd9e05daeaf49d892c69`
+- Actions artifact ID: `10784141710`
+- 원본 ZIP SHA-256: `f4d751da1733c73703b9925ee96242381498357776011c7f0f9600b7e15335cd`
+
+| 같은 Secret을 사용한 요청 | 관측 |
+| --- | --- |
+| native Messages 최소 요청 | HTTP 200, input 11 / output 5 tokens |
+| OpenAI-compatible 최소 요청 | HTTP 200, prompt 11 / completion 5 tokens |
+| 기존 extractor의 frozen 첫 사례 | HTTP 400, `invalid_request_error` |
+| 허용 목록에서 기록한 오류 용어 | `input`, `response_format`, `type` |
+
+이 실행에서 인증과 최소 모델 호출은 성공했다. 추출 요청에만 있던 JSON mode 옵션
+`response_format: {"type":"json_object"}`이 실패 원인으로 지목된다. 원문을 보존하지
+않았으므로 오류 용어만으로 provider 내부 검증 내용을 단정하지 않는다.
+[공식 호환 API 문서](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk)는
+해당 필드를 무시한다고 설명하지만 실제 실행은 거부됐으므로 이 옵션에 의존하지 않는다.
+
+수정은 공식 Claude HTTPS Chat Completions endpoint에서 해당 필드만 생략한다.
+프롬프트, 모델, 토큰 한도와 JSON·스키마·근거 검증은 유지한다. `provider` 이름을
+바꿔도 같은 공식 endpoint에는 동일한 처리를 적용하며, 다른 endpoint는 기존 JSON
+mode를 유지한다. 요청 변경을 반영해 extractor version을 `chat-prompt-json-v1`로
+구분하여 이전 캐시·idempotency identity를 재사용하지 않는다.
+
+회귀 테스트에서는 JSON mode 필드를 받으면 HTTP 400을 반환하는 transport로 실패를
+재현한 뒤 필드 생략으로 성공하는지 검사한다. 이 테스트는 실제 provider 재호출이
+아니다. 위 진단 역시 `quality_evaluated=false`이므로 품질·절감률의 실측 근거가 아니다.
+
 ## 다음 확인
 
-수정본 main에서 새 **Run workflow**로 같은 입력을 실행한다. 과거 run의 Re-run은
-과거 commit을 다시 사용하므로 이 수정이 적용되지 않는다. 새 실행의 `Run paid/network
-hosted evaluation` 로그와 artifact에서 HTTP 상태/진단을 확인한 뒤 원인을 해결한다.
-키를 변경하거나 다시 등록해야 한다고 현재 증거만으로 단정하지 않는다.
+수정본 main에서 새 **Run workflow**로 같은 입력을 지정하고 `diagnostics_only`를
+끄고 전체 평가를 실행한다. 과거 run의 Re-run은 과거 commit을 사용하므로 새 수정이
+적용되지 않는다. 실제 품질 평가·token 집계·validator 통과를 확인한 뒤에만 결과를
+발표한다. 수정 후 외부 성공은 아직 미확인이다.

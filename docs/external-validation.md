@@ -1,14 +1,15 @@
 # 외부 실측 실행 절차
 
-2026-09-23 기준 실행 기록과 절차다. 첫 Claude 평가는 HTTP 오류로 실패했으며
+2026-09-24 기준 실행 기록과 절차다. 첫 Claude 평가는 HTTP 오류로 실패했으며
 [원본과 검증 결함 수정](hosted-evaluation-attempt.md)을 보존했다. 유효한 hosted 품질
 실측과 전체 Render 백엔드 배포는 아직 완료하지 않았다. 공개 `procure-delta-demo`는
 합성 데이터를 사용하는 읽기 전용 웹이다.
 
 ## 1. Hosted LLM 비교
 
-현재 어댑터는 Chat Completions의 JSON mode를 사용하고, 응답을 별도의 스키마·근거
-검증기에 통과시킨다. 다음은 재현을 위해 모델 버전을 고정한 **실행 입력 예시**다.
+현재 어댑터는 Chat Completions를 사용하고, 응답을 별도의 스키마·근거 검증기에
+통과시킨다. Claude 공식 호환 endpoint에서는 JSON mode 옵션을 생략한다.
+다음은 재현을 위해 모델 버전을 고정한 **실행 입력 예시**다.
 다른 OpenAI-compatible provider를 쓰면 endpoint와 provider/model을 함께 바꾼다.
 
 | Workflow 입력 | 값 |
@@ -23,8 +24,8 @@
 Chat Completions와 고정 snapshot 지원을 확인했다. 계정의 모델 사용 권한과 API
 결제가 필요하다.
 
-이번 Claude 실행에는 다음 값을 사용했다. 이 입력에서 HTTP 오류가 났으므로
-연결 성공이 검증됐다는 뜻은 아니다.
+Claude 실행에는 다음 값을 사용했다. 9월 24일 연결 진단에서 최소 요청 두 개는
+성공했지만 기존 추출 요청은 HTTP 400으로 실패했다. 전체 품질 평가는 아직 실패 상태다.
 
 | Workflow 입력 | Claude 입력 |
 | --- | --- |
@@ -36,14 +37,18 @@ Chat Completions와 고정 snapshot 지원을 확인했다. 계정의 모델 사
 
 [Anthropic 호환 API 문서](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk)는
 Bearer 인증, `max_completion_tokens`, prompt/completion usage를 지원한다고 명시한다.
-`response_format`은 무시하므로 JSON 출력은 프롬프트로 요청하고 기존 스키마·근거
-검증기로 검사한다. 호환 API는 모델 비교용이며 native Claude structured outputs
+문서는 `response_format`을 무시한다고 설명하지만, [실제 진단](hosted-evaluation-attempt.md#claude-연결-진단과-요청-수정)은
+이 필드와 관련된 HTTP 400을 기록했다. 따라서 `https://api.anthropic.com/v1/chat/completions`
+요청에서는 해당 필드를 보내지 않는다. JSON 출력은 프롬프트로 요청하고 기존 스키마·근거
+검증기로 검사한다. 다른 endpoint에는 기존 JSON mode를 유지한다. `provider`는 기록용
+이름이며 요청 형식을 선택하지 않는다. 호환 API는 모델 비교용이며 native Claude structured outputs
 어댑터를 구현·검증했다는 뜻은 아니다. 위 OpenAI 가격 예시는 Claude에 적용하지 않는다.
 
 1. [저장소 Actions secrets](https://github.com/sokldjs554/procure-delta/settings/secrets/actions)에
    해당 provider의 키를 `PROCURE_DELTA_LLM_API_KEY`로 등록한다.
 2. [Hosted LLM Evaluation](https://github.com/sokldjs554/procure-delta/actions/workflows/hosted-eval.yml)의
-   **Run workflow**에서 위 입력을 지정한다. 키는 workflow 입력이나 문서에 넣지 않는다.
+   **Run workflow**에서 위 입력을 지정하고 `diagnostics_only`는 끈다.
+   키는 workflow 입력이나 문서에 넣지 않는다.
 3. 완료 후 `procure-delta-hosted-llm-evaluation` artifact의 `hosted.json`, `hosted.md`,
    `hosted-summary.json`과 실행 URL·commit SHA를 보존한다.
 4. `scripts/validate_hosted_eval.py`의 통과 여부와 개별 사례 오류를 확인한다.

@@ -1,4 +1,4 @@
-"""OpenAI-compatible Chat Completions JSON mode behind the provider-neutral boundary."""
+"""Chat Completions extraction with endpoint-specific JSON request support."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
@@ -46,8 +47,18 @@ class HostedExtractor:
         self.endpoint = endpoint
         self.provider = provider
         self.model = model
+        parsed_endpoint = urlsplit(endpoint)
+        # Claude's compatibility endpoint rejects the JSON-mode request observed
+        # in run 35938774940. Keep schema prompting and local validation; the
+        # provider label remains metadata, not a request-protocol selector.
+        self._json_mode = not (
+            parsed_endpoint.scheme == "https"
+            and parsed_endpoint.hostname == "api.anthropic.com"
+            and parsed_endpoint.path.rstrip("/") == "/v1/chat/completions"
+        )
+        request_version = "chat-json-v1-" if self._json_mode else "chat-prompt-json-v1-"
         self.extractor_version = (
-            "chat-json-v1-"
+            request_version
             + hashlib.sha256(f"{endpoint}:{max_completion_tokens}".encode()).hexdigest()[:16]
         )
         self._api_key = api_key
@@ -80,7 +91,7 @@ class HostedExtractor:
             headers=headers,
             json={
                 "model": self.model,
-                "response_format": {"type": "json_object"},
+                **({"response_format": {"type": "json_object"}} if self._json_mode else {}),
                 "max_completion_tokens": self.max_completion_tokens,
                 "messages": [
                     {
