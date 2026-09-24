@@ -105,6 +105,7 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
         usage_recorded = False
         response_diagnostics = None
         schema_error_fields: list[str] = []
+        grounding_issues: list[dict[str, Any]] = []
         rejection_stage = None
         row_prompt_tokens = row_completion_tokens = None
         try:
@@ -143,6 +144,7 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                                              include_url=False)
                 })
             report = validate_extraction(proposal, document)
+            grounding_issues = [issue.model_dump(mode='json') for issue in report.grounding_issues]
             predicted = canonical(report.fields.model_dump(mode='json')) if report.fields else {}
             valid = report.valid
             if not valid:
@@ -189,6 +191,7 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
         rows.append({'id': case['id'], 'expected_valid': case['expected_valid'], 'valid': valid,
                      'schema_valid': schema_ok, 'fields': fields, 'trusted_fields': predicted,
                      'rejection_stage': rejection_stage, 'schema_error_fields': schema_error_fields,
+                     'grounding_issues': grounding_issues,
                      'response_diagnostics': response_diagnostics,
                      'prompt_tokens': row_prompt_tokens, 'completion_tokens': row_completion_tokens,
                      'duration_ms': elapsed, 'error_type': error_type, **http_diagnostics})

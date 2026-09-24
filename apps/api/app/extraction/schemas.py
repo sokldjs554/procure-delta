@@ -107,7 +107,26 @@ class ExtractionResult(StrictModel):
     diagnostics: HostedResponseDiagnostics | None = None
 
 
+GroundingField = Literal[
+    "buyer_name", "title", "procurement_type", "estimated_amount", "currency",
+    "published_at", "closes_at", "regions", "required_certifications",
+    "required_capabilities", "participation_constraints", "contract_period",
+]
+GroundingCode = Literal[
+    "missing_evidence", "evidence_not_on_page", "unsupported_value",
+    "contradictory_claims", "qualified_requirement", "evidence_for_absent_field",
+]
+
+
+class GroundingIssue(StrictModel):
+    """Publishable labels only; never include rejected values or source text."""
+
+    field: GroundingField | None
+    code: GroundingCode
+
+
 class ValidationReport(StrictModel):
     valid: bool
     errors: list[str]
     fields: StructuredFields | None = None
+    grounding_issues: list[GroundingIssue] = Field(default_factory=list)

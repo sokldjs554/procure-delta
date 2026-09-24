@@ -13,6 +13,8 @@ from pydantic import ValidationError
 from app.extraction.schemas import (
     DocumentBundle,
     ExtractionResult,
+    GroundingCode,
+    GroundingIssue,
     StructuredFields,
     ValidationReport,
 )
@@ -175,6 +177,13 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
     except ValidationError as error:
         return ValidationReport(valid=False, errors=[str(error)])
     errors: list[str] = []
+    issues: dict[tuple[str | None, GroundingCode], GroundingIssue] = {}
+
+    def issue(field: str | None, code: GroundingCode) -> None:
+        # Callers pass schema-validated claim names, or None for document issues.
+        # Deduplication bounds published diagnostics even for repeated references.
+        issues[(field, code)] = GroundingIssue.model_validate({"field": field, "code": code})
+
     claims = fields.model_dump(exclude_none=True, exclude={"schema_version", "evidence"})
     page_spans = [(page, list(evidence_spans(page.text))) for page in document.pages]
     for _, spans in page_spans:
@@ -183,10 +192,12 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
             field = LABELS.get(label)
             if field in claims and field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
                 errors.append(f"{field}: negated or qualified requirement needs review")
+                issue(field, "qualified_requirement")
     for field, value in claims.items():
         references = fields.evidence.get(field, [])
         if not references:
             errors.append(f"{field}: missing evidence")
+            issue(field, "missing_evidence")
         for reference in references:
             pages = [
                 spans
@@ -198,8 +209,10 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
             ]
             if not any(reference.quote in spans for spans in pages):
                 errors.append(f"{field}: evidence not on referenced page")
+                issue(field, "evidence_not_on_page")
             if labeled_claims(reference.quote).get(field) != value:
                 errors.append(f"{field}: value unsupported by labeled evidence")
+                issue(field, "unsupported_value")
         observed = [
             labeled_claims(line)[field]
             for _, spans in page_spans
@@ -208,6 +221,9 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
         ]
         if any(item != value for item in observed):
             errors.append(f"{field}: contradictory document claims")
+            issue(field, "contradictory_claims")
     if set(fields.evidence) - set(claims):
         errors.append("evidence for absent or unknown fields")
-    return ValidationReport(valid=not errors, errors=errors, fields=fields if not errors else None)
+        issue(None, "evidence_for_absent_field")
+    return ValidationReport(valid=not errors, errors=errors, fields=fields if not errors else None,
+                            grounding_issues=list(issues.values()))
