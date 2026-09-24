@@ -103,6 +103,10 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
         }
         call_counted = False
         usage_recorded = False
+        response_diagnostics = None
+        schema_error_fields: list[str] = []
+        rejection_stage = None
+        row_prompt_tokens = row_completion_tokens = None
         try:
             if gated:
                 proposal = await DeterministicExtractor().extract(document)
@@ -117,6 +121,11 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                 call_counted = True
                 proposal = await extractor.extract(document)
             if used_hosted:
+                row_prompt_tokens, row_completion_tokens = (
+                    proposal.prompt_tokens, proposal.completion_tokens
+                )
+                if proposal.diagnostics is not None:
+                    response_diagnostics = proposal.diagnostics.model_dump(mode='json')
                 token_in.append(proposal.prompt_tokens)
                 token_out.append(proposal.completion_tokens)
                 costs.append(proposal.estimated_cost)
@@ -124,11 +133,23 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
             try:
                 StructuredFields.model_validate(proposal.output)
                 schema_ok = True
-            except ValidationError:
+            except ValidationError as error:
                 schema_ok = False
+                known_fields = StructuredFields.model_fields
+                schema_error_fields = sorted({
+                    str(item['loc'][0]) if item['loc'] and item['loc'][0] in known_fields
+                    else 'unknown'
+                    for item in error.errors(include_input=False, include_context=False,
+                                             include_url=False)
+                })
             report = validate_extraction(proposal, document)
             predicted = canonical(report.fields.model_dump(mode='json')) if report.fields else {}
             valid = report.valid
+            if not valid:
+                if response_diagnostics and response_diagnostics['status'] != 'parsed':
+                    rejection_stage = 'response'
+                else:
+                    rejection_stage = 'schema' if not schema_ok else 'grounding'
         except Exception as error:
             # Never serialize provider errors, URLs or raw secret-bearing response bodies.
             if used_hosted and call_counted and not usage_recorded:
@@ -137,6 +158,7 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                 costs.append(None)
             schema_ok, valid, predicted, error_type = False, False, {}, type(error).__name__
             http_diagnostics = _http_diagnostics(error)
+            rejection_stage = 'execution'
         elapsed = (time.perf_counter() - start) * 1000
         durations.append(elapsed)
         schema_failures += int(not schema_ok)
@@ -166,6 +188,9 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
                 )
         rows.append({'id': case['id'], 'expected_valid': case['expected_valid'], 'valid': valid,
                      'schema_valid': schema_ok, 'fields': fields, 'trusted_fields': predicted,
+                     'rejection_stage': rejection_stage, 'schema_error_fields': schema_error_fields,
+                     'response_diagnostics': response_diagnostics,
+                     'prompt_tokens': row_prompt_tokens, 'completion_tokens': row_completion_tokens,
                      'duration_ms': elapsed, 'error_type': error_type, **http_diagnostics})
     n = len(cases)
     all_costs_known = bool(costs) and all(c is not None for c in costs)

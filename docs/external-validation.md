@@ -25,7 +25,9 @@ Chat Completions와 고정 snapshot 지원을 확인했다. 계정의 모델 사
 결제가 필요하다.
 
 Claude 실행에는 다음 값을 사용했다. 9월 24일 연결 진단에서 최소 요청 두 개는
-성공했지만 기존 추출 요청은 HTTP 400으로 실패했다. 전체 품질 평가는 아직 실패 상태다.
+성공했지만 기존 추출 요청은 HTTP 400으로 실패했다. 요청 옵션 수정 후 전체 평가는
+실행 오류 0건이었으나 schema failure와 토큰 누락으로 검증에 실패했다. 응답 처리
+수정 후 실제 외부 성공은 아직 미확인이다.
 
 | Workflow 입력 | Claude 입력 |
 | --- | --- |
@@ -53,6 +55,9 @@ Bearer 인증, `max_completion_tokens`, prompt/completion usage를 지원한다�
    `hosted-summary.json`과 실행 URL·commit SHA를 보존한다.
 4. `scripts/validate_hosted_eval.py`의 통과 여부와 개별 사례 오류를 확인한다.
    인증/시간초과/잘린 응답이 있으면 정상 실측으로 발표하지 않는다.
+   row의 `rejection_stage`, `response_diagnostics`, `schema_error_fields`로 거절 원인을
+   구분하고 사례별 토큰과 합계를 확인한다. 측정 validator 통과와 추출 품질 합격을
+   구분한다. 받은 사용량은 거절 결과에서도 보존하므로 정확도·거절 수를 함께 확인한다.
 5. 저장 결과를 검토한 뒤 README와 공개 평가 패널에 반영한다. 기존 OCR 결과는
    별도 실험이므로 hosted 실행 결과로 덮어써서 소실시키지 않는다.
 
@@ -76,8 +81,9 @@ credential 종류·다른 endpoint를 발견하면 네트워크 요청 전에 �
 임의 값, URL, header, key, 응답 본문은 저장하지 않는다. `message_terms`는 정확한 오류
 문장을 재현하지 않으므로 단독으로 원인을 확정하는 근거로 사용하지 않는다.
 
-기존 extractor는 성공 응답의 원래 HTTP 상태 코드를 반환하지 않으므로 해당 단계는
-`http_success: true`로만 기록하고 `200`이라는 값을 추정해서 채우지 않는다.
+프로젝트 요청의 HTTP 성공은 `http_success: true`로 기록하고, 응답 처리 진단은
+`response_diagnostics`에 분리한다. 그 안의 HTTP 상태는 실제 응답에서 읽으며, 값이
+없을 때 `200`이라고 추정해서 채우지 않는다. 거절 결과도 반환된 사용량을 보존한다.
 
 이 진단 결과의 `quality_evaluated`는 항상 false다. HTTP 성공이나 진단 workflow의
 성공을 hosted 품질/정확도/절감률 실측으로 취급하지 않는다. 원인을 해결한 뒤

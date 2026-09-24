@@ -1,4 +1,4 @@
-# 첫 Claude 평가 시도와 실패 처리 수정
+# Claude 평가 실행과 실패 처리 수정
 
 ## 보존한 실행
 
@@ -76,6 +76,52 @@ mode를 유지한다. 요청 변경을 반영해 extractor version을 `chat-prom
 회귀 테스트에서는 JSON mode 필드를 받으면 HTTP 400을 반환하는 transport로 실패를
 재현한 뒤 필드 생략으로 성공하는지 검사한다. 이 테스트는 실제 provider 재호출이
 아니다. 위 진단 역시 `quality_evaluated=false`이므로 품질·절감률의 실측 근거가 아니다.
+
+## 응답 거절과 사용량 누락
+
+- [Actions run 35940406108](https://github.com/sokldjs554/procure-delta/actions/runs/35940406108)
+- 실행: 2026-09-24 00:52:45 UTC, `diagnostics_only=false`
+- source commit: `3d9f31523f125fded6cd9904326a608b14bc94f8`
+- [변경하지 않은 평가 JSON](../artifacts/evaluation/failed/claude-35940406108.json)
+- JSON SHA-256: `ba625def715290c3d21820d692c9651adc7b58f556b7d146d39483d928dc28a1`
+- Actions artifact ID: `10784143912`
+- 원본 ZIP SHA-256: `9aa95ee662ef6697402aedf1a935d82780841c5a335a7628f0073b10bf9dcc25`
+
+| 항목 | 관측 |
+| --- | --- |
+| HTTP/실행 예외 | 두 경로 모두 0건 |
+| hosted_all | 10회, schema failure 10건, 검증 통과 필드 0/30 |
+| hosted_gated | hosted 5회, 정상 필드 30/30은 로컬 deterministic 결과 |
+| prompt/completion tokens | 두 경로 모두 null |
+| 최종 validator | `hosted_all prompt tokens are not measured`로 실패 |
+
+HTTP 오류가 없어졌다고 추출 품질이나 완전한 측정이 확보된 것은 아니다. 당시 artifact는
+모델 응답과 파싱/거절 진단을 기록하지 않아 코드 블록, 잘린 답변, 잘못된 envelope 중
+무엇이 실제 원인이었는지 확정할 수 없다. 누락된 토큰을 사후 추정해 원본에 채우지 않는다.
+
+코드 재현에서는 사용량이 들어 있는 응답도 JSON 파싱 실패·refusal·불완전한 종료·잘못된
+envelope 경로에서 `ExtractionResult`를 조기 반환하며 사용량을 버리는 결함을 확인했다.
+이 결함은 응답의 품질 판정과 provider 사용량 판정을 분리해 수정한다. 유효한 정수 토큰만
+보존하고 bool/문자열/음수/누락은 알 수 없는 값으로 남긴다. 잘못된 비용 값은 토큰이나
+유효한 추출 값을 지우지 않는다. 비용을 반환하지 않는 provider의 비용은 계속 null이다.
+
+응답 전체가 하나의 JSON 또는 단일 JSON 코드 블록이면 같은 스키마·근거 검증을 거친다.
+코드 블록 내부 값은 바꾸지 않으며 설명문, 여러 블록, 잘린 JSON, 비유한 수, 근거 없는
+값은 수용하지 않는다. 이는 제한된 응답 형식 지원이며 **이번 실제 응답이 코드 블록이었다는
+주장이 아니다**. 파싱·사용량 처리 변경을 반영해 extractor version은 `chat-json-v2` /
+`chat-prompt-json-v2`로 올려 이전 캐시를 재사용하지 않는다.
+
+새 평가 row와 CLI는 다음의 안전한 진단만 추가한다.
+
+- 거절 단계: execution / response / schema / grounding
+- 실제 HTTP 상태, 고정된 파싱·종료·코드 블록·사용량 상태
+- 공개 스키마의 오류 필드 이름. 임의 필드 이름은 `unknown`으로 표시
+- 사례별 provider prompt/completion tokens. 불명확한 값을 0으로 채우지 않음
+
+임의 응답 본문·오류 문장·refusal 내용·header·API key는 이 진단에 포함하지 않는다.
+validator가 통과해도 품질 합격을 뜻하지 않는다. 사용량이 측정된 거절도 비용을 소비한
+관측이므로 별도 집계하고, 필드 정확도·검증 통과 수·거절 단계를 함께 읽는다.
+이전 validator의 미측정 토큰 차단 규칙은 유지한다.
 
 ## 다음 확인
 

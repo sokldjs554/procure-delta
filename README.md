@@ -157,15 +157,18 @@ amendment
 | OCR · Korean synthetic | 측정됨 | Tesseract 18/18 fields, `kor+eng`, clean/blurred/low-resolution 3장 |
 | OCR · 실제 공고 PDF 렌더 | 측정됨 · 품질 미달 | 원문 2건/이미지 6장, 문자열 anchor 11/24, 검증 통과 구조화 필드 **0/12**; 자연 스캔 아님 |
 | 한국어 공고 항목 해석 v2 | 제한적 개선 | 별도 2건의 원문 텍스트 **0/6 → 3/6**, 같은 문서의 OCR은 **0/18**; [조건·실패 포함 비교](docs/korean-form-grounding.md) |
-| hosted all | **실행 실패 · 실측 미확정** | Claude 호출 시도 10건 모두 HTTP 오류; token 없음 |
-| hosted gated | **실행 실패 · 실측 미확정** | Claude 호출 시도 5건 모두 HTTP 오류; 절감률·품질 주장 불가 |
+| hosted all | **품질·측정 검증 실패** | 최신 실행 오류 0건, 검증 통과 필드 0/30, 토큰 합계 누락 |
+| hosted gated | **측정 검증 실패** | 30/30은 로컬 deterministic 결과; hosted 토큰 합계 누락, 절감률 실측 미확정 |
 
 첫 [Claude 실행 실패 기록](docs/hosted-evaluation-attempt.md)은 원본 artifact와 함께
 보존했습니다. 해당 Actions의 초록색 표시는 결과 검증 실패가 가려진 결함이었으며,
 유효한 실측으로 인정하지 않습니다. 공개 평가 패널은 기존 미측정 snapshot을 유지합니다.
 9월 24일 별도 연결 진단에서는 native·호환 API 최소 호출이 모두 HTTP 200이었고,
 추출 요청만 `response_format` 관련 HTTP 400으로 실패했습니다. Claude 공식 endpoint의
-요청 옵션을 수정했으며, 수정 후 전체 hosted 품질 평가는 아직 확인되지 않았습니다.
+요청 옵션 수정 후 [전체 평가](docs/hosted-evaluation-attempt.md#응답-거절과-사용량-누락)는 실행 오류
+0건이었지만 모든 hosted 출력이 스키마 검증에 실패했습니다. 거절 시 사용량을 버리는 코드
+결함을 수정하고 안전한 거절 단계 진단을 추가했습니다. 실제 응답의 세부 실패 원인은
+당시 기록만으로 복원할 수 없으며, 수정 후 외부 성공은 아직 미확인입니다.
 
 Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, lifecycle link는 합성 사례 5개 중 2개를 resolve하고 ambiguous/missing/incompatible 사례는 unresolved로 남겼습니다.
 
@@ -271,7 +274,7 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 - 실제 나라장터 연동은 현재 용역 입찰공고와 관측 변경 범위입니다.
 - 실제 사전규격·낙찰·계약 collector는 아직 없습니다.
 - HWP 내용 추출과 실제 나라장터 한국어 자연 스캔 OCR 일반화 성능은 검증하지 않았습니다. 한국어 합성 18/18과 별도로 [실제 공고 PDF 2건의 지면 렌더 진단](docs/public-document-ocr.md)을 수행했지만, 검증 통과 구조화 필드는 **0/12**였습니다. 합성 회귀 통과를 실문서 정확도로 확대 해석하지 않습니다. 기본 서비스 OCR 어댑터도 fixture 전용입니다.
-- hosted LLM의 첫 Claude 실행은 HTTP 오류로 실패했습니다. 유효한 정확도·비용·token 실측은 아직 없습니다.
+- hosted LLM은 HTTP 요청 수정 후에도 응답 검증·사용량 집계에서 실패했습니다. 유효한 전체 정확도·비용·token 비교는 아직 없습니다.
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
