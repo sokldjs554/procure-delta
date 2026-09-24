@@ -69,6 +69,14 @@ Render supplies Postgres connection strings in `postgresql://...` form. ProcureD
 `RELEASE_REVISION` overrides Render's `RENDER_GIT_COMMIT`; otherwise the latter
 identifies the API release. Local environments keep the `development` default.
 
+## OCR runtime
+
+The reference Blueprint selects `OCR_BACKEND=tesseract` for API, worker and
+scheduler. The shared API image includes Korean/English model data. Worker
+startup exercises the real engine and fails instead of falling back to synthetic
+answers when configuration is unavailable. See [runtime limits and verification](runtime-ocr.md).
+A passing startup probe is not document-quality or cloud-capacity evidence.
+
 ## What this does not prove
 
 The Blueprint has not been synced to create a full backend stack in the user's Render workspace. Therefore this is deployment-readiness evidence, not cloud-operation evidence.

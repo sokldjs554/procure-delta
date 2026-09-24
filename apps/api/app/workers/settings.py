@@ -7,6 +7,7 @@ from arq.connections import RedisSettings
 from arq.worker import func
 
 from app.config import get_settings
+from app.documents.ocr_runtime import configured_ocr_adapter
 from app.observability import configure_error_tracking, configure_json_logging
 from app.workers.delta import compute_opportunity_delta, reconcile_pending_deltas
 from app.workers.eligibility import evaluate_company_opportunity, reconcile_eligibility_results
@@ -29,10 +30,11 @@ from app.workers.notifications import (
 from app.workers.ranking import rank_company_opportunity, reconcile_ranking_results
 
 
-async def on_startup(_ctx: dict[str, Any]) -> None:
+async def on_startup(ctx: dict[str, Any]) -> None:
     settings = get_settings()
     configure_json_logging()
     configure_error_tracking(settings)
+    ctx["ocr_adapter"] = await configured_ocr_adapter(settings)
 
 
 def redis_settings() -> RedisSettings:

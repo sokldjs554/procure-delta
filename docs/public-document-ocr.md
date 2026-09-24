@@ -65,9 +65,10 @@ No extraction rules or ground truth were tuned to improve this score. The next
 quality step is layout-aware grounding and independently annotated documents,
 with held-out evaluation, plus the pending real hosted-provider comparison.
 Changing only to a hosted model does not automatically bypass the current
-label-based evidence validator. Natural scanned Korean PDFs and a production
-OCR adapter remain unverified/unimplemented respectively; the service's default
-`FakeFixtureOcrAdapter` is still a fixture-only routing boundary.
+label-based evidence validator. Natural scanned Korean PDFs remain unverified. A subsequent
+[configured Tesseract runtime](runtime-ocr.md) adds real worker recognition; these
+historical CLI measurements do not evaluate that runtime. The local default
+`FakeFixtureOcrAdapter` remains a fixture-only routing boundary.
 
 ## Reproduction
 

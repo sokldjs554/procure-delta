@@ -219,6 +219,10 @@ def main() -> None:
     try:
         execute('compose-contract', compose + ['config', '--quiet'])
         execute('image-build', compose + ['build'])
+        execute('runtime-ocr-image', compose + [
+            'run', '--rm', '--no-deps', '-e', 'OCR_BACKEND=tesseract',
+            'api', 'python', '-m', 'app.ops.check_ocr',
+        ], timeout=120)
         execute('database-and-redis', compose + ['up', '-d', '--wait', 'postgres', 'redis'])
         try:
             execute('backend-integration', compose + ['run', '--rm', 'checks'])

@@ -37,6 +37,8 @@ services:
         sync: false
       - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
         sync: false
+      - key: OCR_BACKEND
+        value: tesseract
       - key: KONEPS_ENABLED
         value: "false"
       - key: EXTRACTION_MODE
@@ -91,6 +93,8 @@ services:
         sync: false
       - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
         sync: false
+      - key: OCR_BACKEND
+        value: tesseract
       - key: KONEPS_ENABLED
         value: "false"
       - key: EXTRACTION_MODE
@@ -137,6 +141,8 @@ services:
         sync: false
       - key: ATTACHMENT_S3_SECRET_ACCESS_KEY
         sync: false
+      - key: OCR_BACKEND
+        value: tesseract
       - key: KONEPS_ENABLED
         value: "false"
       - key: EXTRACTION_MODE
