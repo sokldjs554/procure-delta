@@ -41,8 +41,15 @@ def main() -> None:
                                           'provider_error_type', 'provider_hint')}
                 for row in route['rows'] if row['error_type'] is not None
             ]
+            rejections = [
+                {key: row.get(key) for key in ('id', 'rejection_stage', 'schema_error_fields',
+                                              'response_diagnostics', 'prompt_tokens',
+                                              'completion_tokens')}
+                for row in route['rows'] if row.get('rejection_stage') is not None
+            ]
             print(json.dumps({'route': name, 'status': route['status'],
-                              'execution_errors': route['execution_errors'], 'errors': errors},
+                              'execution_errors': route['execution_errors'], 'errors': errors,
+                              'rejections': rejections},
                              ensure_ascii=False))
     if args.publish:
         if hosted is not None:

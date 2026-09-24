@@ -78,6 +78,25 @@ class StructuredFields(StrictModel):
         return self
 
 
+ResponseStatus = Literal[
+    "parsed", "invalid_json", "invalid_envelope", "non_object_json",
+    "refused", "incomplete_response",
+]
+ResponseFinishReason = Literal[
+    "stop", "length", "content_filter", "tool_calls", "function_call", "other"
+]
+
+
+class HostedResponseDiagnostics(StrictModel):
+    """Bounded metadata only; never upstream text, arbitrary values or headers."""
+
+    http_status: int = Field(ge=100, le=599)
+    status: ResponseStatus = "invalid_envelope"
+    content_format: Literal["plain", "json_fence", "non_text"] | None = None
+    finish_reason: ResponseFinishReason | None = None
+    usage_status: Literal["reported", "partial", "missing"] = "missing"
+
+
 class ExtractionResult(StrictModel):
     """A proposal: construction does not confer business-field trust."""
 
@@ -85,6 +104,7 @@ class ExtractionResult(StrictModel):
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
     estimated_cost: Decimal | None = Field(default=None, ge=0)
+    diagnostics: HostedResponseDiagnostics | None = None
 
 
 class ValidationReport(StrictModel):

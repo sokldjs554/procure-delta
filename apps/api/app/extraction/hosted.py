@@ -5,9 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from typing import Any
+import re
+from contextlib import suppress
+from typing import Any, cast
 from urllib.parse import urlsplit
 
+import httpx
 from pydantic import ValidationError
 
 from app.config import Settings
@@ -17,6 +20,9 @@ from app.extraction.schemas import (
     SCHEMA_VERSION,
     DocumentBundle,
     ExtractionResult,
+    HostedResponseDiagnostics,
+    ResponseFinishReason,
+    ResponseStatus,
     StructuredFields,
 )
 from app.sources.http import ResilientHttpClient
@@ -56,7 +62,7 @@ class HostedExtractor:
             and parsed_endpoint.hostname == "api.anthropic.com"
             and parsed_endpoint.path.rstrip("/") == "/v1/chat/completions"
         )
-        request_version = "chat-json-v1-" if self._json_mode else "chat-prompt-json-v1-"
+        request_version = "chat-json-v2-" if self._json_mode else "chat-prompt-json-v2-"
         self.extractor_version = (
             request_version
             + hashlib.sha256(f"{endpoint}:{max_completion_tokens}".encode()).hexdigest()[:16]
@@ -111,42 +117,81 @@ class HostedExtractor:
                 ],
             },
         )
-        try:
-            envelope: Any = response.json(
-                parse_constant=_reject_nonfinite, parse_float=_finite_float
-            )
-        except ValueError:
-            return ExtractionResult(output={"_invalid_json": response.text})
-        if not isinstance(envelope, dict):
-            return ExtractionResult(output={"_invalid_envelope": envelope})
-        try:
-            choice = envelope["choices"][0]
-            message = choice["message"]
-            if choice.get("finish_reason") != "stop" or message.get("refusal"):
-                return ExtractionResult(output={"_invalid_envelope": envelope})
-            content = message["content"]
-            if not isinstance(content, str):
-                return ExtractionResult(output={"_invalid_envelope": envelope})
-        except (KeyError, IndexError, TypeError, AttributeError):
-            return ExtractionResult(output={"_invalid_envelope": envelope})
-        try:
-            output = json.loads(
-                content, parse_constant=_reject_nonfinite, parse_float=_finite_float
-            )
-        except ValueError:
-            return ExtractionResult(output={"_invalid_json": content})
-        if not isinstance(output, dict):
-            return ExtractionResult(output={"_invalid_output": output})
-        usage = envelope.get("usage") or {}
-        try:
-            return ExtractionResult(
-                output=output,
-                prompt_tokens=usage.get("prompt_tokens"),
-                completion_tokens=usage.get("completion_tokens"),
+        return _parse_response(response)
+
+
+def _parse_response(response: httpx.Response) -> ExtractionResult:
+    diagnostics = HostedResponseDiagnostics(http_status=response.status_code)
+    try:
+        envelope: Any = response.json(
+            parse_constant=_reject_nonfinite, parse_float=_finite_float
+        )
+    except ValueError:
+        diagnostics.status = "invalid_json"
+        return ExtractionResult(output={"_invalid_json": response.text}, diagnostics=diagnostics)
+
+    # Reading usage must not depend on accepting the model's answer. Rejected
+    # answers still consume provider tokens. Missing/invalid values stay unknown.
+    usage = envelope.get("usage") if isinstance(envelope, dict) else None
+    usage = usage if isinstance(usage, dict) else {}
+    prompt = usage.get("prompt_tokens")
+    completion = usage.get("completion_tokens")
+    prompt = prompt if type(prompt) is int and prompt >= 0 else None
+    completion = completion if type(completion) is int and completion >= 0 else None
+    if prompt is not None and completion is not None:
+        diagnostics.usage_status = "reported"
+    elif prompt is not None or completion is not None:
+        diagnostics.usage_status = "partial"
+    cost = None
+    if isinstance(envelope, dict):
+        with suppress(ValidationError):
+            cost = ExtractionResult(
+                output={},
                 estimated_cost=envelope.get("estimated_cost"),
-            )
-        except (ValidationError, AttributeError):
-            return ExtractionResult(output={"_invalid_envelope": envelope})
+            ).estimated_cost
+
+    def result(output: dict[str, Any], status: ResponseStatus) -> ExtractionResult:
+        diagnostics.status = status
+        return ExtractionResult(output=output, prompt_tokens=prompt, completion_tokens=completion,
+                                estimated_cost=cost, diagnostics=diagnostics)
+
+    if not isinstance(envelope, dict):
+        return result({"_invalid_envelope": envelope}, "invalid_envelope")
+    try:
+        choice = envelope["choices"][0]
+        message = choice["message"]
+        finish = choice.get("finish_reason")
+        if isinstance(finish, str) and finish in {
+            "stop", "length", "content_filter", "tool_calls", "function_call",
+        }:
+            diagnostics.finish_reason = cast(ResponseFinishReason, finish)
+        elif finish is not None:
+            diagnostics.finish_reason = "other"
+        if message.get("refusal"):
+            return result({"_invalid_envelope": envelope}, "refused")
+        if finish != "stop":
+            return result({"_invalid_envelope": envelope}, "incomplete_response")
+        content = message["content"]
+        if not isinstance(content, str):
+            diagnostics.content_format = "non_text"
+            return result({"_invalid_envelope": envelope}, "invalid_envelope")
+    except (KeyError, IndexError, TypeError, AttributeError):
+        return result({"_invalid_envelope": envelope}, "invalid_envelope")
+
+    # Only unwrap a complete standalone JSON fence. Never extract a JSON fragment
+    # from prose, repair incomplete JSON or alter a field/evidence value.
+    fenced = re.fullmatch(r"```(?:json)?[ \t]*\r?\n(.*?)\r?\n```", content.strip(), re.S | re.I)
+    diagnostics.content_format = "json_fence" if fenced else "plain"
+    json_content = fenced[1] if fenced else content
+    try:
+        output = json.loads(
+            json_content, parse_constant=_reject_nonfinite, parse_float=_finite_float
+        )
+    except ValueError:
+        return result({"_invalid_json": content}, "invalid_json")
+    if not isinstance(output, dict):
+        return result({"_invalid_output": output}, "non_object_json")
+    return result(output, "parsed")
 
 
 def configured_extractor(settings: Settings) -> StructuredExtractor:

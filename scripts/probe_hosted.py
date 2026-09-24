@@ -136,6 +136,8 @@ async def run_probe(
                     "grounded_valid": validate_extraction(proposal, document).valid,
                     "prompt_tokens": proposal.prompt_tokens,
                     "completion_tokens": proposal.completion_tokens,
+                    "response_diagnostics": proposal.diagnostics.model_dump(mode="json")
+                    if proposal.diagnostics is not None else None,
                 }
             except httpx.HTTPStatusError as error:
                 probes["project_extraction"] = response_summary(error.response, api_key)
