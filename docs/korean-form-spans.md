@@ -105,6 +105,31 @@ Docker·브라우저 검증은 전체 CI의 별도 실행 결과로 확인한다
 `initial_selection_note`는 원래 수집 시점의 manifest 기록이며 현재 규칙이 이 문서와
 독립적으로 개발됐다는 주장이 아니다. 역사적 artifact와 frozen manifest는 보존했다.
 
+### 리뷰 수정 후 재실측
+
+최종 리뷰에서 중첩된 제목 괄호의 안쪽 닫힘을 바깥쪽 닫힘으로 오인해 잘린 제목이
+통과하는 사례를 발견했다. 실패하는 회귀 8개를 먼저 확인하고 바깥쪽 짝의 깊이를
+추적하도록 수정했다. 서식 회귀 45개와 추출·평가 253개, 계약 46개가 로컬에서
+통과했으며 독립 재리뷰에서도 해당 결함 해결을 확인했다.
+
+수정 소스 `5fd166b059ee9859e0e3775058cdfaffb0a2cc03`의 clean checkout에서
+실험 5개를 다시 실행했다. Python·script 코드 해시는
+`80dc56feacfb882597ccba34f0d65d468de41a9dc5039b373db3cc8fa9a3a9ac`이다.
+앞 절의 `2cd6e7e` 기록을 보존하며, 아래 파일이 리뷰 수정 후의 측정 증거다.
+
+- 후보 [첫 실행](../artifacts/evaluation/ocr-candidate-form-spans-v3-balanced.json)과
+  [반복 실행](../artifacts/evaluation/ocr-candidate-form-spans-v3-balanced-repeat.json):
+  두 번 모두 5건 완료·1건 실패, 종료 코드 1이다. 품질·실패 상태·텍스트 해시·모델·정답
+  해시가 앞 절의 v3 실행과 일치한다. 완료 사례 시간은 각각 6.02~9.70초와
+  5.47~8.94초, 페이지별 최대 RSS 범위는 691.68~714.86 MiB와 690.77~715.88 MiB다.
+- [Tesseract 원본 스캔](../artifacts/evaluation/public-scan-form-spans-v3-balanced.json),
+  [일반 렌더](../artifacts/evaluation/public-ocr-form-spans-v3-balanced.json),
+  [서식 렌더](../artifacts/evaluation/public-ocr-forms-spans-v3-balanced.json)는 모두
+  종료 코드 0이며 실행 시간을 제외한 측정 내용이 앞 절의 대조군과 일치한다.
+
+실패 그룹의 `null`과 분모를 그대로 유지했다. 이 수정은 알려진 표본의 정확도 상승을
+의미하지 않는다. 새 hosted prompt에 대한 외부 LLM 실측은 여전히 수행하지 않았다.
+
 ## 재현
 
 기존 manifest와 모델·원본 SHA-256을 그대로 사용한다. 별도 PP-OCRv5 가상환경,
