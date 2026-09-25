@@ -16,7 +16,9 @@ VALID = f"Title: {PRIVATE}\nBuyer: Agency\nCategory: services"
     (f"Title: {PRIVATE}", ["buyer_name", "procurement_type"]),
     (f"Title: {PRIVATE}\nBuyer: Agency\nCategory: invalid-private-category",
      ["procurement_type"]),
-    (VALID + f"\nContract period: {PRIVATE}", ["unknown"]),
+    # Explicit but impossible dates still exercise model-level error redaction;
+    # unsupported free-form periods are omitted by grounding v3.
+    (VALID + "\nContract period: 2026-02-30/2026-12-31", ["unknown"]),
 ])
 def test_schema_rejection_exposes_only_field_names(text, fields):
     result = asyncio.run(score_text(text, {"title": PRIVATE}))
@@ -48,4 +50,13 @@ def test_valid_but_inaccurate_output_is_not_a_validation_rejection():
     assert result["rejection_stage"] is None
     assert result["schema_error_fields"] == result["grounding_issues"] == []
     assert result["trusted_field_metrics"]["correct"] == 0
+    assert PRIVATE not in json.dumps(result)
+
+
+def test_unsupported_optional_period_is_not_a_schema_rejection_or_text_leak():
+    result = asyncio.run(score_text(VALID + f"\nContract period: {PRIVATE}", {"title": PRIVATE}))
+    assert result["downstream_valid"]
+    assert result["rejection_stage"] is None
+    assert result["trusted_field_metrics"]["correct"] == 1
+    assert "contract_period" not in result["field_metrics"]["unexpected"]
     assert PRIVATE not in json.dumps(result)

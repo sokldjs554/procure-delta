@@ -7,7 +7,7 @@ from app.extraction.validation import evidence_spans, labeled_claims
 class DeterministicExtractor:
     """Local/demo extraction of explicit labels, with no inference from raw records."""
 
-    extractor_version = "deterministic-labels-v2"
+    extractor_version = "deterministic-labels-v3"
     provider = "local"
     model = "labeled-text-v1"
 
