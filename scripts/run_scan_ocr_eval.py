@@ -49,7 +49,10 @@ def main() -> None:
     result = {
         "schema_version": 1, "suite": manifest["suite"],
         "measured_at": datetime.now(UTC).isoformat(), "provenance": metadata,
-        "source_kind": manifest["source_kind"], "selection": manifest["selection"],
+        "source_kind": manifest["source_kind"],
+        "selection": "Development regression on previously inspected pages; "
+                     "current extraction rules were informed by this corpus.",
+        "initial_selection_note": manifest["selection"],
         "measurement": asyncio.run(evaluate_scans(manifest, args.source_dir, config)),
         "limitation": (
             "Original image-only PDFs; no page rewriting, rerasterization, blur or crop before "

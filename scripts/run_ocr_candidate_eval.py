@@ -50,7 +50,10 @@ async def evaluate(args):
             probe_failed=probe_failed,
         )
         groups.append({"suite": manifest["suite"], "source_kind": manifest["source_kind"],
-                       "selection": manifest["selection"], "sources": manifest["sources"],
+                       "selection": "Development regression on previously inspected pages; "
+                                    "current extraction rules were informed by this corpus.",
+                       "initial_selection_note": manifest["selection"],
+                       "sources": manifest["sources"],
                        "provenance": metadata, "measurement": measurement})
     return {"schema_version": 1, "measured_at": datetime.now(UTC).isoformat(),
             "suite": "korean-ocr-candidate-v1", "groups": groups,
@@ -59,14 +62,15 @@ async def evaluate(args):
                 "One annotated page per source rendered in RGB at 300 dpi; RapidOCR then "
                 "uses its version-pinned defaults including max_side_len=2000. No crops, "
                 "manual corrections or label-specific preprocessing. Native PDFs are "
-                "raster controls, not natural scans. Page-scoped unchanged deterministic "
+                "raster controls, not natural scans. Page-scoped versioned deterministic "
                 "extraction and grounding; not whole-PDF recognition/worker acceptance. "
                 "1 GiB address-space limit differs from the 512 MiB production worker. "
                 "Elapsed time includes a cold single-page child, imports, model/source "
                 "hashing, rendering, recognition and parent scoring. Not comparable with "
                 "whole-PDF worker timings. RSS is Linux child high-water mark, not cloud "
                 "capacity. Raw PDFs, text, values, quotes and confidences are not published. "
-                "No production dependency, backend selection or validation rule changes."
+                "The runner does not select a production OCR backend. Initial selection "
+                "notes describe corpus collection, not the current tuning/holdout status."
             )}
 
 
