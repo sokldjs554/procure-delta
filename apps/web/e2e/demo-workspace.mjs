@@ -21,6 +21,7 @@ for (const stream of [server.stdout, server.stderr]) {
 }
 const exited = once(server, "exit");
 let browser;
+let activePage;
 const errors = [];
 const titles = {
   contact: "AI 기반 민원상담 시스템 구축",
@@ -51,6 +52,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: "Asia/Seoul" });
   const page = await context.newPage();
+  activePage = page;
   page.setDefaultTimeout(20000);
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(origin);
@@ -132,6 +134,7 @@ try {
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   const mobilePage = await mobile.newPage();
+  activePage = mobilePage;
   mobilePage.setDefaultTimeout(20000);
   mobilePage.on("pageerror", error => errors.push(error.message));
   for (const route of ["/", "/inbox", "/opportunities/opp-ai-contact-center", "/pipeline", "/notifications", "/profile", "/about"]) {
@@ -155,6 +158,9 @@ try {
   assert.deepEqual(errors, []);
   await mobile.close();
   console.log("Static demo workspace E2E passed: filters, quick views, sorts, comparison, version selection, watch, notifications, replay, seven mobile routes.");
+} catch (error) {
+  if (activePage && !activePage.isClosed()) await screenshot(activePage, "failure").catch(() => {});
+  throw error;
 } finally {
   if (browser) await browser.close();
   server.kill("SIGTERM");

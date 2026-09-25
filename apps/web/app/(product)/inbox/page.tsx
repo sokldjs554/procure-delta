@@ -77,7 +77,7 @@ export default function Inbox() {
     <div className="inbox-toolbar"><div className="quick-views" role="group" aria-label="불러온 공고 빠른 보기">{views.map(option =>
       <button type="button" key={option.key} className={`quick-view${view === option.key ? " active" : ""}`} aria-pressed={view === option.key} onClick={() => setView(option.key)}>
         {option.label} <span>{filterInbox(items, option.key).length}</span></button>)}</div>
-      <label className="inbox-sort">정렬 <select value={sort} onChange={e => setSort(e.target.value as InboxSort)}><option value="recommendation">추천 · 관련도순</option><option value="deadline">마감 임박순</option><option value="budget">예산 높은순 · 통화별</option></select></label></div>
+      <label className="inbox-sort">정렬 <select aria-label="정렬" value={sort} onChange={e => setSort(e.target.value as InboxSort)}><option value="recommendation">추천 · 관련도순</option><option value="deadline">마감 임박순</option><option value="budget">예산 높은순 · 통화별</option></select></label></div>
     <p className="inbox-scope">현재 불러온 {items.length}건 중 {visible.length}건 표시 · 빠른 보기와 정렬은 불러온 공고에만 적용됩니다.</p>
     <InboxComparison items={compared} onRemove={id => setSelected(current => current.filter(value => value !== id))} onClear={() => setSelected([])} />
     {loading ? <div className="state" role="status"><span className="spinner" />공고를 불러오는 중입니다.</div>
