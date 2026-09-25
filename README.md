@@ -10,7 +10,7 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 
 **https://procure-delta-demo.onrender.com**
 
-공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **읽기전용 합성 데이터 모드**로 배포합니다.
+공개 웹은 비용 없는 포트폴리오 시연을 위해 `NEXT_PUBLIC_STATIC_DEMO=true`인 **합성 데이터 모드**로 배포합니다. 검색·정렬·비교가 작동하며 관심 공고·프로필·알림 설정 변경은 현재 탭에서만 유지됩니다. 예시 추천·참여 판단과 알림 기록은 고정입니다.
 
 - Pipeline Control Room의 시나리오와 contract는 실제 backend 구현과 맞춰 둡니다.
 - 화면에 보이는 performance 값은 저장된 격리 검증 snapshot입니다.
@@ -18,6 +18,15 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 - 실제 FastAPI · PostgreSQL · Redis/ARQ 경로는 Docker release gate와 GitHub Actions에서 별도로 검증합니다.
 
 ![ProcureDelta landing](docs/images/landing.png)
+
+### 공고 탐색과 비교
+
+- **공고함**: 검색·생애주기·상세 조건, 참여 조건별 빠른 보기, 마감·예산 정렬, 최대 3건 비교를 제공합니다. 빠른 보기와 정렬은 현재 불러온 공고에만 적용합니다. 서로 다른 통화의 예산은 환산하지 않습니다.
+- **공고 상세**: 버전을 선택해 정규화된 내용과 변경 전후를 확인합니다. 검증된 현재 버전의 요구사항만 원문 인용·페이지·문서 해시와 연결하며, 이전 버전 선택 시 현재 판단과의 차이를 표시합니다. 합성 문서는 실제 다운로드 파일이 없음을 표시합니다.
+- **파이프라인**: 이전·다음 단계, 재생 속도 조절, 진행 상태와 단계별 설명을 제공합니다. 미실행 단계나 미평가 결과는 성공 판단으로 표시하지 않습니다.
+- **알림**: 변경 내용을 읽고 해당 공고로 이동할 수 있습니다. 공개 데모에서는 외부 메시지를 보내지 않습니다.
+
+CI에서 공개 배포와 동일한 정적 모드를 빌드해 데스크톱 동선과 모바일 7개 화면을 검사합니다. 실제 API 기반 동선은 별도의 Docker release gate에서 검증합니다.
 
 ## 60초 데모
 

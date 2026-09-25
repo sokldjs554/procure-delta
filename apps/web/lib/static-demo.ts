@@ -1,4 +1,5 @@
 import { evaluationSnapshot } from "./evaluation-snapshot.ts";
+import { filterStaticOpportunities } from "./static-filters.ts";
 import type {
   Actor,
   AdminFailure,
@@ -187,6 +188,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
                 created_at: "2026-09-10T09:05:00Z",
                 normalized_json: {
                   estimated_amount: "320000000",
+                  currency: opportunity.currency,
                   required_capabilities: ["LLM"],
                   region_restriction: null,
                   deadline: "2026-09-30T09:00:00Z",
@@ -201,6 +203,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
                 created_at: "2026-09-16T03:05:00Z",
                 normalized_json: {
                   estimated_amount: "280000000",
+                  currency: opportunity.currency,
                   required_capabilities: ["LLM", "STT"],
                   region_restriction: "서울 소재 기업",
                   deadline: "2026-10-02T09:00:00Z",
@@ -217,6 +220,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
                 created_at: opportunity.published_at ?? now,
                 normalized_json: {
                   estimated_amount: opportunity.estimated_amount,
+                  currency: opportunity.currency,
                   lifecycle_stage: opportunity.lifecycle_stage,
                 },
               },
@@ -252,7 +256,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
                   from_version_id: "ver-ai-1",
                   to_version_id: "ver-ai-2",
                   field_changes_json: {
-                    estimated_amount: { before: "320000000", after: "280000000" },
+                    budget: { before: { estimated_amount: "320000000", currency: opportunity.currency }, after: { estimated_amount: "280000000", currency: opportunity.currency } },
                     required_capabilities: { added: ["STT"] },
                     region_restriction: { before: null, after: "서울 소재 기업" },
                     deadline: { before: "2026-09-30", after: "2026-10-02" },
@@ -297,6 +301,7 @@ const details: Record<string, OpportunityDetail> = Object.fromEntries(
         trusted_fields: {
           required_capabilities: opportunity.id === "opp-ai-contact-center" ? ["LLM", "STT"] : ["OCR", "문서분류"],
           estimated_amount: opportunity.estimated_amount,
+          currency: opportunity.currency,
         },
         evidence: {
           required_capabilities: [{ page: 3, quote: "합성 문서 근거: 필수 수행 역량" }],
@@ -743,14 +748,7 @@ async function staticDemoValue(path: string, init: RequestInit = {}): Promise<un
   }
 
   if (pathname === "/opportunities") {
-    const q = (url.searchParams.get("q") ?? "").toLowerCase();
-    const stage = url.searchParams.get("lifecycle_stage") ?? "";
-    const eligibleOnly = url.searchParams.get("eligible_only") === "true";
-    const items = baseOpportunities
-      .filter((item) => !q || `${item.title} ${item.buyer_name}`.toLowerCase().includes(q))
-      .filter((item) => !stage || item.lifecycle_stage === stage)
-      .filter((item) => !eligibleOnly || Boolean(item.eligibility?.eligible && !item.eligibility.warnings.length))
-      .map(opportunityView);
+    const items = filterStaticOpportunities(baseOpportunities, url.searchParams).map(opportunityView);
     return { items, next_cursor: null };
   }
 

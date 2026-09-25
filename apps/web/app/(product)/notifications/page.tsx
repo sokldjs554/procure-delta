@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getNotifications,
@@ -15,6 +16,7 @@ const labels = {
   eligibility_changed: "참여 조건 변경",
   outcome_published: "낙찰·계약 결과",
 } as const;
+const statusLabels: Record<string, string> = { delivered: "전달 완료", pending: "전달 대기", retry: "재시도 대기", failed: "전달 실패", sending: "전달 중", suppressed: "발송 제외" };
 export default function Notifications() {
   const [items, setItems] = useState<NotificationItem[] | null>(null),
     [cursor, setCursor] = useState<string | null>(null),
@@ -91,7 +93,7 @@ export default function Notifications() {
         <div>
           <p className="eyebrow">NOTIFICATIONS</p>
           <h1>알림 기록과 설정</h1>
-          <p>변경 이벤트와 실제 전달 상태를 확인합니다.</p>
+          <p>{process.env.NEXT_PUBLIC_STATIC_DEMO === "true" ? "합성 변경 알림을 살펴보세요. 공개 데모에서는 외부 메시지를 발송하지 않습니다." : "변경 이벤트와 실제 전달 상태를 확인합니다."}</p>
         </div>
       </header>
       <div className="detail-grid">
@@ -119,11 +121,13 @@ export default function Notifications() {
                       item.status === "delivered" ? "success" : "pending"
                     }
                   >
-                    {item.status}
+                    {statusLabels[item.status] ?? item.status}
                   </span>
                   <p>
-                    채널 {item.channel} · 시도 {item.attempt_count}회
+                    채널 {item.channel === "local" ? "제품 내 알림" : item.channel} · 시도 {item.attempt_count}회
                   </p>
+                  {item.payload && typeof item.payload === "object" && !Array.isArray(item.payload) && typeof item.payload.title === "string" && <p>{item.payload.title}</p>}
+                  <Link href={`/opportunities/${encodeURIComponent(item.opportunity_id)}`}>변경된 공고 확인 →</Link>
                 </article>
               ))}
               {historyError && <p role="alert">{historyError}</p>}
@@ -144,6 +148,7 @@ export default function Notifications() {
         </section>
         <section className="panel preferences">
           <h2>알림 설정</h2>
+          {process.env.NEXT_PUBLIC_STATIC_DEMO === "true" && <p className="notice">이 화면의 설정은 현재 탭에서만 유지됩니다. 예시 알림 기록은 설정과 관계없이 표시됩니다.</p>}
           {prefsLoading ? (
             <p>불러오는 중…</p>
           ) : prefsError && !prefs ? (

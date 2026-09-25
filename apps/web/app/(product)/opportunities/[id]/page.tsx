@@ -17,13 +17,24 @@ import {
   getCurrentVersion,
 } from "../../../../lib/product";
 import { JsonView } from "../../../../components/json-view";
+import {
+  deltaRows,
+  describeField,
+  describeValue,
+  documentLink,
+  documentChangeRows,
+  evidenceRows,
+  hasEvaluatedEligibility,
+  normalizedRows,
+} from "../../../../lib/detail-presentation";
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<OpportunityDetail | null>(null),
     [error, setError] = useState(""),
     [actionError, setActionError] = useState(""),
     [busy, setBusy] = useState(false),
-    [reload, setReload] = useState(0);
+    [reload, setReload] = useState(0),
+    [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const requestId = useRef(0);
   useEffect(() => {
     const request = ++requestId.current;
@@ -31,6 +42,7 @@ export default function Detail() {
     setError("");
     setActionError("");
     setBusy(false);
+    setSelectedVersionId(null);
     getOpportunity(id)
       .then((value) => {
         if (request === requestId.current) setData(value);
@@ -61,6 +73,11 @@ export default function Detail() {
     );
   const decision = describeDecision(data.decision_status, data.eligibility),
     current = getCurrentVersion(data.versions, data.current_version_id);
+  const selectedVersion = data.versions.find((version) => version.id === selectedVersionId) ?? current;
+  const showingHistoricalVersion = selectedVersion !== null && selectedVersion.id !== data.current_version_id;
+  const trustedExtraction = data.extraction.status === "validated" && current !== null && !showingHistoricalVersion;
+  const trustedRows = trustedExtraction ? normalizedRows(data.extraction.trusted_fields) : [];
+  const citations = trustedExtraction ? evidenceRows(data.extraction.evidence) : [];
   async function toggle() {
     const request = requestId.current;
     const opportunityId = data!.id;
@@ -84,6 +101,9 @@ export default function Detail() {
   }
   return (
     <main className="product detail">
+      <nav className="detail-breadcrumb" aria-label="현재 위치">
+        <Link href="/inbox">공고함으로 돌아가기</Link><span aria-hidden="true">/</span><span>공고 상세</span>
+      </nav>
       <header className="detail-head">
         <div>
           <div className="badges">
@@ -111,6 +131,12 @@ export default function Detail() {
           )}
         </div>
       </header>
+      <nav className="detail-jump" aria-label="상세 항목 바로가기">
+        <a href="#overview">공고 요약</a>
+        <a href="#changes">변경 전후</a>
+        <a href="#evidence">원문 근거</a>
+        <a href="#documents">첨부 문서</a>
+      </nav>
       <section className="summary-grid">
         <Fact
           label="예산"
@@ -127,18 +153,19 @@ export default function Detail() {
         />
         <Fact
           label="추천 게이트"
-          value={data.ranking?.recommended ? "검토 추천" : "추천 기준 미충족"}
+          value={data.ranking ? data.ranking.recommended ? "검토 추천" : "추천 기준 미충족" : "계산 대기"}
         />
       </section>
       <div className="detail-grid">
         <div>
           <Section
+            id="overview"
             title="참여 조건 판단"
             subtitle="관련도 점수와 별개의 결정입니다."
           >
-            {data.decision_status !== "ready" ? (
+            {!hasEvaluatedEligibility(data.decision_status, data.eligibility) ? (
               <p className="notice">
-                현재 입력이 준비되지 않아 참여 가능으로 확정하지 않습니다.
+                참여 조건 평가 결과가 준비되지 않아 참여 가능으로 확정하지 않습니다.
               </p>
             ) : (
               <>
@@ -153,35 +180,67 @@ export default function Detail() {
               </>
             )}
           </Section>
-          <Section title="현재 정규화 요약">
-            {current ? (
+          <Section title="공고 내용">
+            {selectedVersion ? (
               <>
-                <p>
-                  현재 버전 v{current.version_number} ·{" "}
-                  {formatDate(current.effective_at)}
-                </p>
-                <JsonView value={current.normalized_json} />
+                <label className="detail-version-select">확인할 공고 버전
+                  <select value={selectedVersion.id} onChange={(event) => setSelectedVersionId(event.target.value)}>
+                    {data.versions.map((version) => <option value={version.id} key={version.id}>
+                      v{version.version_number} · {version.id === data.current_version_id ? "현재" : "이전"} · {formatDate(version.effective_at)}
+                    </option>)}
+                  </select>
+                </label>
+                {showingHistoricalVersion && <p className="notice">이전 버전의 공고 내용입니다. 위 참여 조건 판단은 현재 버전에 대한 결과이며, 이 버전에 대해 다시 계산한 결과가 아닙니다.</p>}
+                <dl className="detail-facts">
+                  {normalizedRows(selectedVersion.normalized_json).map((row) =>
+                    <div key={row.key}><dt>{row.label}</dt><dd>{row.text}</dd></div>,
+                  )}
+                </dl>
+                {!normalizedRows(selectedVersion.normalized_json).length && <p>표시할 정규화 항목이 없습니다.</p>}
+                <TechnicalData title="정규화 원본 데이터" value={selectedVersion.normalized_json} />
               </>
             ) : (
               <p>현재 버전이 없습니다.</p>
             )}
           </Section>
-          <Section title="요구사항과 근거">
+          <Section id="evidence" title="요구사항과 원문 근거">
             <p className="notice">
-              구조화 추출 상태: <b>{data.extraction.status}</b>. 검증된 현재
-              추출만 판단에 사용합니다.
+              구조화 추출 상태: <b>{data.extraction.status}</b>. 검증된 현재 버전의
+              추출만 신뢰할 수 있는 요구사항으로 표시합니다.
             </p>
-            <JsonView value={data.extraction.trusted_fields} />
-            <h3>근거 인용</h3>
-            <JsonView value={data.extraction.evidence} />
-            {Object.keys(data.extraction.conflicts as object).length > 0 && (
+            {showingHistoricalVersion && <p>이전 버전을 선택했습니다. 현재 버전으로 돌아오면 검증된 요구사항과 근거를 볼 수 있습니다.</p>}
+            {trustedExtraction && <>
+              <h3>검증된 요구사항</h3>
+              {trustedRows.length ? <dl className="detail-facts">
+                {trustedRows.map((row) => <div key={row.key}><dt>{row.label}</dt><dd>{row.text}</dd></div>)}
+              </dl> : <p>검증된 요구사항이 없습니다.</p>}
+              <h3>원문 인용</h3>
+              {citations.length ? <div className="detail-evidence">
+                {citations.map((citation, index) => {
+                  const matchingDocument = data.documents.find((document) => document.sha256 && document.sha256 === citation.attachmentSha);
+                  return <article className="detail-evidence-card" key={`${citation.field}-${index}`}>
+                    <b>{citation.label}</b>
+                    {citation.quote ? <blockquote>{citation.quote}</blockquote> : <p>원문 인용이 제공되지 않았습니다.</p>}
+                    <small>
+                      {matchingDocument ? <DocumentReference id={matchingDocument.id} filename={matchingDocument.filename} /> : citation.source ? `출처 ${citation.source}` : "출처 문서 확인 필요"}
+                      {citation.page ? ` · ${citation.page}쪽` : ""}
+                    </small>
+                    {citation.attachmentSha && <small title={citation.attachmentSha}>SHA-256 {citation.attachmentSha}</small>}
+                  </article>;
+                })}
+              </div> : <p>연결된 원문 인용이 없습니다.</p>}
+            </>}
+            {trustedExtraction && data.extraction.conflicts !== null && typeof data.extraction.conflicts === "object" && !Array.isArray(data.extraction.conflicts) && Object.keys(data.extraction.conflicts).length > 0 && (
               <>
                 <h3>상충 정보</h3>
-                <JsonView value={data.extraction.conflicts} />
+                <p className="notice">원문끼리 서로 다른 내용을 제시한 항목입니다. 아래 기술 데이터를 확인하세요.</p>
+                <TechnicalData title="상충 정보 원본" value={data.extraction.conflicts} />
               </>
             )}
+            {data.extraction.validation_errors.length > 0 && <p className="notice">검증 오류 {data.extraction.validation_errors.length}건이 기록되었습니다.</p>}
+            <TechnicalData title="추출·근거 원본 데이터" value={{ trusted_fields: data.extraction.trusted_fields, evidence: data.extraction.evidence, conflicts: data.extraction.conflicts, validation_errors: data.extraction.validation_errors }} />
           </Section>
-          <Section title="Delta — 변경 전후">
+          <Section id="changes" title="변경 전후">
             <p>
               {data.deltas.current_inputs_ready
                 ? "현재 비교 입력 준비 완료"
@@ -191,17 +250,32 @@ export default function Detail() {
               data.deltas.items.map((delta) => (
                 <article className="delta" key={delta.id}>
                   <header>
-                    <b>{delta.impact_level} 영향</b>
+                    <b>{delta.impact_level === "HIGH" ? "중요 변경" : delta.impact_level === "LOW" ? "경미한 변경" : `${delta.impact_level} 영향`}</b>
                     <span>
                       {delta.applicable_now ? "현재 적용" : "과거 비교"}
                     </span>
                   </header>
-                  <h3>필드 변경</h3>
-                  <JsonView value={delta.field_changes_json} />
-                  <h3>문서 변경</h3>
-                  <JsonView value={delta.document_changes_json} />
-                  <h3>판정 근거</h3>
-                  <JsonView value={delta.impact_reasons_json} />
+                  <p className="muted">{data.versions.find((version) => version.id === delta.from_version_id)?.version_number ?? "?"} → {data.versions.find((version) => version.id === delta.to_version_id)?.version_number ?? "?"} 버전 비교</p>
+                  {deltaRows(delta.field_changes_json).length ? <div className="detail-change-table" role="table" aria-label="필드 변경 전후">
+                    <div className="detail-change-head" role="row"><span role="columnheader">항목</span><span role="columnheader">변경 전</span><span role="columnheader">변경 후</span></div>
+                    {deltaRows(delta.field_changes_json).map((row) => <div className="detail-change-row" role="row" key={row.key}>
+                      <b role="cell">{row.label}</b><span role="cell">{row.before}</span><strong role="cell">{row.after}</strong>
+                    </div>)}
+                  </div> : <p>변경된 필드가 없습니다.</p>}
+                  {documentChangeRows(delta.document_changes_json).length > 0 && <>
+                    <h3>문서 변경</h3>
+                    <div className="detail-doc-change">{documentChangeRows(delta.document_changes_json).map((change, index) =>
+                      <div key={index}><b>{change.kind}</b><span>{change.before} → {change.after}</span>
+                        {change.beforeSha && <small>이전 SHA-256 {change.beforeSha}</small>}
+                        {change.afterSha && <small>변경 SHA-256 {change.afterSha}</small>}
+                      </div>,
+                    )}</div>
+                  </>}
+                  {Array.isArray(delta.impact_reasons_json) && delta.impact_reasons_json.length > 0 &&
+                    <p className="muted">변경 사유: {delta.impact_reasons_json.map((reason) => describeValue(reason)).join(" · ")}</p>}
+                  {!Array.isArray(delta.impact_reasons_json) && delta.impact_reasons_json !== null && typeof delta.impact_reasons_json === "object" && Array.isArray(delta.impact_reasons_json.codes) &&
+                    <p className="muted">변경 사유: {delta.impact_reasons_json.codes.map((code) => describeField(String(code))).join(" · ") || "분류 사유 없음"}</p>}
+                  <TechnicalData title="변경 상세·판정 근거 원본" value={{ fields: delta.field_changes_json, documents: delta.document_changes_json, impact_reasons: delta.impact_reasons_json }} />
                 </article>
               ))
             ) : (
@@ -244,14 +318,15 @@ export default function Detail() {
               <p>현재 순위 판단이 없습니다.</p>
             )}
           </Section>
-          <Section title="원문 문서">
+          <Section id="documents" title="원문 문서" subtitle="현재 버전의 첨부 문서입니다.">
+            {showingHistoricalVersion && <p className="notice">위에서 이전 버전을 선택해도 이 목록은 현재 버전의 문서입니다. 이전 첨부 파일을 제공하는 목록이 아닙니다.</p>}
             {data.documents.length ? (
               data.documents.map((document) => (
                 <article className="document" key={document.id}>
                   <b>{document.filename}</b>
                   <small>SHA-256 {document.sha256 ?? "확인 전"}</small>
                   <small>다운로드 상태 {document.download_status}</small>
-                  <a href={documentUrl(document.id)}>인증된 원문 다운로드</a>
+                  <DocumentReference id={document.id} />
                 </article>
               ))
             ) : (
@@ -264,16 +339,18 @@ export default function Detail() {
   );
 }
 function Section({
+  id,
   title,
   subtitle,
   children,
 }: {
+  id?: string;
   title: string;
   subtitle?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="panel">
+    <section id={id} className="panel detail-section">
       <header>
         <h2>{title}</h2>
         {subtitle && <p>{subtitle}</p>}
@@ -281,6 +358,15 @@ function Section({
       {children}
     </section>
   );
+}
+function TechnicalData({ title, value }: { title: string; value: import("../../../../lib/api").JsonValue }) {
+  return <details className="detail-technical"><summary>{title}</summary><JsonView value={value} /></details>;
+}
+function DocumentReference({ id, filename }: { id: string; filename?: string }) {
+  const link = documentLink(documentUrl(id));
+  return link.href
+    ? <a href={link.href}>{filename ?? link.label}</a>
+    : <span className="document-unavailable">{filename ? `${filename} · ` : ""}{link.label}</span>;
 }
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -304,7 +390,7 @@ function ReasonList({
         <ul className="reasons">
           {reasons.map((reason, index) => (
             <li key={`${reason.code}-${index}`}>
-              <b>{reason.field}</b>
+              <b>{describeField(reason.field)}</b>
               {reason.message}
             </li>
           ))}

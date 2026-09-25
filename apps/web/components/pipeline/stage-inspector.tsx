@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { PipelineStage } from "../../lib/api";
+import { stageSummary } from "../../lib/pipeline";
 import { AmendmentImpact } from "./amendment-impact";
 
 type Tab = "input" | "output" | "evidence" | "decision";
@@ -42,6 +43,13 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
     ["evidence", "근거"],
     ["decision", "판단"],
   ];
+  const summary = stageSummary(stage);
+  const statusText: Record<PipelineStage["status"], string> = {
+    passed: "처리됨",
+    warning: "주의",
+    blocked: "중단됨",
+    not_run: "미실행",
+  };
 
   return (
     <section className="stage-inspector" aria-live="polite">
@@ -51,9 +59,15 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
           <h2>{stage.label}</h2>
         </div>
         <span className={`stage-status status-${stage.status}`}>
-          {stage.status}
+          {statusText[stage.status]}
         </span>
       </header>
+      <div className="pipeline-stage-summary">
+        <p>{summary.description}</p>
+        <p className="stage-result">
+          <strong>이 단계의 결과</strong> {summary.result}
+        </p>
+      </div>
       <p className="stage-measurement">
         측정 지연:{" "}
         {stage.measured_duration_ms === null
@@ -61,9 +75,9 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
           : `${stage.measured_duration_ms.toFixed(2)} ms`}
       </p>
       {stage.notice && <p className="honesty">{stage.notice}</p>}
-      {["delta", "eligibility", "ranking", "notification"].includes(stage.id) && (
-        <AmendmentImpact stage={stage} />
-      )}
+      {["delta", "eligibility", "ranking", "notification"].includes(
+        stage.id,
+      ) && <AmendmentImpact stage={stage} />}
       <details className="pipeline-technical-details">
         <summary>
           <span>
@@ -72,7 +86,11 @@ export function StageInspector({ stage }: { stage: PipelineStage | null }) {
           </span>
         </summary>
         <div className="pipeline-technical-body">
-          <div className="inspector-tabs" role="tablist" aria-label="단계 세부 정보">
+          <div
+            className="inspector-tabs"
+            role="tablist"
+            aria-label="단계 세부 정보"
+          >
             {labels.map(([id, label]) => (
               <button
                 key={id}

@@ -26,6 +26,11 @@ test("formatMoney handles unknown amounts without inventing a value", () => {
   assert.equal(formatMoney("125000000", "KRW"), "₩125,000,000");
 });
 
+test("money displays retain fractional changes rather than rounding them away", () => {
+  assert.notEqual(formatMoney("1200.40", "USD"), formatMoney("1200.49", "USD"));
+  assert.match(formatMoney("1200.125", "USD"), /1,200\.125/);
+});
+
 test("appendUniquePage keeps order while removing repeated cursor-boundary rows", () => {
   const current = [{ id: "a" }, { id: "b" }];
   const next = [{ id: "b" }, { id: "c" }];

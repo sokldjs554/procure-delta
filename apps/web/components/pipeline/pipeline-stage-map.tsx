@@ -1,5 +1,12 @@
 import type { PipelineStage } from "../../lib/api";
 
+const statusText: Record<PipelineStage["status"], string> = {
+  passed: "처리됨",
+  warning: "주의",
+  blocked: "중단됨",
+  not_run: "미실행",
+};
+
 export function PipelineStageMap({
   stages,
   selectedStageId,
@@ -35,9 +42,7 @@ export function PipelineStageMap({
               </span>
               <span>
                 <strong>{stage.label}</strong>
-                <small>
-                  {stage.kind} · {stage.status}
-                </small>
+                <small>{statusText[stage.status]}</small>
               </span>
             </button>
           </li>

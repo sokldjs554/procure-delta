@@ -32,7 +32,7 @@ export function formatMoney(amount: string | null, currency: string) {
   if (amount === null) return "금액 미공개";
   const value = Number(amount);
   if (!Number.isFinite(value)) return `${amount} ${currency}`;
-  return new Intl.NumberFormat("ko-KR", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("ko-KR", { style: "currency", currency, maximumFractionDigits: 20 }).format(value);
 }
 
 export function formatDate(value: string | null) {
