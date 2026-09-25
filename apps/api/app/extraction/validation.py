@@ -109,21 +109,32 @@ def _value_line(text: str) -> bool:
     )
 
 
-def _whole_title_quote(value: str) -> bool:
+def _title_quote_end(value: str) -> int | None:
+    """Find the outer closing mark, preserving nested title punctuation."""
     closing = QUOTATION_BRACKETS.get(value[:1])
-    if not closing or len(value) < 2 or not value.endswith(closing):
-        return False
-    # A prefix such as [재공고] and punctuation within a title keep their literal meaning.
-    return value.count(value[0]) == (2 if value[0] == closing else 1) and (
-        value[0] == closing or value.count(closing) == 1
-    )
+    if not closing:
+        return None
+    opening = value[0]
+    depth = 1
+    for index, character in enumerate(value[1:], start=1):
+        if character == closing:
+            depth -= 1
+            if depth == 0:
+                return index
+        elif character == opening:
+            depth += 1
+    return None
+
+
+def _whole_title_quote(value: str) -> bool:
+    return bool(value) and _title_quote_end(value) == len(value) - 1
 
 
 def _title_value(value: str) -> str:
     if _whole_title_quote(value):
         return " ".join(value[1:-1].split())
     closing = QUOTATION_BRACKETS.get(value[:1])
-    if closing and closing not in value[1:]:
+    if closing and _title_quote_end(value) is None:
         # Keep the malformed claim visible to schema/conflict validation, even if
         # another valid title occurs first. Never accept a truncated quoted title.
         return ""

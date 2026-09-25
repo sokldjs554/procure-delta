@@ -28,10 +28,12 @@ def extraction_system_prompt() -> str:
         "correctly in the recognized heading. No qualifiers or extra prose are allowed. "
         "For title only, remove exactly one pair enclosing the entire value: 「」, 『』, “”, "
         'double quotes, [] or ［］; collapse whitespace inside that enclosure to single spaces. '
+        "For asymmetric enclosing marks, balance nested matching pairs and preserve the "
+        "inner marks; an inner closing mark does not close the outer enclosure. "
         "Keep prefixes such as [재공고] and punctuation inside otherwise unquoted titles. "
         "An unclosed quoted title on a nonempty labeled line can consume exactly one "
         "immediately adjacent value line, with at most 300 value characters in total, only "
-        "if it closes that single enclosing pair. Do not cross labels or section markers; "
+        "if it closes that outer enclosing pair. Do not cross labels or section markers; "
         "unquoted wrapped titles and unclosed/mismatched quoted titles are unsupported. "
         "Do not infer fields from unlabeled prose or table cells. "
         "Keep strings in the source language; do not translate, paraphrase or expand them. "
