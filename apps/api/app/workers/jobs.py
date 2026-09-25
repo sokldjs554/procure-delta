@@ -17,7 +17,7 @@ from arq import Retry
 from arq.connections import ArqRedis
 from pydantic import ValidationError
 from redis.exceptions import RedisError
-from sqlalchemy import select, update
+from sqlalchemy import SQLColumnExpression, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -610,18 +610,20 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
         settings, local_root=storage_root
     )
     now = datetime.now(UTC)
+    # Keep heterogeneous JSON values opaque so SQLAlchemy can infer the other
+    # selected columns instead of propagating Any into the whole row.
+    payload_column: SQLColumnExpression[dict[str, object]] = RawRecord.payload_json
     async with _session_scope(ctx) as discovery_session:
         rows = (
             await discovery_session.execute(
                 select(
                     RawRecord.id,
                     RawRecord.source_record_id,
-                    RawRecord.payload_json,
+                    payload_column,
                     RawRecord.http_etag,
                     RawRecord.http_last_modified,
                     RawRecord.source_updated_at,
                     OpportunityVersion.id,
-                    OpportunityVersion.documents_generation,
                     SourceRegistry.code,
                     SourceRegistry.base_url,
                 )
@@ -640,7 +642,6 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
             http_last_modified,
             source_updated_at,
             version_id,
-            processing_generation,
             source_code,
             source_base_url,
         ) = row
@@ -654,6 +655,7 @@ async def reconcile_pending_documents(ctx: dict[str, Any]) -> dict[str, int]:
                     .with_for_update()
                 )
             ).one()
+            # Snapshot the generation under its lock, not in the discovery query.
             processing_generation = current.documents_generation
             failure = await state_session.scalar(
                 select(JobFailure).where(

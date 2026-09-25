@@ -51,7 +51,9 @@ def main() -> None:
         "provenance": metadata,
         "source_kind": manifest["source_kind"], "natural_scan_documents": 0,
         "public_source_documents": len(manifest["sources"]),
-        "selection": manifest["selection"],
+        "selection": "Development regression on previously inspected pages; "
+                     "current extraction rules were informed by this corpus.",
+        "initial_selection_note": manifest["selection"],
         "limitation": (
             "Public PDFs, one page each, rasterized into three correlated variants. "
             "Not natural scans, a representative corpus, full-page CER, or production OCR. "

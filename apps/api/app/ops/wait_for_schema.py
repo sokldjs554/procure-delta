@@ -20,7 +20,7 @@ def schema_ready() -> bool:
     engine = create_engine(settings.database_url, pool_pre_ping=True)
     try:
         with engine.connect() as connection:
-            observed = set(
+            observed: set[str] = set(
                 connection.execute(text("SELECT version_num FROM alembic_version")).scalars()
             )
         return observed == expected

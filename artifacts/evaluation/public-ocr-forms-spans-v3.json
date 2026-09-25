@@ -1,0 +1,647 @@
+{
+  "schema_version": 1,
+  "suite": "korean-public-pdf-forms-v1",
+  "measured_at": "2026-09-25T00:30:08.889078+00:00",
+  "provenance": {
+    "dataset_sha256": "9e82b6d8be68a4e8faefe4af4dca23f1cb00b201737f4dee5113913949af16ab",
+    "source_sha256": "da4958e6da34a2adac10fd02d21e385b61d7f50dc6c4fbb61459f3d537396142",
+    "git_commit": "2cd6e7e04d787c25357594c48f4530465b4ae47f",
+    "git_dirty": false,
+    "configuration": {
+      "language": "kor+eng",
+      "page_segmentation_mode": 3,
+      "preparation": "First page rendered at 300 dpi, 300 dpi with Gaussian blur 1.2, and 150 dpi; no crops or OCR-based case exclusion.",
+      "tessdata_sha256": {
+        "kor": "6b85e11d9bbf07863b97b3523b1b112844c43e713df8b66418a081fd1060b3b2",
+        "eng": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2"
+      },
+      "pymupdf": "1.28.2",
+      "pillow": "11.3.0",
+      "extractor_version": "deterministic-labels-v3",
+      "grounding_version": "explicit-labels-v3"
+    },
+    "environment": {
+      "python": "3.12.14",
+      "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+      "cpu_logical_count": 9,
+      "machine": "x86_64",
+      "cpu_model": "x86_64",
+      "environment_label": "local-korean-form-spans-v3",
+      "cpu_quota": "800000 100000"
+    },
+    "synthetic": false
+  },
+  "source_kind": "public_pdf_with_native_text",
+  "natural_scan_documents": 0,
+  "public_source_documents": 2,
+  "selection": "Development regression on previously inspected pages; current extraction rules were informed by this corpus.",
+  "initial_selection_note": "Two additional convenience-sampled PDFs: a colon-labeled notice and an unsupported unlabeled table cover. Search snippets informed the parser design; these are diagnostic cases, NOT held-out or representative data. Images and native text were visually checked and annotations frozen before OCR. No OCR-driven rule tuning.",
+  "limitation": "Public PDFs, one page each, rasterized into three correlated variants. Not natural scans, a representative corpus, full-page CER, or production OCR. Anchors use NFC and whitespace-insensitive exact substring matching. Trusted fields require the versioned production validator to accept the whole result. Raw source PDFs, full native text and OCR output are not published.",
+  "measurement": {
+    "sources": [
+      {
+        "id": "yeoju-2026-43",
+        "filename": "yeoju-2026-43.pdf",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01358964&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=05",
+        "issuer": "경기도여주교육지원청",
+        "sha256": "1917b2f208eba36550d2fae50167b5afa50c3b890c210d2750e3dc167ddd55ec",
+        "page": 1,
+        "expected_fields": {
+          "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+          "buyer_name": "경기도여주교육지원청",
+          "procurement_type": "services"
+        },
+        "recognition_anchors": {
+          "title": "이포초 영어체험실 외 1교(상품중 급식소) 내진성능평가용역",
+          "buyer": "경기도여주교육지원청"
+        },
+        "annotation_note": "Page visually checked. The explicit service notice heading supplies category; title and buyer use colon labels. No dates, contact details or inferred requirements scored.",
+        "byte_size": 212369,
+        "page_count": 11,
+        "native_text_characters": 478,
+        "native_text_layer": true
+      },
+      {
+        "id": "worker-center-cm",
+        "filename": "worker-center-cm.pdf",
+        "url": "https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01563696&bidPbancOrd=001&fileSeq=2&fileType=&prcmBsneSeCd=05",
+        "issuer": "한국노동조합총연맹",
+        "sha256": "d278ffd4e194097458b2cb2ad75469c003b52f002f0d9ec6fc7eb2ed492b37de",
+        "page": 1,
+        "expected_fields": {
+          "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+          "buyer_name": "한국노동조합총연맹",
+          "procurement_type": "services"
+        },
+        "recognition_anchors": {
+          "title": "중앙근로자복지센터 시설개선공사 건설사업관리용역",
+          "buyer": "한국노동조합총연맹"
+        },
+        "annotation_note": "Page visually checked. Service category refers to construction management, not the construction project itself. This table/cover has no supported complete category heading or colon-labeled title/buyer; abstention remains in the denominator.",
+        "byte_size": 419077,
+        "page_count": 19,
+        "native_text_characters": 245,
+        "native_text_layer": true
+      }
+    ],
+    "native_control": {
+      "summary": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 4,
+        "expected_anchors": 4,
+        "recognition_anchor_recall": 1.0,
+        "proposed_correct_fields": 3,
+        "trusted_correct_fields": 3,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.5,
+        "valid_documents": 1
+      },
+      "rows": [
+        {
+          "id": "yeoju-2026-43",
+          "status": "measured",
+          "text_sha256": "3fa0060b44e8282cb1fc5f0e376124111a9b7754986e0360380c4b82e0bc88b4",
+          "anchors": {
+            "correct": 2,
+            "support": 2,
+            "recall": 1.0,
+            "per_anchor": {
+              "title": true,
+              "buyer": true
+            }
+          },
+          "field_metrics": {
+            "correct": 3,
+            "expected_fields": 3,
+            "accuracy": 1.0,
+            "per_field": {
+              "title": true,
+              "buyer_name": true,
+              "procurement_type": true
+            },
+            "missing": [],
+            "unexpected": [],
+            "exact_match": true
+          },
+          "downstream_valid": true,
+          "rejection_stage": null,
+          "schema_error_fields": [],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 3,
+            "expected_fields": 3,
+            "accuracy": 1.0,
+            "per_field": {
+              "title": true,
+              "buyer_name": true,
+              "procurement_type": true
+            },
+            "missing": [],
+            "unexpected": [],
+            "exact_match": true
+          }
+        },
+        {
+          "id": "worker-center-cm",
+          "status": "measured",
+          "text_sha256": "99eeb21a3fce33f41c3bf6ae5384f0f26ccaf04518a28e33c70f7fbd37b02ec7",
+          "anchors": {
+            "correct": 2,
+            "support": 2,
+            "recall": 1.0,
+            "per_anchor": {
+              "title": true,
+              "buyer": true
+            }
+          },
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "buyer_name",
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          }
+        }
+      ]
+    },
+    "ocr": {
+      "summary": {
+        "status": "measured",
+        "cases": 6,
+        "measured_cases": 6,
+        "recognized_anchors": 3,
+        "expected_anchors": 12,
+        "recognition_anchor_recall": 0.25,
+        "proposed_correct_fields": 2,
+        "trusted_correct_fields": 0,
+        "expected_fields": 18,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      },
+      "rows": [
+        {
+          "id": "yeoju-2026-43/300dpi",
+          "status": "measured",
+          "dpi": 300,
+          "gaussian_blur_radius": 0.0,
+          "image_sha256": "7bea8c0f5945d1a9460a53058c58f4aef84a450dc0f493a0839c72af9316f1de",
+          "image_size": [
+            2480,
+            3505
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 1545.7513319997815,
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "buyer_name",
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "361c4b5d156d05763607147d1d30e2b59de6959c6f3b88167df16d2efaa6af97",
+          "anchors": {
+            "correct": 0,
+            "support": 2,
+            "recall": 0.0,
+            "per_anchor": {
+              "title": false,
+              "buyer": false
+            }
+          }
+        },
+        {
+          "id": "yeoju-2026-43/300dpi_blurred",
+          "status": "measured",
+          "dpi": 300,
+          "gaussian_blur_radius": 1.2,
+          "image_sha256": "97bf53a72dc0923a85715399979702990facc406ef7c56cf431baaddf0d364b0",
+          "image_size": [
+            2480,
+            3505
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 1570.8782159999828,
+          "field_metrics": {
+            "correct": 1,
+            "expected_fields": 3,
+            "accuracy": 0.3333333333333333,
+            "per_field": {
+              "title": false,
+              "buyer_name": true,
+              "procurement_type": false
+            },
+            "missing": [
+              "procurement_type"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "procurement_type"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "6adda8cc2fcbb69e635b703757caa0278ce06c7be5e829fce92cafb3ca4b0367",
+          "anchors": {
+            "correct": 1,
+            "support": 2,
+            "recall": 0.5,
+            "per_anchor": {
+              "title": false,
+              "buyer": true
+            }
+          }
+        },
+        {
+          "id": "yeoju-2026-43/150dpi",
+          "status": "measured",
+          "dpi": 150,
+          "gaussian_blur_radius": 0.0,
+          "image_sha256": "6ce4b18b7a04853a4d4a657ebf89bc76d257bb88a192bf047f453225531680db",
+          "image_size": [
+            1240,
+            1753
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 989.9386160032009,
+          "field_metrics": {
+            "correct": 1,
+            "expected_fields": 3,
+            "accuracy": 0.3333333333333333,
+            "per_field": {
+              "title": false,
+              "buyer_name": true,
+              "procurement_type": false
+            },
+            "missing": [
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "b304359d950d8f02a6b4380b694dae8397ca230223a4a9b2abf4836dc7649366",
+          "anchors": {
+            "correct": 1,
+            "support": 2,
+            "recall": 0.5,
+            "per_anchor": {
+              "title": false,
+              "buyer": true
+            }
+          }
+        },
+        {
+          "id": "worker-center-cm/300dpi",
+          "status": "measured",
+          "dpi": 300,
+          "gaussian_blur_radius": 0.0,
+          "image_sha256": "6168897895cd536be346639a1536452deac098537b1d302cea5b20e96ae1f2da",
+          "image_size": [
+            2550,
+            3300
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 556.2091769970721,
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "buyer_name",
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "6724163f3eb12984f225b056b9080d5b981ce2a552f2cc78abb5e4049eff2a28",
+          "anchors": {
+            "correct": 0,
+            "support": 2,
+            "recall": 0.0,
+            "per_anchor": {
+              "title": false,
+              "buyer": false
+            }
+          }
+        },
+        {
+          "id": "worker-center-cm/300dpi_blurred",
+          "status": "measured",
+          "dpi": 300,
+          "gaussian_blur_radius": 1.2,
+          "image_sha256": "26d2c48e652932fb054db2cbc61ead500efaa3910f88ae451288b5e4db097a2b",
+          "image_size": [
+            2550,
+            3300
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 501.4396510014194,
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "buyer_name",
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "6199bc9be8a2cd5ec78bbeb0c305df36da62ceee4bc2dbf95ce5b3d5ff53abf4",
+          "anchors": {
+            "correct": 1,
+            "support": 2,
+            "recall": 0.5,
+            "per_anchor": {
+              "title": false,
+              "buyer": true
+            }
+          }
+        },
+        {
+          "id": "worker-center-cm/150dpi",
+          "status": "measured",
+          "dpi": 150,
+          "gaussian_blur_radius": 0.0,
+          "image_sha256": "cd4d7fea7b0e1236b3ff4346a56781a91da92fde48d735675e5b4dd8199f8c17",
+          "image_size": [
+            1275,
+            1650
+          ],
+          "provider": "tesseract 5.3.4",
+          "elapsed_ms": 450.11555399833014,
+          "field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "downstream_valid": false,
+          "rejection_stage": "schema",
+          "schema_error_fields": [
+            "buyer_name",
+            "procurement_type",
+            "title"
+          ],
+          "grounding_issues": [],
+          "trusted_field_metrics": {
+            "correct": 0,
+            "expected_fields": 3,
+            "accuracy": 0.0,
+            "per_field": {
+              "title": false,
+              "buyer_name": false,
+              "procurement_type": false
+            },
+            "missing": [
+              "buyer_name",
+              "procurement_type",
+              "title"
+            ],
+            "unexpected": [],
+            "exact_match": false
+          },
+          "text_sha256": "0328ca4e444f75d57dca918e9cb185f7fa759b1d8d7f7abbfb9c6e430533dea1",
+          "anchors": {
+            "correct": 0,
+            "support": 2,
+            "recall": 0.0,
+            "per_anchor": {
+              "title": false,
+              "buyer": false
+            }
+          }
+        }
+      ]
+    },
+    "by_variant": {
+      "300dpi": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 0,
+        "expected_anchors": 4,
+        "recognition_anchor_recall": 0.0,
+        "proposed_correct_fields": 0,
+        "trusted_correct_fields": 0,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      },
+      "300dpi_blurred": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 2,
+        "expected_anchors": 4,
+        "recognition_anchor_recall": 0.5,
+        "proposed_correct_fields": 1,
+        "trusted_correct_fields": 0,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      },
+      "150dpi": {
+        "status": "measured",
+        "cases": 2,
+        "measured_cases": 2,
+        "recognized_anchors": 1,
+        "expected_anchors": 4,
+        "recognition_anchor_recall": 0.25,
+        "proposed_correct_fields": 1,
+        "trusted_correct_fields": 0,
+        "expected_fields": 6,
+        "trusted_field_accuracy": 0.0,
+        "valid_documents": 0
+      }
+    }
+  }
+}

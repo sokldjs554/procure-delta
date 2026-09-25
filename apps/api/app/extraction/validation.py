@@ -19,7 +19,7 @@ from app.extraction.schemas import (
     ValidationReport,
 )
 
-GROUNDING_VERSION = "explicit-labels-v2"
+GROUNDING_VERSION = "explicit-labels-v3"
 
 LABELS = {
     "Title": "title",
@@ -68,9 +68,18 @@ FORM_PREFIX = re.compile(r"^(?:[ㆍ·•○ㅇ□▪-]\s*|(?:\d{1,2}|[가-하])[
 VALUE_BOUNDARY = re.compile(
     r"^(?:[\[({（【〔①-⑳Ⅰ-Ⅻⅰ-ⅻ*※▷▶◆■]|[A-Za-z][.)]|[IVXLCDM]+[.)])"
 )
+HEADING_BRACKETS = (("(", ")"), ("[", "]"), ("（", "）"), ("［", "］"))
+QUOTATION_BRACKETS = {"「": "」", "『": "』", "“": "”", '"': '"', "[": "]", "［": "］"}
+_ESTIMATE = "(?:" + "|".join(
+    re.escape(left) + "견적제출" + re.escape(right) for left, right in HEADING_BRACKETS
+) + ")"
+_CATEGORY = "(?:" + "|".join(
+    re.escape(left) + "(용역|물품|공사)" + re.escape(right)
+    for left, right in HEADING_BRACKETS
+) + ")"
 NOTICE_HEADING = re.compile(
-    r"(?:(용역|물품|공사)(?:입찰공고|입찰설명서|소액수의\(견적제출\)설명서)"
-    r"|조달물자\((용역|물품|공사)\)구매입찰공고)"
+    rf"(?:(용역|물품|공사)(?:입찰공고|입찰설명서|소액수의{_ESTIMATE}설명서)"
+    rf"|조달물자{_CATEGORY}구매입찰공고)"
 )
 PROCUREMENT_TYPES = {"용역": "services", "물품": "goods", "공사": "works"}
 
@@ -87,29 +96,95 @@ def split_label(text: str) -> tuple[str, str, bool]:
     return KOREAN_LABELS[compact] if korean else label, value.strip(), korean
 
 
+def _value_line(text: str) -> bool:
+    return bool(
+        text
+        and len(text) <= 300
+        and not re.search(r"[:：]", text)
+        and not FORM_PREFIX.match(text)
+        and not VALUE_BOUNDARY.match(text)
+        and "".join(text.split()) not in KOREAN_LABELS
+        and text not in {*LABELS, "Budget"}
+        and not NOTICE_HEADING.fullmatch("".join(text.split()))
+    )
+
+
+def _title_quote_end(value: str) -> int | None:
+    """Find the outer closing mark, preserving nested title punctuation."""
+    closing = QUOTATION_BRACKETS.get(value[:1])
+    if not closing:
+        return None
+    opening = value[0]
+    depth = 1
+    for index, character in enumerate(value[1:], start=1):
+        if character == closing:
+            depth -= 1
+            if depth == 0:
+                return index
+        elif character == opening:
+            depth += 1
+    return None
+
+
+def _whole_title_quote(value: str) -> bool:
+    return bool(value) and _title_quote_end(value) == len(value) - 1
+
+
+def _title_value(value: str) -> str:
+    if _whole_title_quote(value):
+        return " ".join(value[1:-1].split())
+    closing = QUOTATION_BRACKETS.get(value[:1])
+    if closing and _title_quote_end(value) is None:
+        # Keep the malformed claim visible to schema/conflict validation, even if
+        # another valid title occurs first. Never accept a truncated quoted title.
+        return ""
+    return value
+
+
+def _joined_heading(first: str, second: str) -> str | None:
+    joined = (first + second).strip()
+    if first.strip() and second.strip() and len(joined) <= 120 and NOTICE_HEADING.fullmatch(
+        "".join(joined.split())
+    ):
+        return joined
+    return None
+
+
 def evidence_spans(text: str) -> Iterator[str]:
-    """Single lines, or a colon-only label and its immediately adjacent value line.
+    """Exact single-line or bounded adjacent two-line form spans.
 
     Never cross a blank line, section marker, other label, page or attachment.
-    Longer wrapped values and unlabeled table cells remain unsupported.
+    Only a complete heading or an explicitly enclosed title can join beyond the
+    existing colon-only label rule. Unquoted wrapped values remain unsupported.
     """
     lines = text.splitlines(keepends=True)
     for index, line in enumerate(lines):
         quote = line.strip()
         label, value, _ = split_label(quote)
-        if label in {*LABELS, "Budget"} and not value and index + 1 < len(lines):
+        if index + 1 < len(lines):
             following = lines[index + 1].strip()
+            joined = (line + lines[index + 1]).strip()
+            heading = _joined_heading(line, lines[index + 1])
+            if heading:
+                yield heading
+                continue
+            following_heading = (
+                index + 2 < len(lines)
+                and _joined_heading(lines[index + 1], lines[index + 2]) is not None
+            )
+            joined_value = split_label(joined)[1]
             if (
-                following
-                and len(following) <= 300
-                and not re.search(r"[:：]", following)
-                and not FORM_PREFIX.match(following)
-                and not VALUE_BOUNDARY.match(following)
-                and "".join(following.split()) not in KOREAN_LABELS
-                and following not in {*LABELS, "Budget"}
-                and not NOTICE_HEADING.fullmatch("".join(following.split()))
+                label == "Title" and value and not _title_value(value)
+                and _value_line(following) and len(joined_value) <= 300
+                and _whole_title_quote(joined_value)
             ):
-                yield (line + lines[index + 1]).strip()
+                yield joined
+                continue
+            if (
+                label in {*LABELS, "Budget"} and not value
+                and not following_heading and _value_line(following)
+            ):
+                yield joined
                 continue
         yield quote
 
@@ -118,7 +193,8 @@ def labeled_claims(line: str) -> dict[str, Any]:
     """Decode one complete explicit label. Never infer values from unrelated prose."""
     heading = NOTICE_HEADING.fullmatch("".join(line.split()))
     if heading:
-        return {"procurement_type": PROCUREMENT_TYPES[heading[1] or heading[2]]}
+        kind = next(value for value in heading.groups() if value is not None)
+        return {"procurement_type": PROCUREMENT_TYPES[kind]}
     label, value, korean = split_label(line)
     if not label or not value:
         return {}
@@ -167,7 +243,12 @@ def labeled_claims(line: str) -> dict[str, Any]:
             }.get(value, value)
         }
     if field == "contract_period":
-        return {field: value.replace(" to ", "/")}
+        dates = re.fullmatch(r"(\d{4}-\d{2}-\d{2})(?: to |/)(\d{4}-\d{2}-\d{2})", value)
+        # Relative/free-form periods are unsupported, not guessed date ranges.
+        # Explicit ISO-shaped dates still reach the schema, including invalid ones.
+        return {field: f"{dates[1]}/{dates[2]}"} if dates else {}
+    if field == "title":
+        return {field: _title_value(value)}
     return {field: value}
 
 

@@ -1,13 +1,17 @@
 # Claude v3 외부 실측: 정확도 변화와 비용·지연 한계
 
 2026-09-24의 [전체 평가 36016974477](https://github.com/sokldjs554/procure-delta/actions/runs/36016974477)은
-최신 main에서 실제 외부 호출과 측정 validator를 모두 통과했다. `diagnostics_only=false`이며
+당시 main에서 실제 외부 호출과 측정 validator를 모두 통과했다. `diagnostics_only=false`이며
 연결 probe는 건너뛰었다. 같은 작성자 제작 합성 10건에서 단독 Claude 경로의 검증 통과
 필드가 v2 **18/30 → v3 30/30**, 정상 문서 거절이 **2건 → 0건**으로 바뀌었다.
 
 각 요청 버전의 실행은 1회다. 프롬프트 보완 후의 관측 차이이며 반복 실험이나 인과 효과,
 실제 조달 문서 일반화 성능을 증명하지 않는다. [v2 보고서와 원본](hosted-evaluation-v2.md)을
 별도로 보존했다. 새 실행을 과거 실행의 재검증이나 같은 버전의 반복으로 세지 않는다.
+
+이 문서의 v3는 hosted 요청 버전이다. 이후 [한국어 서식 해석 v3](korean-form-spans.md)로
+로컬 검증 규칙과 실제 prompt가 바뀌었다. 변경된 prompt의 외부 실행은 미측정이며,
+아래 수치는 기록된 과거 소스·요청 버전에만 해당한다.
 
 ## 원본과 출처
 

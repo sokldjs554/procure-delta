@@ -119,6 +119,21 @@ README에 사용되는 screenshot은 mockup이 아니라 이 검증 run의 실�
 검증한다. 선택 의존성·모델·공개 PDF를 설치하거나 실문서 인식을 재실행하지 않으므로
 초록색 CI를 후보 인식 성능 또는 운영 적용 승인으로 해석하지 않는다.
 
+[서식 해석 v3](korean-form-spans.md)는 같은 원본·모델·인식 텍스트를 사용한 개발 회귀다.
+두 실행의 필드 점수와 실패 상태가 일치했다. Tesseract 원본 8쪽과 두 렌더 대조군도
+다시 측정했다. 검증 통과 결과에도 제목 인식 오류가 남은 사례와 미완료 그룹을 공개한다.
+새 규칙의 45개 회귀 사례는 정확한 인용·두 줄 제한·페이지/절 경계·잘못된 괄호·
+다른 필드와의 충돌·선택 계약기간의 보수적 생략을 확인한다. 중첩된 제목 괄호의
+안쪽 닫힘을 바깥쪽 닫힘으로 오인하던 문제도 회귀 사례 8개로 검증한다.
+
+2026-09-25 신규 CI 설치는 SQLAlchemy 2.1.0을 선택하면서 기존 조회 코드의 타입 추론과
+누락된 비동기 의존성 선언 문제를 드러냈다. JSON 열을 `dict[str, object]`로 명시하고
+잠금 이후 다시 읽는 generation 열을 discovery 조회에서 제거했으며 스키마 버전 집합의
+타입을 선언했다. SQLAlchemy 2.0.54와 2.1.0 양쪽에서 strict mypy를 확인했다.
+비동기 실행에는 `sqlalchemy[asyncio]`를 선언해 fresh install에서도 greenlet을 설치한다.
+이는 [SQLAlchemy 2.1 공식 변경 사항](https://docs.sqlalchemy.org/en/21/changelog/migration_21.html#asyncio-greenlet-dependency-no-longer-installs-by-default)에 따른 설치 계약이다.
+초기 CI 실패는 성공으로 재분류하지 않으며, 최종 PR/커밋의 CI와 컨테이너 gate를 확인해야 한다.
+
 ## Node standalone 배포의 정적 파일 검증
 
 2026-09-24 `60d4772` 공개 배포는 Render에서 live였지만, HTML에 포함된
