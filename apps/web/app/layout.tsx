@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import "./styles.css";
 import "./mobile-fixes.css";
+import "./workspace.css";
 
 export const metadata: Metadata = {
   title: "ProcureDelta | 조달 변화 인텔리전스",

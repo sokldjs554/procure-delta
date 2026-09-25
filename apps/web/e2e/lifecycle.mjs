@@ -97,6 +97,12 @@ try {
   await page.getByRole("button", { name: "관심 공고 해제", exact: true }).waitFor();
   checks.push("real inbox / eligibility / evidence / watch mutation");
   await page.screenshot({ path: resolve(output, "01-tender.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".document").filter({ hasText: document.sha256 }).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.screenshot({ path: resolve(output, "01-tender-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  checks.push("mobile detail wraps a real 64-character attachment checksum");
   seed("amendment");
   await page.reload();
   await page.locator("article.delta").getByText("high 영향", { exact: true }).first().waitFor();

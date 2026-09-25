@@ -42,3 +42,25 @@ test("static demo serves the core product journey without an API", async () => {
 
   assert.equal(staticDocumentUrl("doc-spec"), "#synthetic-document");
 });
+
+test("static inbox applies buyer, category, amount and date filters instead of ignoring them", async () => {
+  const cases: [string, string[]][] = [
+    ["buyer=공공데이터", ["opp-ai-document"]],
+    ["category=물품", []],
+    ["amount_min=200000000&amount_max=300000000", ["opp-ai-contact-center"]],
+    ["deadline_to=2026-09-30T00:00:00Z", ["opp-ai-document"]],
+    ["deadline_from=2026-10-03T00:00:00Z", ["opp-data-platform"]],
+    ["changed_since=2026-09-16T23:00:00Z", ["opp-data-platform"]],
+    ["q=AI&buyer=공공데이터&amount_max=200000000", ["opp-ai-document"]],
+  ];
+  for (const [query, expected] of cases) {
+    const result = await staticDemoRequest<{ items: Opportunity[] }>(`/opportunities?${query}`);
+    assert.deepEqual(result.items.map(item => item.id), expected, query);
+  }
+});
+
+test("static inbox rejects malformed filter values rather than silently broadening results", async () => {
+  for (const query of ["amount_min=nope", "amount_min=-1", "amount_min=3&amount_max=2", "deadline_from=not-a-date", "deadline_from=2026-10-02&deadline_to=2026-09-01"]) {
+    await assert.rejects(staticDemoRequest(`/opportunities?${query}`), /필터/);
+  }
+});
