@@ -1,5 +1,27 @@
 # Verification
 
+## 2026-09-26 공개 데모 UI 검증 (KST)
+
+PR #32의 구현 커밋 `7b48242abb871e9f12314c50177f365ed704dc5e`에서 공개 데모와 동일한
+`NEXT_PUBLIC_STATIC_DEMO=true` 운영 빌드를 검사했다. push run **36164897460**과
+PR run **36164902788**의 frontend 검사가 모두 통과했다.
+
+- 프런트엔드 테스트 **67/67**, lint, typecheck, production build
+- standalone 서버의 `/about` 및 실제 JS/CSS **10개** HTTP 응답
+- 검색·상세 필터, 참여 조건별 빠른 보기, 마감·예산 정렬, 최대 3건 비교
+- 이전/현재 버전 전환, 관심 공고 변경, 알림에서 공고로 이동
+- 키보드 본문 이동, 파이프라인 단계 이동과 읽기 쉬운 예산 변경 표시
+- 모바일 **7개 경로**의 가로 넘침과 JavaScript 오류 검사
+
+README의 랜딩·공고 비교·파이프라인 이미지는 PR run **36164902788**의 실제 브라우저
+캡처다. 예전 파이프라인 WebP 파일은 디코딩에 실패해 검증된 PNG로 교체했다.
+독립 리뷰에서 발견한 작은 안내 문구 4곳은 색 대비 **5.30~5.75:1**로 수정했다.
+이 수치는 해당 문구에 대한 확인이며 사이트 전체의 접근성 인증을 뜻하지 않는다.
+
+이 검사는 공개 합성 모드의 동작을 확인한다. 실제 API·PostgreSQL·Redis 및 worker의
+컨테이너 검증은 같은 CI의 `backend`와 `release-contract`에서 별도로 실행한다.
+기존 OCR·Claude·성능 측정 자료를 덮어쓰거나 유료 API를 재실행하지 않았다.
+
 ## Current release gate
 
 2026-09-21에 `python scripts/verify_containers.py --scale-records 1000`으로 원본 `.env`, 기존 DB/Redis 볼륨, 기존 서비스와 분리된 Compose 프로젝트에서 전체 검증을 실행했다.

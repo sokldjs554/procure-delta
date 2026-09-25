@@ -28,6 +28,8 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 
 CI에서 공개 배포와 동일한 정적 모드를 빌드해 데스크톱 동선과 모바일 7개 화면을 검사합니다. 실제 API 기반 동선은 별도의 Docker release gate에서 검증합니다.
 
+![공고 3건의 예산·마감·참여 조건 비교](docs/images/opportunity-inbox.png)
+
 ## 60초 데모
 
 면접관이 프로젝트를 처음 봤을 때 가장 먼저 볼 동선입니다.
@@ -48,7 +50,7 @@ collect → dedupe → normalize → document/OCR → structured extraction
 → validation → lifecycle → Delta → eligibility → ranking → notification
 ```
 
-![Pipeline Control Room](docs/images/pipeline-control-room.webp)
+![Pipeline Control Room](docs/images/pipeline-control-room.png)
 
 ## 왜 이 구조인가
 
