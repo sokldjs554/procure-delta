@@ -36,6 +36,7 @@ async function noOverflow(page) {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${page.url()} overflows the viewport`);
 }
 async function screenshot(page, name, fullPage = true) {
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: resolve(output, `${name}.png`), fullPage });
 }
 try {
@@ -61,6 +62,10 @@ try {
   await screenshot(page, "landing-desktop");
   await page.getByRole("link", { name: "제품 둘러보기" }).click();
   await visibleCards(page, 3);
+  await page.keyboard.press("Tab");
+  await page.getByRole("link", { name: "본문으로 건너뛰기" }).focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await page.locator("#workspace-content").evaluate(element => document.activeElement === element), true);
   await page.getByRole("button", { name: /^참여 조건 충족/ }).click();
   assert.match(await (await visibleCards(page, 1)).innerText(), /OCR 자동화/);
   await page.getByRole("button", { name: /^확인 필요/ }).click();
@@ -128,6 +133,9 @@ try {
   await page.getByRole("button", { name: /정정으로 조건 변경/ }).click();
   await page.locator('button[data-stage-id="delta"]').click();
   await page.locator(".impact-change-list").waitFor();
+  assert.match(await page.locator(".impact-change-list").innerText(), /₩320,000,000/);
+  assert.match(await page.locator(".impact-change-list").innerText(), /₩280,000,000/);
+  assert.ok(!(await page.locator(".impact-change-list").innerText()).includes("estimated_amount"));
   await screenshot(page, "pipeline-desktop", false);
   assert.deepEqual(errors, []);
   await context.close();

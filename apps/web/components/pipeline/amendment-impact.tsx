@@ -1,5 +1,6 @@
 import type { PipelineStage } from "../../lib/api";
 import { decisionHeadline, stageOutputLayout } from "../../lib/pipeline";
+import { describeField, describeValue } from "../../lib/detail-presentation";
 
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -34,10 +35,10 @@ export function AmendmentImpact({ stage }: { stage: PipelineStage }) {
             const row = object(value);
             return (
               <article key={field}>
-                <b>{field}</b>
-                <span>{text(row.before)}</span>
+                <b>{describeField(field)}</b>
+                <span>{describeValue(row.before, field)}</span>
                 <span aria-hidden="true">→</span>
-                <span>{text(row.after)}</span>
+                <span>{describeValue(row.after, field)}</span>
               </article>
             );
           })}
