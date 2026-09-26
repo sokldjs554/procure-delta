@@ -151,7 +151,12 @@ async def deliver_notification(ctx: dict[str, Any], notification_event_id: str) 
                 and settings.notification_external_enabled
                 and destination
             ):
-                channel = WebhookChannel(destination.get_secret_value())
+                channel = WebhookChannel(
+                    destination.get_secret_value(),
+                    payload_format=settings.notification_webhook_formats.get(
+                        event.user_id, "generic"
+                    ),
+                )
             elif (
                 event.channel == "email"
                 and settings.notification_external_enabled

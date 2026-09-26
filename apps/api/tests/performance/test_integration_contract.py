@@ -50,3 +50,88 @@ async def test_backfill_benchmark_resumes_at_both_page_budget_limits(monkeypatch
     assert result["ingest_runs"] == result["successful_runs"] == 200
     assert result["normalized_records"] == 200
     assert result["resumed_from_checkpoint"] is True
+
+
+@pytest.mark.asyncio
+async def test_backfill_drains_pages_larger_than_normalization_cap_without_touching_other_sources(
+    monkeypatch, worker_session_factory,
+):
+    from datetime import UTC, datetime
+
+    from app.config import Settings
+    from app.evaluation.integration import backfill_load
+    from app.models import RawRecord, SourceRegistry
+    from app.workers import jobs
+    from tests.conftest import TEST_DATABASE_URL
+
+    monkeypatch.setenv("BENCH_DATABASE_URL", TEST_DATABASE_URL)
+    monkeypatch.setattr(
+        jobs, "get_settings", lambda: Settings(_env_file=None, normalization_batch_size=15)
+    )
+    async with worker_session_factory() as setup:
+        source = SourceRegistry(
+            code="unrelated-backfill", display_name="Unrelated", base_url="https://example.invalid"
+        )
+        setup.add(source)
+        await setup.flush()
+        unrelated = RawRecord(
+            source_id=source.id,
+            source_record_id="unrelated-pending",
+            payload_json={"title": "Must remain untouched"},
+            payload_sha256="a" * 64,
+            fetched_at=datetime(2020, 1, 1, tzinfo=UTC),
+        )
+        setup.add(unrelated)
+        await setup.commit()
+        unrelated_id = unrelated.id
+
+    real_reconcile = jobs.reconcile_pending_normalizations
+    batch_counts = []
+
+    async def observe_reconciliation(ctx, **kwargs):
+        outcome = await real_reconcile(ctx, **kwargs)
+        batch_counts.append(outcome["normalized"])
+        return outcome
+
+    monkeypatch.setattr(jobs, "reconcile_pending_normalizations", observe_reconciliation)
+    result = await backfill_load(100, page_size=50, first_batch_pages=1)
+
+    assert result["successful"] is True
+    assert result["normalized_records"] == 100
+    assert result["normalization_batch_size"] == 15
+    assert result["normalized_during_discovery"] == 30
+    assert result["normalization_reconciliation_batches"] == 5
+    assert result["normalized_during_reconciliation"] == 70
+    assert result["normalization_reconciliation_stop"] == "complete"
+    assert result["elapsed_seconds"] >= result["normalization_reconciliation_seconds"] > 0
+    assert batch_counts == [15, 15, 15, 15, 10]
+    async with worker_session_factory() as verify:
+        untouched = await verify.get_one(RawRecord, unrelated_id)
+        assert untouched.normalization_status == "pending"
+
+
+@pytest.mark.asyncio
+async def test_backfill_stops_when_reconciliation_makes_no_database_progress(monkeypatch):
+    from app.config import Settings
+    from app.evaluation.integration import backfill_load
+    from app.workers import jobs
+    from tests.conftest import TEST_DATABASE_URL
+
+    monkeypatch.setenv("BENCH_DATABASE_URL", TEST_DATABASE_URL)
+    monkeypatch.setattr(
+        jobs, "get_settings", lambda: Settings(_env_file=None, normalization_batch_size=15)
+    )
+
+    async def stalled_reconciliation(ctx, **kwargs):
+        # A misleading worker summary must not replace the measured PostgreSQL count.
+        return {"normalized": 15, "failed": 0}
+
+    monkeypatch.setattr(jobs, "reconcile_pending_normalizations", stalled_reconciliation)
+    result = await backfill_load(100, page_size=50, first_batch_pages=1)
+
+    assert result["successful"] is False
+    assert result["records_per_second"] is None
+    assert result["normalized_records"] == 30
+    assert result["normalization_reconciliation_batches"] == 1
+    assert result["normalized_during_reconciliation"] == 0
+    assert result["normalization_reconciliation_stop"] == "no_progress"

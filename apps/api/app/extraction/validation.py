@@ -19,7 +19,7 @@ from app.extraction.schemas import (
     ValidationReport,
 )
 
-GROUNDING_VERSION = "explicit-labels-v3"
+GROUNDING_VERSION = "explicit-labels-v4"
 
 LABELS = {
     "Title": "title",
@@ -267,13 +267,43 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
 
     claims = fields.model_dump(exclude_none=True, exclude={"schema_version", "evidence"})
     page_spans = [(page, list(evidence_spans(page.text))) for page in document.pages]
+    observed: dict[str, list[Any]] = {}
+    qualified: set[str] = set()
     for _, spans in page_spans:
         for quote in spans:
             label, value, _ = split_label(quote)
             field = LABELS.get(label)
-            if field in claims and field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
-                errors.append(f"{field}: negated or qualified requirement needs review")
-                issue(field, "qualified_requirement")
+            if field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
+                qualified.add(field)
+                if field in claims:
+                    errors.append(f"{field}: negated or qualified requirement needs review")
+                    issue(field, "qualified_requirement")
+            for source_field, source_value in labeled_claims(quote).items():
+                observed.setdefault(source_field, []).append(source_value)
+
+    # Validate supported source constraints independently of the model's selection.
+    # Otherwise omitting an invalid budget, reversed dates or a conflicting optional
+    # field could turn the same document from rejected into trusted. This is only a
+    # rejection check: do not add source fields to the returned model proposal.
+    source_values = {}
+    for field, values in observed.items():
+        if field in qualified and field not in claims:
+            # The existing contract explicitly permits whole-field omission here.
+            continue
+        source_values[field] = values[0]
+        if any(value != values[0] for value in values[1:]):
+            errors.append(f"{field}: contradictory document claims")
+            issue(field, "contradictory_claims")
+    try:
+        StructuredFields.model_validate({
+            **claims, **source_values, "schema_version": fields.schema_version, "evidence": {},
+        })
+    except ValidationError as error:
+        errors.append("document: invalid explicit source claim")
+        for item in error.errors(include_input=False, include_context=False, include_url=False):
+            name = item["loc"][0] if item["loc"] else None
+            issue(name if isinstance(name, str) and name in source_values else None,
+                  "invalid_source_claim")
     for field, value in claims.items():
         references = fields.evidence.get(field, [])
         if not references:
@@ -294,13 +324,7 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
             if labeled_claims(reference.quote).get(field) != value:
                 errors.append(f"{field}: value unsupported by labeled evidence")
                 issue(field, "unsupported_value")
-        observed = [
-            labeled_claims(line)[field]
-            for _, spans in page_spans
-            for line in spans
-            if field in labeled_claims(line)
-        ]
-        if any(item != value for item in observed):
+        if any(item != value for item in observed.get(field, [])):
             errors.append(f"{field}: contradictory document claims")
             issue(field, "contradictory_claims")
     if set(fields.evidence) - set(claims):

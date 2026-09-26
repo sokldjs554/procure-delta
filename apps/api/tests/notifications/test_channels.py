@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 import httpx
@@ -16,6 +17,82 @@ def event():
         dedupe_key="stable-key",
         payload_json={"title": "Synthetic", "evidence": "document"},
     )
+
+
+@pytest.mark.asyncio
+async def test_slack_format_uses_bounded_plain_text_without_mentions_or_raw_payload():
+    from app.notifications.webhook import WebhookChannel
+
+    item = event()
+    item.payload_json = {
+        "title": "<!channel> <@U123> & 공개 공고 " + "긴제목" * 2000,
+        "private": "do-not-forward-canary",
+    }
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        payload = json.loads(request.content)
+        assert payload["mrkdwn"] is False
+        assert payload["unfurl_links"] is False
+        assert payload["unfurl_media"] is False
+        assert "<!channel>" not in payload["text"]
+        assert "<@U123>" not in payload["text"]
+        assert "&lt;!channel&gt;" in payload["text"]
+        block = payload["blocks"][0]["text"]
+        assert block["type"] == "plain_text"
+        assert "마감 변경" in block["text"]
+        assert "공개 공고" in block["text"]
+        assert str(item.opportunity_id) in block["text"]
+        assert len(block["text"]) <= 3000
+        assert b"do-not-forward-canary" not in request.content
+        return httpx.Response(200, text="ok")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+        result = await WebhookChannel(
+            "https://93.184.216.34/hook", client=client, payload_format="slack"
+        ).send(item)
+    assert result.success is True
+    assert len(requests) == 1
+    assert requests[0].headers["idempotency-key"] == "stable-key"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status,body,success,retryable",
+    [
+        (200, "ok", True, False),
+        (200, "ok\n", True, False),
+        (200, "invalid_payload secret-canary", False, False),
+        (200, "", False, False),
+        pytest.param(200, "x" * 10000, False, False, id="oversized-response"),
+        (204, "", False, False),
+        (400, "invalid_payload", False, False),
+        (429, "rate_limited", False, True),
+        (503, "unavailable", False, True),
+        (302, "", False, False),
+    ],
+)
+async def test_slack_accepts_only_explicit_success_and_keeps_bounded_retry_policy(
+    status, body, success, retryable
+):
+    from app.notifications.webhook import WebhookChannel
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _: httpx.Response(status, text=body))
+    ) as client:
+        result = await WebhookChannel(
+            "https://93.184.216.34/hook", client=client, payload_format="slack"
+        ).send(event())
+    assert (result.success, result.retryable) == (success, retryable)
+    assert "canary" not in (result.error_code or "")
+
+
+def test_unknown_webhook_format_fails_configuration_instead_of_silent_fallback():
+    from app.config import Settings
+
+    with pytest.raises(ValueError):
+        Settings(_env_file=None, notification_webhook_formats={"owner": "slcak"})
 
 
 @pytest.mark.asyncio

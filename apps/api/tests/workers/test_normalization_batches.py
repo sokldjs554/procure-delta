@@ -100,6 +100,23 @@ async def test_normalization_drains_bounded_batches_after_worker_restart(
 
 
 @pytest.mark.asyncio
+async def test_normalization_prioritizes_oldest_backlog_before_lower_uuid(
+    worker_session_factory: async_sessionmaker[AsyncSession],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configure_batch(monkeypatch)
+    await seed_pending(worker_session_factory, 3)
+    async with worker_session_factory() as setup:
+        newest = await setup.get_one(RawRecord, UUID(int=1))
+        newest.fetched_at = datetime(2026, 2, 1, tzinfo=UTC)
+        await setup.commit()
+
+    await run_batch(worker_session_factory, "reconcile")
+
+    assert await normalized_ids(worker_session_factory) == [2, 3]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("entrypoint", ["poll", "reconcile"])
 async def test_normalization_filters_retry_holds_before_batch_limit(
     worker_session_factory: async_sessionmaker[AsyncSession],

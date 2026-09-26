@@ -148,6 +148,53 @@ async def test_configured_owner_webhook_is_selected_only_with_explicit_enable(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("enabled", [False, True])
+async def test_owner_slack_format_flows_from_outbox_to_bounded_transport(
+    delivery_context, monkeypatch, enabled
+):
+    import json
+
+    import httpx
+
+    from app.config import Settings
+    from app.workers.notifications import deliver_notification
+
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        body = json.loads(request.content)
+        assert body["blocks"][0]["text"]["type"] == "plain_text"
+        assert "Synthetic opportunity" in body["text"]
+        assert "payload" not in body
+        return httpx.Response(200, text="ok")
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        "app.notifications.webhook.httpx.AsyncClient",
+        lambda **kwargs: original_client(transport=httpx.MockTransport(handle), **kwargs),
+    )
+    ctx, item_id = delivery_context
+    ctx["notification_settings"] = Settings(
+        _env_file=None,
+        notification_external_enabled=enabled,
+        notification_webhook_destinations={
+            "synthetic-notification-owner": "https://93.184.216.34/secret",
+        },
+        notification_webhook_formats={"synthetic-notification-owner": "slack"},
+    )
+    event_id = await enqueue(ctx, item_id, "webhook")
+    result = await deliver_notification(ctx, str(event_id))
+    assert result["status"] == ("sent" if enabled else "dead_lettered")
+    assert len(requests) == (1 if enabled else 0)
+    await deliver_notification(ctx, str(event_id))
+    assert len(requests) == (1 if enabled else 0)
+    async with ctx["session_factory"]() as session:
+        row = await session.get_one(NotificationEvent, event_id)
+        assert row.attempt_count == 1
+
+
+@pytest.mark.asyncio
 async def test_configured_email_delivers_over_real_local_smtp(delivery_context):
     from email import policy
     from email.parser import BytesParser

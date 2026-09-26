@@ -24,6 +24,12 @@ python scripts/run_eval.py --allow-hosted --output artifacts/evaluation/hosted.j
 
 성공 기준은 단순 HTTP 200이 아니다. `hosted_all`과 `hosted_gated`가 모두 measured이고, 각 route의 p50/p95 latency와 prompt/completion token이 존재하며, call/token reduction이 계산돼야 한다. Provider가 비용을 직접 반환하지 않으면 비용은 null로 남긴다. 실행 artifact는 업로드하지만 자동으로 공개 평가 결과를 덮어쓰지 않는다.
 
+게시 전 validator는 호출·토큰·공급자 보고 비용의 절감률을 route 원값으로 재계산한다.
+case rows가 있는 artifact는 고유 사례 ID, 두 경로의 동일 사례/정답 분모,
+문서·필드·거절 집계와 사용량 합계를 대조한다. 실제 토큰/비용 증가를 뜻하는 음수
+절감률도 일치하면 게시할 수 있다. 이 무결성 검사는 독립 정답 검수나 외부 재실행을
+대신하지 않으며, 측정되지 않은 비용을 채우지 않는다.
+
 HTTP/timeout 등 실행 예외가 있으면 route는 `failed`이며 절감 비교는 `not_run`이다.
 의도적으로 잘못된 문서를 모델·근거 검증기가 거절하는 경우와 실행 예외를 구분한다.
 실패 row에는 HTTP 상태와 허용 목록에 있는 provider 오류 분류만 보존한다. 키, URL,
@@ -42,6 +48,14 @@ snapshot은 유지된다. OCR 없이 이 파일을 덮어쓰면 OCR은 '미측�
 `read_published_summary`는 측정 validator·동일 dataset 확인 후 hosted 두 경로만 합친다.
 `python scripts/publish_evaluation_snapshot.py`가 동일한 API projection에서 정적 데모 데이터를
 생성하며 OCR 원본·기존 provenance를 유지한다. 실패한 외부 결과를 게시하지 않는다.
+
+신규 hosted 결과에는 실제 전송 prompt의 `prompt_contract_sha256`을 기록한다.
+공개 API는 과거 측정 여부(`hosted_evaluated`)와 현재 prompt·schema·grounding 계약의
+측정 여부(`hosted_current_contract_evaluated`)를 분리한다. route의
+`prompt_contract_status`는 `current`, `different`, `unknown`, `not_run` 중 하나다.
+과거 artifact에 비교용 hash가 없으면 `unknown`이며 현재 계약은 미측정으로 표시한다.
+저장된 v2/v3의 수치·상태·원본은 유지한다. 이 표시는 provider/model·출력 한도나
+실행환경의 동일성을 뜻하지 않는다. 현재 `explicit-labels-v4`는 외부 재평가 전이다.
 
 ## 데이터와 분모
 

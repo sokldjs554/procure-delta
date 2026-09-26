@@ -187,7 +187,8 @@ gated의 정상 필드는 로컬 규칙에서 나왔고, 같은 셋의 순수 �
 없어 **비용·비용 절감률은 미측정**입니다. API와 정적 데모는 같은 저장된 공개 projection을 사용합니다.
 
 위 Claude v3는 9월 24일의 **요청 버전**입니다. 이후 한국어 서식 해석과 로컬 근거
-검증기를 v3로 변경했고 실제 hosted prompt도 바뀌었습니다. 새 prompt의 외부 Claude
+검증기를 변경했고 실제 hosted prompt도 바뀌었습니다. 현재 grounding 계약은 v4이며,
+명시된 잘못된 조건을 모델이 생략하는 경우도 차단합니다. 새 prompt의 외부 Claude
 평가는 아직 실행하지 않았으며 위 수치를 현재 prompt의 실측으로 표시하지 않습니다.
 
 Delta는 합성 비교 8쌍에서 expected changed field 7개를 검증했고, lifecycle link는 합성 사례 5개 중 2개를 resolve하고 ambiguous/missing/incompatible 사례는 unresolved로 남겼습니다.
@@ -277,6 +278,10 @@ docker compose run --rm --no-deps api python -m app.sources.koneps_smoke --live 
 자세한 계약: [Source contracts](docs/source-contracts.md)
 
 ## 기술 구성
+
+지원 직무와의 연결은 [스텝에이아이 공고 34개 항목 대조](docs/job-requirement-audit.md)에
+정리했습니다. 코드·테스트·외부 실측을 구분하고 결제/구독, OCR 품질, 현재 LLM 재평가,
+GCP/AWS 운영과 실제 공개 데이터 규모의 미완료 범위를 함께 표시합니다.
 
 - **Backend**: Python 3.12+, FastAPI, SQLAlchemy async, Alembic, Pydantic v2
 - **Data/Queue**: PostgreSQL 16, Redis 7, ARQ

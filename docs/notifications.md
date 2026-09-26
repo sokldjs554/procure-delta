@@ -47,6 +47,36 @@ Values are secret HTTPS URLs, not user-editable profile or preference fields. Ea
 validated and DNS-pinned to a public address; credentials in the URL, private addresses, redirects
 and environment proxies are rejected or disabled.
 
+### Slack incoming webhook format
+
+`NOTIFICATION_WEBHOOK_FORMATS` explicitly maps an owner to `"slack"` or `"generic"`.
+Owners absent from this map keep the existing generic JSON contract. For example:
+
+```dotenv
+NOTIFICATION_WEBHOOK_FORMATS={"synthetic-owner":"slack"}
+```
+
+The same owner must have a secret URL in `NOTIFICATION_WEBHOOK_DESTINATIONS`, select
+the `webhook` channel in preferences, and the operator must enable external delivery.
+No real destination is included in the repository or enabled in the public demo.
+An unknown format fails configuration instead of silently choosing another payload.
+
+The Slack format uses a bounded `plain_text` section containing the trigger, title,
+opportunity ID and notification ID. It does not forward the raw payload or evidence.
+The fallback text escapes Slack control characters; Markdown, media and link unfurling
+are disabled. Titles are capped at 2,000 characters to stay within the documented
+3,000-character section limit. The normal DNS pinning and timeout rules still apply.
+Only HTTP 200 with a bounded `ok` response is success. A 2xx error/HTML/empty/oversized
+body is not success; 429/5xx retain the durable retry policy. Error bodies are not logged.
+
+Contract tests exercise the actual adapter with a controlled HTTP transport and the
+PostgreSQL outbox/worker selection path. They are **not evidence of a real Slack
+workspace receiving a message**. Incoming webhooks do not promise receiver-side
+idempotency; an ambiguous success may still duplicate a Slack message.
+
+Sources checked 2026-09-26: [Slack incoming webhooks](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/),
+[section block limits](https://docs.slack.dev/reference/block-kit/blocks/section-block/).
+
 Email delivery uses `NOTIFICATION_SMTP_HOST`, optional SMTP credentials, one operator-owned
 `NOTIFICATION_EMAIL_SENDER`, and an owner-keyed `NOTIFICATION_EMAIL_RECIPIENTS` mapping.
 STARTTLS is enabled by default. `EmailChannel` emits a stable Message-ID from the notification

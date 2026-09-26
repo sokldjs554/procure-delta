@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 
 import httpx
@@ -67,3 +68,29 @@ def test_missing_usage_still_blocks_publishing_without_invented_zero():
     assert route["rows"][0]["response_diagnostics"]["usage_status"] == "partial"
     with pytest.raises(HostedEvaluationError, match="completion tokens are not measured"):
         validate_hosted_artifact(artifact(route))
+
+
+def test_evaluation_records_the_prompt_contract_actually_sent(monkeypatch):
+    from app.extraction import hosted
+
+    sent_prompts = []
+
+    async def run():
+        def handler(request):
+            sent_prompts.append(json.loads(request.content)["messages"][0]["content"])
+            return httpx.Response(200, json={
+                "choices": [{"finish_reason": "stop", "message": {"content": "{}"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 2},
+            })
+
+        async with ResilientHttpClient(transport=httpx.MockTransport(handler)) as client:
+            extractor = HostedExtractor(endpoint="https://provider.invalid/v1/chat/completions",
+                                        provider="mock", model="test", client=client)
+            monkeypatch.setattr(hosted, "extraction_system_prompt", lambda: "Changed after setup")
+            return await extraction_eval([CASE], extractor)
+
+    route = asyncio.run(run())
+    assert route["extractor"]["prompt_contract_sha256"] == hashlib.sha256(
+        sent_prompts[0].encode(),
+    ).hexdigest()
+    assert sent_prompts[0] not in json.dumps(route)

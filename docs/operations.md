@@ -21,7 +21,10 @@ docker compose logs --tail 100 api worker scheduler migrate
 API와 worker/scheduler는 동일한 JSON logging formatter를 사용한다. `SENTRY_ENABLED=false`가 기본이며,
 실제 error tracking을 켜려면 `SENTRY_ENABLED=true`와 `SENTRY_DSN`을 모두 설정해야 한다.
 Sentry 전송 시 request/user는 제거하고 exception message와 secret-shaped extra/tag/breadcrumb data를
-redact한다. `SENTRY_TRACES_SAMPLE_RATE` 기본값은 0이다.
+redact한다. SDK의 지역 변수 수집을 끄고 exception·thread·top-level stack frame의
+`vars`, `pre_context`, `context_line`, `post_context`도 제거한다. 파일·줄·함수 위치는 유지한다.
+가짜 비밀값을 넣은 회귀로 이 경계를 확인하며 실제 외부 DSN 수신 증거는 아니다.
+`SENTRY_TRACES_SAMPLE_RATE` 기본값은 0이다.
 
 기본 알림은 로컬 영수증이다. 이메일·웹훅을 실제 발송했다고 해석하지 않는다.
 평가용 OCR이 있는 것과 기본 서비스에 실제 OCR 공급자가 연결된 것은 다르다.

@@ -12,7 +12,10 @@ const percent = (n: number | null) =>
   n === null ? "미측정" : `${(100 * n).toFixed(1)}%`;
 
 function routeStatus(route: EvaluationRouteSummary) {
-  return route.status === "measured" ? "측정됨" : "미실행";
+  if (route.status !== "measured") return "미실행";
+  return route.prompt_contract_status === "different" || route.prompt_contract_status === "unknown"
+    ? "과거 측정"
+    : "측정됨";
 }
 
 function numberMetric(value: number | null, suffix = "") {
@@ -138,7 +141,7 @@ export default function About() {
 
             {data.hosted_evaluated && (
               <div className="honesty" style={{ overflowWrap: "anywhere" }} aria-label="외부 Claude 실측">
-                <h3>외부 Claude 실측 · 합성 회귀</h3>
+                <h3>저장된 외부 Claude 실측 · 합성 회귀</h3>
                 <p>{data.routes.hosted_all.notice}</p>
                 <p>{data.routes.hosted_gated.notice}</p>
                 <p>
@@ -189,8 +192,8 @@ export default function About() {
               </article>
               <article>
                 <small>HOSTED LLM</small>
-                <strong>{data.hosted_evaluated ? "측정됨" : "미실행"}</strong>
-                <span>정확도·토큰·비용을 추정해서 채우지 않음</span>
+                <strong>{data.hosted_current_contract_evaluated ? "현재 계약 측정됨" : "현재 계약 미측정"}</strong>
+                <span>현재 프롬프트·검증 규칙 기준 · 과거 측정값은 위 표에 보존</span>
               </article>
             </div>
 

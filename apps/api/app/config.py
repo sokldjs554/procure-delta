@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     koneps_service_key: SecretStr | None = None
     koneps_lookback_days: int = Field(default=1, ge=1, le=30)
     koneps_pages_per_poll: int = Field(default=5, ge=1, le=100)
+    normalization_batch_size: int = Field(default=100, ge=1, le=1000)
     extraction_mode: Literal["deterministic", "hosted"] = "deterministic"
     extraction_endpoint: str | None = None
     extraction_provider: str | None = None
@@ -51,6 +52,9 @@ class Settings(BaseSettings):
     extraction_credit_units: int = Field(default=1, ge=1, le=1_000_000)
     notification_external_enabled: bool = False
     notification_webhook_destinations: dict[str, SecretStr] = Field(default_factory=dict)
+    notification_webhook_formats: dict[str, Literal["generic", "slack"]] = Field(
+        default_factory=dict
+    )
     notification_smtp_host: str | None = None
     notification_smtp_port: int = Field(default=587, ge=1, le=65535)
     notification_smtp_starttls: bool = True
