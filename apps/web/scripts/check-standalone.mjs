@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout } from "node:timers/promises";
+import { verifySiteAssets } from "./site-assets.mjs";
 
 const port = process.env.STANDALONE_CHECK_PORT ?? "13225";
 const origin = `http://127.0.0.1:${port}`;
@@ -25,20 +26,10 @@ try {
     }
   }
   assert.ok(response, `Standalone did not become ready: ${output}`);
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  const assets = [...new Set([...html.matchAll(/(?:src|href)="([^"?]+\.(?:js|css))(?:\?[^\"]*)?"/g)]
-    .map((match) => match[1]).filter((path) => path.startsWith("/_next/static/")))];
-  assert.ok(assets.some((path) => path.endsWith(".js")), "HTML must reference JavaScript");
-  assert.ok(assets.some((path) => path.endsWith(".css")), "HTML must reference stylesheets");
-  for (const path of assets) {
-    const asset = await fetch(`${origin}${path}`, { signal: AbortSignal.timeout(5000) });
-    assert.equal(asset.status, 200, `Missing standalone asset: ${path}`);
-    assert.match(asset.headers.get("content-type") ?? "", /javascript|text\/css/);
-    assert.ok((await asset.arrayBuffer()).byteLength > 0);
-  }
+  await response.arrayBuffer();
+  const report = await verifySiteAssets(origin, ["/about"]);
   assert.equal(child.exitCode, null, `Standalone exited during asset checks: ${output}`);
-  console.log(`Standalone HTTP check passed: /about + ${assets.length} JS/CSS assets`);
+  console.log(`Standalone HTTP check passed: /about + ${report.assets.length} JS/CSS assets`);
 } finally {
   child.kill("SIGTERM");
   await exited;
