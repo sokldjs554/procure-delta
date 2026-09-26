@@ -1,0 +1,44 @@
+name: Public demo HTTP
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - .github/workflows/public-demo.yml
+      - apps/web/scripts/site-assets.mjs
+      - apps/web/scripts/check-public-demo.mjs
+      - apps/web/tests/site-assets.test.mjs
+
+permissions:
+  contents: read
+
+jobs:
+  public-assets:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify checker rejects missing and misleading assets
+        working-directory: apps/web
+        run: node --test tests/site-assets.test.mjs
+      - name: Check the public demo pages and their actual JS/CSS responses
+        working-directory: apps/web
+        run: node scripts/check-public-demo.mjs
+        env:
+          CHECKER_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: procure-delta-public-http
+          path: artifacts/public-demo/http-assets.json
