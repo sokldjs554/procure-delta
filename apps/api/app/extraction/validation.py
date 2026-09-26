@@ -19,7 +19,7 @@ from app.extraction.schemas import (
     ValidationReport,
 )
 
-GROUNDING_VERSION = "explicit-labels-v3"
+GROUNDING_VERSION = "explicit-labels-v4"
 
 LABELS = {
     "Title": "title",
@@ -82,6 +82,14 @@ NOTICE_HEADING = re.compile(
     rf"|조달물자{_CATEGORY}구매입찰공고)"
 )
 PROCUREMENT_TYPES = {"용역": "services", "물품": "goods", "공사": "works"}
+AMOUNT_LITERAL = r"-?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?"
+# Identify explicit ISO-shaped literals only. A parse failure within this shape
+# must remain an invalid claim; prose and genuinely unsupported formats stay absent.
+ISO_DATETIME_LITERAL = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    r"(?:[T ][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:[.,][0-9]+)?)?"
+    r"(?:Z|[+-][0-9]{2}:?[0-9]{2}| KST)?)?"
+)
 
 
 def split_label(text: str) -> tuple[str, str, bool]:
@@ -199,9 +207,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
     if not label or not value:
         return {}
     if label == "Budget":
-        if korean and re.fullmatch(r"[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?원", value):
+        if korean and re.fullmatch(AMOUNT_LITERAL + "원", value):
             value = "KRW " + value[:-1]
-        match = re.fullmatch(r"(KRW|USD|EUR|JPY) ([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)", value)
+        match = re.fullmatch(r"(KRW|USD|EUR|JPY) (" + AMOUNT_LITERAL + ")", value)
         if not match:
             return {}
         return {"currency": match[1], "estimated_amount": Decimal(match[2].replace(",", ""))}
@@ -218,6 +226,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
         try:
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
                 if field != "published_at":
+                    # Valid date-only deadlines remain unsupported. An impossible
+                    # calendar date is invalid, not merely missing a time/zone.
+                    datetime.fromisoformat(value)
                     return {}
                 parsed = (
                     datetime.fromisoformat(value + "T00:00:00+09:00")
@@ -232,7 +243,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
                 return {}
             return {field: parsed.astimezone(UTC)}
         except ValueError:
-            return {}
+            # As with invalid ISO contract periods, preserve the literal so the
+            # schema/source-constraint check rejects it even if a model omits it.
+            return {field: value} if ISO_DATETIME_LITERAL.fullmatch(value) else {}
     if field == "procurement_type":
         return {
             field: {
@@ -267,13 +280,43 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
 
     claims = fields.model_dump(exclude_none=True, exclude={"schema_version", "evidence"})
     page_spans = [(page, list(evidence_spans(page.text))) for page in document.pages]
+    observed: dict[str, list[Any]] = {}
+    qualified: set[str] = set()
     for _, spans in page_spans:
         for quote in spans:
             label, value, _ = split_label(quote)
             field = LABELS.get(label)
-            if field in claims and field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
-                errors.append(f"{field}: negated or qualified requirement needs review")
-                issue(field, "qualified_requirement")
+            if field in LIST_FIELDS and NEGATED_REQUIREMENT.search(value):
+                qualified.add(field)
+                if field in claims:
+                    errors.append(f"{field}: negated or qualified requirement needs review")
+                    issue(field, "qualified_requirement")
+            for source_field, source_value in labeled_claims(quote).items():
+                observed.setdefault(source_field, []).append(source_value)
+
+    # Validate supported source constraints independently of the model's selection.
+    # Otherwise omitting an invalid budget, reversed dates or a conflicting optional
+    # field could turn the same document from rejected into trusted. This is only a
+    # rejection check: do not add source fields to the returned model proposal.
+    source_values = {}
+    for field, values in observed.items():
+        if field in qualified and field not in claims:
+            # The existing contract explicitly permits whole-field omission here.
+            continue
+        source_values[field] = values[0]
+        if any(value != values[0] for value in values[1:]):
+            errors.append(f"{field}: contradictory document claims")
+            issue(field, "contradictory_claims")
+    try:
+        StructuredFields.model_validate({
+            **claims, **source_values, "schema_version": fields.schema_version, "evidence": {},
+        })
+    except ValidationError as error:
+        errors.append("document: invalid explicit source claim")
+        for item in error.errors(include_input=False, include_context=False, include_url=False):
+            name = item["loc"][0] if item["loc"] else None
+            issue(name if isinstance(name, str) and name in source_values else None,
+                  "invalid_source_claim")
     for field, value in claims.items():
         references = fields.evidence.get(field, [])
         if not references:
@@ -294,13 +337,7 @@ def validate_extraction(result: ExtractionResult, document: DocumentBundle) -> V
             if labeled_claims(reference.quote).get(field) != value:
                 errors.append(f"{field}: value unsupported by labeled evidence")
                 issue(field, "unsupported_value")
-        observed = [
-            labeled_claims(line)[field]
-            for _, spans in page_spans
-            for line in spans
-            if field in labeled_claims(line)
-        ]
-        if any(item != value for item in observed):
+        if any(item != value for item in observed.get(field, [])):
             errors.append(f"{field}: contradictory document claims")
             issue(field, "contradictory_claims")
     if set(fields.evidence) - set(claims):

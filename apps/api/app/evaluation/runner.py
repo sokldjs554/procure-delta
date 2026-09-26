@@ -205,7 +205,9 @@ async def extraction_eval(cases: list[dict[str, Any]], extractor: StructuredExtr
         else None,
         'execution_errors': execution_errors,
         'extractor': {'provider': extractor.provider, 'model': extractor.model,
-                      'version': extractor.extractor_version},
+                      'version': extractor.extractor_version,
+                      **({'prompt_contract_sha256': extractor.prompt_contract_sha256}
+                         if hasattr(extractor, 'prompt_contract_sha256') else {})},
         'documents': n, 'field_accuracy': rate(correct_fields,
             expected_fields),
         'correct_fields': correct_fields, 'expected_fields': expected_fields,

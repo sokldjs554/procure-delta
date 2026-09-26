@@ -1,13 +1,16 @@
 """Small allowlisted public projection of a committed, offline evaluation artifact."""
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel
 
 from app.evaluation.hosted_artifact import validate_hosted_artifact
+from app.extraction.prompt import extraction_system_prompt
 
 
 class EvaluationRouteSummary(BaseModel):
@@ -23,6 +26,10 @@ class EvaluationRouteSummary(BaseModel):
     completion_tokens: int | None = None
     reported_cost: float | None = None
     language: str | None = None
+    extractor_version: str | None = None
+    prompt_contract_sha256: str | None = None
+    current_prompt_contract_sha256: str | None = None
+    prompt_contract_status: Literal['current', 'different', 'unknown', 'not_run'] = 'not_run'
     notice: str | None = None
 
 
@@ -63,6 +70,7 @@ class EvaluationSummary(BaseModel):
     ocr_support: int = 0
     ocr_language: str | None = None
     hosted_evaluated: bool = False
+    hosted_current_contract_evaluated: bool = False
     hosted_optimization: HostedOptimizationSummary = HostedOptimizationSummary()
     routes: dict[str, EvaluationRouteSummary] = {}
     notice: str = ('저장된 소규모 합성 회귀 평가입니다. 현재 운영 지표나 '
@@ -88,6 +96,23 @@ def _hosted_route(value: dict[str, Any]) -> EvaluationRouteSummary:
     if not isinstance(metrics, dict):
         # Measured evaluation artifacts store route metrics directly; older wrappers may nest them.
         metrics = value
+    extractor = metrics.get('extractor')
+    extractor = extractor if isinstance(extractor, dict) else {}
+    recorded_hash = extractor.get('prompt_contract_sha256')
+    if not isinstance(recorded_hash, str) or not re.fullmatch(r'[0-9a-f]{64}', recorded_hash):
+        recorded_hash = None
+    current_hash = hashlib.sha256(extraction_system_prompt().encode()).hexdigest()
+    contract_status: Literal['current', 'different', 'unknown'] = (
+        'unknown' if recorded_hash is None else 'current' if recorded_hash == current_hash
+        else 'different'
+    )
+    notices = {
+        'unknown': ('저장된 실행에 계약 해시가 없어 현재 프롬프트·검증 계약과의 일치를 '
+                    '확인할 수 없습니다. 현재 계약은 외부 미측정으로 표시합니다.'),
+        'different': ('이 수치는 이전 프롬프트·검증 계약의 기록입니다. '
+                      '현재 계약은 외부 미측정입니다.'),
+        'current': '저장된 실행의 프롬프트·검증 계약이 현재 코드와 일치합니다.',
+    }
     return EvaluationRouteSummary(
         status='measured',
         support=int(metrics.get('expected_fields', metrics.get('support', 0)) or 0),
@@ -100,6 +125,11 @@ def _hosted_route(value: dict[str, Any]) -> EvaluationRouteSummary:
         prompt_tokens=metrics.get('prompt_tokens'),
         completion_tokens=metrics.get('completion_tokens'),
         reported_cost=metrics.get('reported_cost_per_document'),
+        extractor_version=extractor.get('version'),
+        prompt_contract_sha256=recorded_hash,
+        current_prompt_contract_sha256=current_hash,
+        prompt_contract_status=contract_status,
+        notice=notices[contract_status],
     )
 
 
@@ -201,6 +231,10 @@ def read_summary(path: Path) -> EvaluationSummary:
         ocr_accuracy=ocr.get('field_accuracy'), ocr_correct=ocr.get('correct_fields', 0),
         ocr_support=ocr.get('expected_fields', 0), ocr_language=ocr.get('language'),
         hosted_evaluated=raw['extraction_routes']['hosted_all'].get('status') == 'measured',
+        hosted_current_contract_evaluated=all(
+            routes[name].prompt_contract_status == 'current'
+            for name in ('hosted_all', 'hosted_gated')
+        ),
         hosted_optimization=optimization,
         routes=routes,
     )
@@ -226,7 +260,8 @@ def read_published_summary(directory: Path) -> EvaluationSummary:
         result.routes[name].notice = (
             f"{model} · {hosted.measured_at} · commit {commit}. "
             f"저자 작성 합성 {route['documents']}건의 1회 실측이며 "
-            "실제 문서 일반화 성능이 아닙니다."
+            "실제 문서 일반화 성능이 아닙니다. "
+            + (hosted.routes[name].notice or '')
         )
         normal_rejections = sum(row["expected_valid"] and not row["valid"] for row in route["rows"])
         result.routes[name].notice = (
@@ -246,6 +281,7 @@ def read_published_summary(directory: Path) -> EvaluationSummary:
         f"외부 모델이 추가로 수용한 정상 문서는 {recovered}건입니다."
     )
     result.hosted_evaluated = True
+    result.hosted_current_contract_evaluated = hosted.hosted_current_contract_evaluated
     result.hosted_optimization = hosted.hosted_optimization
     result.hosted_optimization.notice = (
         "경로 전체 지연시간에는 gated의 로컬 처리도 포함됩니다. "

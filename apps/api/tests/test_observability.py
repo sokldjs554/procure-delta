@@ -50,6 +50,7 @@ def test_error_tracking_uses_privacy_safe_sdk_options() -> None:
     assert options["environment"] == "ci"
     assert options["release"] == "revision-123"
     assert options["send_default_pii"] is False
+    assert options["include_local_variables"] is False
     assert options["traces_sample_rate"] == 0.25
     assert options["before_send"] is scrub_sentry_event
     assert configure_error_tracking(Settings(_env_file=None), init=init) is False
@@ -106,6 +107,40 @@ def test_sentry_scrubber_removes_request_user_and_sensitive_details() -> None:
     assert scrubbed["breadcrumbs"]["values"] == [
         {"timestamp": 1.0, "category": "http", "level": "info"}
     ]
+
+
+@pytest.mark.parametrize("location", ["exception", "top", "thread"])
+def test_sentry_frames_keep_locations_without_locals_or_source_context(location) -> None:
+    import json
+
+    frame = {
+        "filename": "app/extraction/hosted.py", "lineno": 42, "function": "extract",
+        "vars": {"payload": "private-document-canary", "key": "secret-key-canary"},
+        "pre_context": ["secret-source-canary"],
+        "context_line": "private-source-canary", "post_context": ["token-canary"],
+    }
+    stack = {"frames": [frame, None, "unexpected"]}
+    if location == "exception":
+        event = {"exception": {"values": [{"type": "ValueError", "stacktrace": stack}]}}
+    elif location == "thread":
+        event = {"threads": {"values": [{"id": 1, "stacktrace": stack}]}}
+    else:
+        event = {"stacktrace": stack}
+    scrubbed = scrub_sentry_event(event, {})
+    serialized = json.dumps(scrubbed)
+    assert "canary" not in serialized
+    assert frame == {
+        "filename": "app/extraction/hosted.py", "lineno": 42, "function": "extract",
+    }
+
+
+def test_sentry_scrubber_tolerates_missing_and_malformed_stack_locations() -> None:
+    event = {
+        "exception": {"values": [None, {"stacktrace": {"frames": None}}]},
+        "threads": {"values": [False, {"stacktrace": "unexpected"}]},
+        "stacktrace": None,
+    }
+    assert scrub_sentry_event(event, {}) is event
 
 
 def test_capture_is_noop_when_disabled_and_uses_sdk_when_enabled(monkeypatch) -> None:

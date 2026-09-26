@@ -12,6 +12,8 @@ from uuid import uuid4
 
 import httpx
 
+from app.config import get_settings
+
 from .metrics import percentile
 from .performance import LOCAL_HOSTS, require_benchmark_database, synthetic_record
 from .provenance import environment
@@ -233,13 +235,13 @@ async def backfill_load(
                 page_budget=100,
             )
 
-        elapsed = time.perf_counter() - started
         async with factory() as session:
             source = await session.scalar(
                 select(SourceRegistry).where(SourceRegistry.code == source_code)
             )
             if source is None:
                 raise RuntimeError("backfill benchmark source was not persisted")
+            source_id = source.id
             runs = list(
                 await session.scalars(
                     select(IngestRun)
@@ -247,14 +249,42 @@ async def backfill_load(
                     .order_by(IngestRun.started_at, IngestRun.id)
                 )
             )
-            normalized = await session.scalar(
+            normalized_statement = (
                 select(func.count())
                 .select_from(RawRecord)
                 .where(
-                    RawRecord.source_id == source.id,
+                    RawRecord.source_id == source_id,
                     RawRecord.normalization_status == "normalized",
                 )
             )
+            normalized = int(await session.scalar(normalized_statement) or 0)
+
+        normalized_during_discovery = normalized
+        reconciliation_batches = 0
+        # A progressing call must add at least one durable normalized row. The initial
+        # remaining count therefore bounds all calls, including partial batches.
+        reconciliation_batch_limit = max(0, records - normalized)
+        reconciliation_stop = "complete" if normalized == records else "batch_limit"
+        reconciliation_started = time.perf_counter()
+        for _ in range(reconciliation_batch_limit):
+            if normalized >= records:
+                break
+            await jobs.reconcile_pending_normalizations(
+                {"session_factory": factory}, source_id=source_id
+            )
+            reconciliation_batches += 1
+            async with factory() as verification_session:
+                observed = int(await verification_session.scalar(normalized_statement) or 0)
+            if observed <= normalized:
+                # Count database progress, never an optimistic worker summary or another source.
+                normalized = observed
+                reconciliation_stop = "no_progress"
+                break
+            normalized = observed
+        if normalized == records:
+            reconciliation_stop = "complete"
+        reconciliation_seconds = time.perf_counter() - reconciliation_started
+        elapsed = time.perf_counter() - started
 
         resume_index = first_batch_pages
         resumed_from_checkpoint = (
@@ -289,6 +319,13 @@ async def backfill_load(
             "ingest_runs": len(runs),
             "successful_runs": successful_runs,
             "normalized_records": normalized,
+            "normalization_batch_size": get_settings().normalization_batch_size,
+            "normalized_during_discovery": normalized_during_discovery,
+            "normalization_reconciliation_batches": reconciliation_batches,
+            "normalization_reconciliation_batch_limit": reconciliation_batch_limit,
+            "normalized_during_reconciliation": normalized - normalized_during_discovery,
+            "normalization_reconciliation_seconds": reconciliation_seconds,
+            "normalization_reconciliation_stop": reconciliation_stop,
             "resumed_from_checkpoint": resumed_from_checkpoint,
             "elapsed_seconds": elapsed,
             "records_per_second": records / elapsed if complete else None,

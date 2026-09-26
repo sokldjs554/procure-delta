@@ -146,7 +146,9 @@ try {
   const hostedAll = page
     .locator(".evaluation-route-row")
     .filter({ hasText: "hosted all" });
-  await hostedAll.getByText("측정됨", { exact: true }).waitFor();
+  await hostedAll.getByText("과거 측정", { exact: true }).waitFor();
+  assert.equal(await hostedAll.getByText("측정됨", { exact: true }).count(), 0);
+  await page.getByText("현재 계약 미측정", { exact: true }).waitFor();
   await hostedAll.getByText("100.0%", { exact: true }).waitFor();
   const hostedEvidence = page.getByLabel("외부 Claude 실측");
   await hostedEvidence.getByText(/22,343 → 10,149/).waitFor();
@@ -164,6 +166,7 @@ try {
   });
   const mobileView = await openPipeline(mobile);
   await mobileView.page.goto(`${web}/about`);
+  await mobileView.page.getByText("현재 계약 미측정", { exact: true }).waitFor();
   await mobileView.page
     .getByLabel("외부 Claude 실측")
     .getByText(/22,343 → 10,149/)

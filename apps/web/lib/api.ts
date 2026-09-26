@@ -473,6 +473,10 @@ export interface EvaluationRouteSummary {
   completion_tokens: number | null;
   reported_cost: number | null;
   language: string | null;
+  extractor_version: string | null;
+  prompt_contract_sha256: string | null;
+  current_prompt_contract_sha256: string | null;
+  prompt_contract_status: "current" | "different" | "unknown" | "not_run";
   notice: string | null;
 }
 export interface EvaluationSummary {
@@ -498,6 +502,7 @@ export interface EvaluationSummary {
   ocr_support: number;
   ocr_language: string | null;
   hosted_evaluated: boolean;
+  hosted_current_contract_evaluated: boolean;
   hosted_optimization: {
     status: "measured" | "not_run";
     all_calls: number | null;

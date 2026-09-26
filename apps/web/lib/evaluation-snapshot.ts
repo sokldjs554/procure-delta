@@ -24,6 +24,7 @@ export const evaluationSnapshot: EvaluationSummary = {
   "ocr_support": 18,
   "ocr_language": "eng",
   "hosted_evaluated": true,
+  "hosted_current_contract_evaluated": false,
   "hosted_optimization": {
     "status": "measured",
     "all_calls": 10,
@@ -51,6 +52,10 @@ export const evaluationSnapshot: EvaluationSummary = {
       "completion_tokens": null,
       "reported_cost": null,
       "language": null,
+      "extractor_version": null,
+      "prompt_contract_sha256": null,
+      "current_prompt_contract_sha256": null,
+      "prompt_contract_status": "not_run",
       "notice": "로컬 deterministic extractor · 합성 회귀셋"
     },
     "hosted_all": {
@@ -66,7 +71,11 @@ export const evaluationSnapshot: EvaluationSummary = {
       "completion_tokens": 3555,
       "reported_cost": null,
       "language": null,
-      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 0건입니다."
+      "extractor_version": "chat-prompt-json-v3-a522d812a6f15e65",
+      "prompt_contract_sha256": null,
+      "current_prompt_contract_sha256": "531d6b21218485514986d5a7e68a9a3b71832521c6987ca3e022b1a3a88f60dc",
+      "prompt_contract_status": "unknown",
+      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 저장된 실행에 계약 해시가 없어 현재 프롬프트·검증 계약과의 일치를 확인할 수 없습니다. 현재 계약은 외부 미측정으로 표시합니다. 정상 문서 중 검증 거절은 0건입니다."
     },
     "hosted_gated": {
       "status": "measured",
@@ -81,7 +90,11 @@ export const evaluationSnapshot: EvaluationSummary = {
       "completion_tokens": 809,
       "reported_cost": null,
       "language": null,
-      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 정상 문서 중 검증 거절은 0건입니다. 로컬 규칙 처리 5건의 정답 필드는 30/30이며, 외부 모델이 추가로 수용한 정상 문서는 0건입니다."
+      "extractor_version": "chat-prompt-json-v3-a522d812a6f15e65",
+      "prompt_contract_sha256": null,
+      "current_prompt_contract_sha256": "531d6b21218485514986d5a7e68a9a3b71832521c6987ca3e022b1a3a88f60dc",
+      "prompt_contract_status": "unknown",
+      "notice": "claude-haiku-4-5-20251001 · 2026-09-24T15:02:01.497536+00:00 · commit ae63b0474800067ebc2c3432c5ade0b7f754a7cc. 저자 작성 합성 10건의 1회 실측이며 실제 문서 일반화 성능이 아닙니다. 저장된 실행에 계약 해시가 없어 현재 프롬프트·검증 계약과의 일치를 확인할 수 없습니다. 현재 계약은 외부 미측정으로 표시합니다. 정상 문서 중 검증 거절은 0건입니다. 로컬 규칙 처리 5건의 정답 필드는 30/30이며, 외부 모델이 추가로 수용한 정상 문서는 0건입니다."
     },
     "ocr": {
       "status": "measured",
@@ -96,6 +109,10 @@ export const evaluationSnapshot: EvaluationSummary = {
       "completion_tokens": null,
       "reported_cost": null,
       "language": "eng",
+      "extractor_version": null,
+      "prompt_contract_sha256": null,
+      "current_prompt_contract_sha256": null,
+      "prompt_contract_status": "not_run",
       "notice": "English rendered images only; not Korean scans, layouts or production OCR."
     },
     "ocr_korean": {
@@ -111,6 +128,10 @@ export const evaluationSnapshot: EvaluationSummary = {
       "completion_tokens": null,
       "reported_cost": null,
       "language": "kor+eng",
+      "extractor_version": null,
+      "prompt_contract_sha256": null,
+      "current_prompt_contract_sha256": null,
+      "prompt_contract_status": "not_run",
       "notice": "Synthetic Korean rendered text only; not production scans, handwriting, tables, or diverse public-procurement document layouts."
     }
   },

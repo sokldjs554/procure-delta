@@ -53,6 +53,7 @@ def test_request_explains_grounding_rules_and_keeps_document_separate(endpoint):
     extractor, requests, document = capture_requests(endpoint, 2)
     body = json.loads(requests[0].content)
     system = body["messages"][0]["content"]
+    assert extractor.prompt_contract_sha256 == hashlib.sha256(system.encode()).hexdigest()
     assert "+09:00" in system and "date-only" in system
     assert "optional" in system and "qualified" in system
     assert "source language" in system and "source order" in system
@@ -85,5 +86,6 @@ def test_changed_prompt_invalidates_extraction_and_request_identity(monkeypatch)
                         raising=False)
     second, second_requests, _ = capture_requests(endpoint)
     assert second.extractor_version != first.extractor_version
+    assert second.prompt_contract_sha256 != first.prompt_contract_sha256
     assert (second_requests[0].headers["Idempotency-Key"]
             != first_requests[0].headers["Idempotency-Key"])

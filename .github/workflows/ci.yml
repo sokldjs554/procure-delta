@@ -95,7 +95,11 @@ jobs:
         with:
           node-version: "22"
       - name: Isolated containers, migrations, real E2E and benchmarks
-        run: python scripts/verify_containers.py --scale-records 1000
+        # Check actual interpolated configuration; never start or send to test destinations.
+        # The full release below uses a separate isolated Compose file.
+        run: |
+          python scripts/check_compose_environment.py
+          python scripts/verify_containers.py --scale-records 1000
       - uses: actions/upload-artifact@v4
         if: always()
         with:

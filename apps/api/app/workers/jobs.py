@@ -11,13 +11,14 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
+from uuid import UUID
 
 import httpx
 from arq import Retry
 from arq.connections import ArqRedis
 from pydantic import ValidationError
 from redis.exceptions import RedisError
-from sqlalchemy import SQLColumnExpression, select, update
+from sqlalchemy import SQLColumnExpression, String, cast, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -353,6 +354,37 @@ async def ingest_record(
         )
 
 
+async def _pending_normalization_ids(
+    session: AsyncSession, *, source_id: UUID | None = None
+) -> list[UUID]:
+    """Select a bounded oldest-first batch without letting retry holds consume its slots."""
+    blocked = (
+        select(JobFailure.id)
+        .where(
+            JobFailure.job_type == "normalize_record",
+            JobFailure.payload_json["raw_record_id"].astext == cast(RawRecord.id, String),
+            JobFailure.attempts > 0,
+            or_(
+                JobFailure.dead_lettered.is_(True),
+                JobFailure.attempts >= MAX_ATTEMPTS,
+                JobFailure.next_retry_at.is_(None),
+                JobFailure.next_retry_at > datetime.now(UTC),
+            ),
+        )
+        .exists()
+    )
+    statement = select(RawRecord.id).where(
+        RawRecord.normalization_status == "pending", ~blocked
+    )
+    if source_id is not None:
+        statement = statement.where(RawRecord.source_id == source_id)
+    statement = statement.order_by(RawRecord.fetched_at, RawRecord.id).limit(
+        get_settings().normalization_batch_size
+    )
+    # Ingest failures do not gate this raw-first recovery path: the raw data is already durable.
+    return list(await session.scalars(statement))
+
+
 async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[str, str]:
     started = time.perf_counter()
     adapter = source_adapters().get(source_code)
@@ -408,14 +440,7 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
                 .values(attempts=0, dead_lettered=False, next_retry_at=None)
             )
             await session.commit()
-            pending_ids = (
-                await session.scalars(
-                    select(RawRecord.id).where(
-                        RawRecord.source_id == source.id,
-                        RawRecord.normalization_status == "pending",
-                    )
-                )
-            ).all()
+            pending_ids = await _pending_normalization_ids(session, source_id=source.id)
             for raw_id in pending_ids:
                 try:
                     await _normalize_persisted_raw(session, raw_id)
@@ -568,16 +593,14 @@ async def _record_normalization_failure(
     return failure
 
 
-async def reconcile_pending_normalizations(ctx: dict[str, Any]) -> dict[str, int]:
+async def reconcile_pending_normalizations(
+    ctx: dict[str, Any], *, source_id: UUID | None = None
+) -> dict[str, int]:
     """Recover raw-first commits interrupted before normalization."""
     normalized = 0
     failed = 0
     async with _session_scope(ctx) as session:
-        raw_ids = (
-            await session.scalars(
-                select(RawRecord.id).where(RawRecord.normalization_status == "pending")
-            )
-        ).all()
+        raw_ids = await _pending_normalization_ids(session, source_id=source_id)
         for raw_id in raw_ids:
             try:
                 await _normalize_persisted_raw(session, raw_id)

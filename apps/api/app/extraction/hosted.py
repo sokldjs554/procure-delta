@@ -63,6 +63,7 @@ class HostedExtractor:
             and parsed_endpoint.path.rstrip("/") == "/v1/chat/completions"
         )
         self._system_prompt = extraction_system_prompt()
+        self.prompt_contract_sha256 = hashlib.sha256(self._system_prompt.encode()).hexdigest()
         request_version = "chat-json-v3-" if self._json_mode else "chat-prompt-json-v3-"
         request_contract = json.dumps([endpoint, max_completion_tokens, self._system_prompt])
         self.extractor_version = (

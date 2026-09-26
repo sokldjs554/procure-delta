@@ -34,6 +34,10 @@ test("static demo serves the core product journey without an API", async () => {
   assert.equal(evaluation.routes.ocr_korean.field_accuracy, 1);
   assert.equal(evaluation.routes.ocr_korean.language, "kor+eng");
   assert.equal(evaluation.hosted_evaluated, true);
+  assert.equal(evaluation.hosted_current_contract_evaluated, false);
+  assert.equal(evaluation.routes.hosted_all.prompt_contract_status, "unknown");
+  assert.equal(evaluation.routes.hosted_all.prompt_contract_sha256, null);
+  assert.match(evaluation.routes.hosted_all.notice ?? "", /현재 계약은 외부 미측정/);
   assert.equal(evaluation.routes.hosted_all.field_accuracy, 1);
   assert.equal(evaluation.hosted_optimization.all_tokens, 22343);
   assert.equal(evaluation.hosted_optimization.gated_tokens, 10149);

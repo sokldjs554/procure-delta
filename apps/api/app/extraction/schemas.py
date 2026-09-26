@@ -115,6 +115,7 @@ GroundingField = Literal[
 GroundingCode = Literal[
     "missing_evidence", "evidence_not_on_page", "unsupported_value",
     "contradictory_claims", "qualified_requirement", "evidence_for_absent_field",
+    "invalid_source_claim",
 ]
 
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -89,4 +91,76 @@ def test_hosted_validator_rejects_execution_errors_despite_measured_status_and_u
         {"error_type": "HTTPStatusError", "http_status": 401},
     ]
     with pytest.raises(HostedEvaluationError, match="execution errors"):
+        validate_hosted_artifact(raw)
+
+
+@pytest.mark.parametrize("key,value", [
+    ("call_reduction_rate", 0.99),
+    ("token_reduction_rate", 0.99),
+    ("avoided_calls", 9),
+    ("reported_cost_reduction_rate", 0.5),
+])
+def test_published_reductions_must_follow_measured_route_totals(key, value):
+    raw = artifact()
+    raw["hosted_optimization"][key] = value
+    with pytest.raises(HostedEvaluationError, match="does not match|unavailable"):
+        validate_hosted_artifact(raw)
+
+
+def test_a_measured_token_increase_is_valid_evidence_not_a_publication_failure():
+    raw = artifact()
+    raw["extraction_routes"]["hosted_gated"]["prompt_tokens"] = 160
+    raw["hosted_optimization"].update(gated_tokens=180, token_reduction_rate=-0.2)
+    assert validate_hosted_artifact(raw)["token_reduction_rate"] == -0.2
+
+
+@pytest.mark.parametrize("reported,valid", [(0.6, True), (0.99, False), (None, False)])
+def test_provider_cost_reduction_is_recomputed_only_from_reported_costs(reported, valid):
+    raw = artifact()
+    raw["extraction_routes"]["hosted_all"]["reported_cost_per_document"] = "0.20"
+    raw["extraction_routes"]["hosted_gated"]["reported_cost_per_document"] = "0.08"
+    raw["hosted_optimization"]["reported_cost_reduction_rate"] = reported
+    if valid:
+        assert validate_hosted_artifact(raw)["reported_cost_reduction_rate"] == 0.6
+    else:
+        with pytest.raises(HostedEvaluationError, match="cost reduction"):
+            validate_hosted_artifact(raw)
+
+
+def recorded_artifact():
+    path = Path(__file__).resolve().parents[2] / "app/evaluation/results/hosted.json"
+    return json.loads(path.read_text())
+
+
+@pytest.mark.parametrize("key,value", [
+    ("documents", 9), ("correct_fields", 29), ("expected_fields", 31),
+    ("field_accuracy", 0.99), ("grounded_accepted_documents", 10),
+    ("schema_failures", 0),
+])
+def test_recorded_case_totals_must_match_the_published_aggregate(key, value):
+    raw = recorded_artifact()
+    raw["extraction_routes"]["hosted_all"][key] = value
+    with pytest.raises(HostedEvaluationError, match="rows"):
+        validate_hosted_artifact(raw)
+
+
+def test_duplicate_case_ids_cannot_supply_apparently_complete_coverage():
+    raw = recorded_artifact()
+    rows = raw["extraction_routes"]["hosted_all"]["rows"]
+    rows[1]["id"] = rows[0]["id"]
+    with pytest.raises(HostedEvaluationError, match="rows"):
+        validate_hosted_artifact(raw)
+
+
+def test_aggregate_tokens_cannot_disagree_with_measured_case_usage():
+    raw = recorded_artifact()
+    raw["extraction_routes"]["hosted_all"]["rows"][0]["prompt_tokens"] += 100
+    with pytest.raises(HostedEvaluationError, match="rows"):
+        validate_hosted_artifact(raw)
+
+
+def test_route_comparison_requires_the_same_evaluated_case_ids():
+    raw = recorded_artifact()
+    raw["extraction_routes"]["hosted_gated"]["rows"][0]["id"] = "different-case"
+    with pytest.raises(HostedEvaluationError, match="same cases"):
         validate_hosted_artifact(raw)

@@ -84,19 +84,42 @@ def _scrub_value(value: Any) -> Any:
     return value
 
 
+def _scrub_stacktrace(stacktrace: object) -> None:
+    if not isinstance(stacktrace, dict):
+        return
+    frames = stacktrace.get("frames")
+    if not isinstance(frames, list):
+        return
+    for frame in frames:
+        if isinstance(frame, dict):
+            # Names are not a reliable indication of whether a local holds PII.
+            # Source context can also contain literal credentials or document text.
+            for key in ("vars", "pre_context", "context_line", "post_context"):
+                frame.pop(key, None)
+
+
 def scrub_sentry_event(event: Event, hint: Hint) -> Event | None:
     """Remove request/user/exception text and secret-shaped extras before transport."""
     del hint
     event.pop("request", None)
     event.pop("user", None)
+    _scrub_stacktrace(event.get("stacktrace"))
+
+    threads = event.get("threads")
+    if isinstance(threads, dict) and isinstance(threads.get("values"), list):
+        for thread in threads["values"]:
+            if isinstance(thread, dict):
+                _scrub_stacktrace(thread.get("stacktrace"))
 
     exception = event.get("exception")
     if isinstance(exception, dict):
         values = exception.get("values")
         if isinstance(values, list):
             for value in values:
-                if isinstance(value, dict) and "value" in value:
-                    value["value"] = "[REDACTED_EXCEPTION_DETAIL]"
+                if isinstance(value, dict):
+                    if "value" in value:
+                        value["value"] = "[REDACTED_EXCEPTION_DETAIL]"
+                    _scrub_stacktrace(value.get("stacktrace"))
 
     if "message" in event:
         event["message"] = "application_error"
@@ -155,6 +178,7 @@ def configure_error_tracking(
         environment=active.sentry_environment,
         release=error_tracking_release(active),
         send_default_pii=False,
+        include_local_variables=False,
         traces_sample_rate=active.sentry_traces_sample_rate,
         before_send=scrub_sentry_event,
     )
