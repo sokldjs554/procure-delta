@@ -10,10 +10,11 @@
     "start": "HOSTNAME=0.0.0.0 node .next/standalone/server.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts tests/*.test.mjs",
     "test:browser": "node tests/product.browser.mjs",
     "test:e2e": "node e2e/lifecycle.mjs",
-    "test:standalone": "node scripts/check-standalone.mjs"
+    "test:standalone": "node scripts/check-standalone.mjs",
+    "test:public": "node scripts/check-public-demo.mjs"
   },
   "dependencies": {
     "next": "16.3.5",
