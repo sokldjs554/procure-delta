@@ -73,11 +73,13 @@
 | 문제 | 보완 | 확인 방법 |
 |---|---|---|
 | 대기 raw를 한꺼번에 조회·처리 | ready 행 선별 후 기본 100건 제한, fetched_at/ID 순서 | 여러 배치·재시작·retry/terminal 앞행·타 source 격리 |
-| 잘못된 예산·역전 날짜를 모델이 빼면 승인 | 출력과 별도로 명시적 원문 제약 검사, grounding 계약 버전 변경 | 부분 출력 거절·정상 선택 항목 생략 허용 |
+| 배치 제한보다 큰 페이지의 backfill 조기 종료 | 해당 benchmark source만 제한 배치로 소진, 실제 DB 진행 확인·유한 횟수 제한 | 100건/page 50/cap 15 완주, 다른 source 격리, 진행 없음 중단 |
+| 잘못된 예산·역전/존재하지 않는 날짜를 모델이 빼면 승인 | 출력과 별도로 명시적 원문 제약 검사, grounding 계약 버전 변경 | 0·음수·상한 초과 예산과 잘못된 날짜 생략 거절·정상 선택 항목 생략 허용 |
 | 과거 hosted 결과와 현재 prompt 혼동 | 기록/현재 계약 hash와 applicability, 화면 안내 | 일치/불일치/metadata 부재/미실행 구분, 과거 수치 보존 |
 | 합계와 다른 절감률을 artifact가 허용 | 실제 합계로 비율 검증, 증가는 음수 절감률로 허용 | 조작 비율·실제 증가·0/누락 사용량 경계 |
 | 오류 추적 스택에 내부 값이 남음 | SDK locals 끄기, 모든 스택의 vars/source context 제거 | 가짜 secret 제거 + 파일/줄/함수 유지 |
 | generic만 있어 Slack 수신 계약 없음 | owner별 Slack 형식과 bounded 성공 응답 검증 | payload·멘션 억제·2xx 오류·429/5xx·outbox·비활성 |
+| 알림·Sentry 설정이 일반 Docker worker에 전달되지 않음 | API/worker/scheduler 환경 변수 연결, 빈 SMTP 인증 값은 미설정 처리 | 실제 Compose 보간 결과 검사: 비활성 기본값·JSON·특수문자·설정 전달 |
 
 ## 우선순위가 높은 미완료 항목
 

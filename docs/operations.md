@@ -25,6 +25,9 @@ redact한다. SDK의 지역 변수 수집을 끄고 exception·thread·top-level
 `vars`, `pre_context`, `context_line`, `post_context`도 제거한다. 파일·줄·함수 위치는 유지한다.
 가짜 비밀값을 넣은 회귀로 이 경계를 확인하며 실제 외부 DSN 수신 증거는 아니다.
 `SENTRY_TRACES_SAMPLE_RATE` 기본값은 0이다.
+일반 Compose는 알림·Sentry 설정과 `RELEASE_REVISION`을 API·worker·scheduler에
+같이 전달한다. `python scripts/check_compose_environment.py`는 별도 가짜 설정 파일로
+실제 Compose 보간 결과를 검사한다. 사용자 `.env`를 읽거나 컨테이너를 시작하지 않는다.
 
 기본 알림은 로컬 영수증이다. 이메일·웹훅을 실제 발송했다고 해석하지 않는다.
 평가용 OCR이 있는 것과 기본 서비스에 실제 OCR 공급자가 연결된 것은 다르다.

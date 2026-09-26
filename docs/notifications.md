@@ -41,6 +41,9 @@ and a bounded error code, never a recipient, destination URL or notification bod
 
 External delivery requires explicit operator configuration of
 `NOTIFICATION_EXTERNAL_ENABLED=true`; no external channel is enabled by default.
+The normal Compose stack forwards these settings to API, worker and scheduler.
+`scripts/check_compose_environment.py` checks both disabled defaults and configured
+JSON/SMTP values with synthetic settings; it never starts services or sends messages.
 
 Webhook delivery uses an owner-keyed `NOTIFICATION_WEBHOOK_DESTINATIONS` JSON mapping.
 Values are secret HTTPS URLs, not user-editable profile or preference fields. Each destination is
@@ -79,6 +82,7 @@ Sources checked 2026-09-26: [Slack incoming webhooks](https://docs.slack.dev/mes
 
 Email delivery uses `NOTIFICATION_SMTP_HOST`, optional SMTP credentials, one operator-owned
 `NOTIFICATION_EMAIL_SENDER`, and an owner-keyed `NOTIFICATION_EMAIL_RECIPIENTS` mapping.
+Empty optional SMTP username/password settings are treated as absent credentials.
 STARTTLS is enabled by default. `EmailChannel` emits a stable Message-ID from the notification
 dedupe key and `SmtpTransport` performs one bounded SMTP attempt. CI starts a loopback SMTP
 receiver and verifies a real TCP delivery from the durable outbox path through the worker to the

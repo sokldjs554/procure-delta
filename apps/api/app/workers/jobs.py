@@ -593,12 +593,14 @@ async def _record_normalization_failure(
     return failure
 
 
-async def reconcile_pending_normalizations(ctx: dict[str, Any]) -> dict[str, int]:
+async def reconcile_pending_normalizations(
+    ctx: dict[str, Any], *, source_id: UUID | None = None
+) -> dict[str, int]:
     """Recover raw-first commits interrupted before normalization."""
     normalized = 0
     failed = 0
     async with _session_scope(ctx) as session:
-        raw_ids = await _pending_normalization_ids(session)
+        raw_ids = await _pending_normalization_ids(session, source_id=source_id)
         for raw_id in raw_ids:
             try:
                 await _normalize_persisted_raw(session, raw_id)

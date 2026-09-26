@@ -82,6 +82,14 @@ NOTICE_HEADING = re.compile(
     rf"|조달물자{_CATEGORY}구매입찰공고)"
 )
 PROCUREMENT_TYPES = {"용역": "services", "물품": "goods", "공사": "works"}
+AMOUNT_LITERAL = r"-?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?"
+# Identify explicit ISO-shaped literals only. A parse failure within this shape
+# must remain an invalid claim; prose and genuinely unsupported formats stay absent.
+ISO_DATETIME_LITERAL = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    r"(?:[T ][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:[.,][0-9]+)?)?"
+    r"(?:Z|[+-][0-9]{2}:?[0-9]{2}| KST)?)?"
+)
 
 
 def split_label(text: str) -> tuple[str, str, bool]:
@@ -199,9 +207,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
     if not label or not value:
         return {}
     if label == "Budget":
-        if korean and re.fullmatch(r"[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?원", value):
+        if korean and re.fullmatch(AMOUNT_LITERAL + "원", value):
             value = "KRW " + value[:-1]
-        match = re.fullmatch(r"(KRW|USD|EUR|JPY) ([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)", value)
+        match = re.fullmatch(r"(KRW|USD|EUR|JPY) (" + AMOUNT_LITERAL + ")", value)
         if not match:
             return {}
         return {"currency": match[1], "estimated_amount": Decimal(match[2].replace(",", ""))}
@@ -218,6 +226,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
         try:
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
                 if field != "published_at":
+                    # Valid date-only deadlines remain unsupported. An impossible
+                    # calendar date is invalid, not merely missing a time/zone.
+                    datetime.fromisoformat(value)
                     return {}
                 parsed = (
                     datetime.fromisoformat(value + "T00:00:00+09:00")
@@ -232,7 +243,9 @@ def labeled_claims(line: str) -> dict[str, Any]:
                 return {}
             return {field: parsed.astimezone(UTC)}
         except ValueError:
-            return {}
+            # As with invalid ISO contract periods, preserve the literal so the
+            # schema/source-constraint check rejects it even if a model omits it.
+            return {field: value} if ISO_DATETIME_LITERAL.fullmatch(value) else {}
     if field == "procurement_type":
         return {
             field: {

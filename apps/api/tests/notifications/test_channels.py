@@ -95,6 +95,17 @@ def test_unknown_webhook_format_fails_configuration_instead_of_silent_fallback()
         Settings(_env_file=None, notification_webhook_formats={"owner": "slcak"})
 
 
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_blank_smtp_credentials_do_not_opt_in_to_authentication(blank):
+    from app.config import Settings
+
+    settings = Settings(
+        _env_file=None, notification_smtp_username=blank, notification_smtp_password=blank,
+    )
+    assert settings.notification_smtp_username is None
+    assert settings.notification_smtp_password is None
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "status,success,retryable",

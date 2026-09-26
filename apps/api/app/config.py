@@ -76,6 +76,13 @@ class Settings(BaseSettings):
     sentry_environment: str = "development"
     sentry_traces_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    @field_validator("notification_smtp_username", "notification_smtp_password")
+    @classmethod
+    def optional_smtp_credentials(cls, value: SecretStr | None) -> SecretStr | None:
+        # Compose forwards unset optional credentials as empty strings.
+        # Absence must not turn an unauthenticated SMTP connection into login("").
+        return value if value is not None and value.get_secret_value().strip() else None
+
     @field_validator("extraction_credit_units", mode="before")
     @classmethod
     def whole_credit_units(cls, value: object) -> int:

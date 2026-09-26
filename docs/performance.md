@@ -63,6 +63,16 @@ API는 저장소 checkout에서는 원본 artifact를 우선 읽고, Docker 이�
 
 이 benchmark는 최초 호출과 재개 호출 두 번을 측정한다. 각 호출은 production과 동일하게 최대 100페이지이며, 최초 batch와 남은 페이지가 각각 100페이지 이하여야 한다. 이 범위를 벗어나는 조합은 DB 접근 전에 거절한다. 예를 들어 `--records 2000 --page-size 10 --first-batch-pages 5`는 재개할 195페이지가 한도를 넘으므로 허용하지 않는다. 이 제한은 두 호출을 비교하는 benchmark의 입력 계약이며 전체 수집기의 누적 처리 한도가 아니다.
 
+현재 도구는 페이지 크기가 `NORMALIZATION_BATCH_SIZE`보다 커서 남은 정규화가 있으면,
+두 discovery 호출 뒤 해당 benchmark 소스만 같은 제한 크기로 복구한다. 다른 소스의 pending
+원본은 처리하지 않는다. 각 호출 후 PostgreSQL 완료 건수를 다시 읽고, 진전이 없거나 예상
+건수가 완료되면 멈춘다. 추가 호출 수도 처음 남은 레코드 수 이하로 제한한다.
+`elapsed_seconds`에는 이 복구 시간이 포함되며, 원본 결과의 `normalized_during_discovery`,
+`normalized_during_reconciliation`, `normalization_reconciliation_batches`,
+`normalization_reconciliation_seconds`, `normalization_reconciliation_stop`으로 구간을 구분한다.
+처리가 남으면 `successful=false`, `records_per_second=null`을 반환한다. 위의 과거 reference
+측정값은 이 변경으로 다시 측정하거나 덮어쓰지 않았다.
+
 기존 release snapshot의 gate 목록에는 이후 backfill gate를 소급해서 넣지 않는다. 공개 UI의 별도 Backfill 카드와 이 절의 실행 번호로 후속 측정을 확인한다.
 
 이 값은 **합성 local PostgreSQL backfill** 측정이다. 실제 나라장터 HTTP 응답 지연·rate limit·실문서 다운로드·OCR·hosted LLM은 포함하지 않으므로 운영 수집 처리량으로 일반화하지 않는다.

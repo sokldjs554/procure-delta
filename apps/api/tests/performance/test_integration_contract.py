@@ -68,6 +68,10 @@ async def test_backfill_drains_pages_larger_than_normalization_cap_without_touch
     monkeypatch.setattr(
         jobs, "get_settings", lambda: Settings(_env_file=None, normalization_batch_size=15)
     )
+    monkeypatch.setattr(
+        "app.evaluation.integration.get_settings",
+        lambda: Settings(_env_file=None, normalization_batch_size=15),
+    )
     async with worker_session_factory() as setup:
         source = SourceRegistry(
             code="unrelated-backfill", display_name="Unrelated", base_url="https://example.invalid"
@@ -120,6 +124,10 @@ async def test_backfill_stops_when_reconciliation_makes_no_database_progress(mon
     monkeypatch.setenv("BENCH_DATABASE_URL", TEST_DATABASE_URL)
     monkeypatch.setattr(
         jobs, "get_settings", lambda: Settings(_env_file=None, normalization_batch_size=15)
+    )
+    monkeypatch.setattr(
+        "app.evaluation.integration.get_settings",
+        lambda: Settings(_env_file=None, normalization_batch_size=15),
     )
 
     async def stalled_reconciliation(ctx, **kwargs):
