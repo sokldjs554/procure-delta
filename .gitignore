@@ -14,3 +14,4 @@ coverage/
 !.env.example
 artifacts/e2e/
 artifacts/container/
+artifacts/public-demo/

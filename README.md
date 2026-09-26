@@ -27,6 +27,7 @@ FastAPI · PostgreSQL/Alembic · Redis/ARQ · Next.js/TypeScript 기반의 개�
 - **알림**: 변경 내용을 읽고 해당 공고로 이동할 수 있습니다. 공개 데모에서는 외부 메시지를 보내지 않습니다.
 
 CI에서 공개 배포와 동일한 정적 모드를 빌드해 데스크톱 동선과 모바일 7개 화면을 검사합니다. 실제 API 기반 동선은 별도의 Docker release gate에서 검증합니다.
+main CI 성공 뒤에는 `Public demo HTTP`가 공개 사이트의 8개 경로와 해당 HTML의 실제 JS/CSS 응답을 검사합니다. [검사 범위와 실행 방법](docs/verification.md)을 함께 기록합니다.
 
 ![공고 3건의 예산·마감·참여 조건 비교](docs/images/opportunity-inbox.png)
 

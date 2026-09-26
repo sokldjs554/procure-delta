@@ -1,5 +1,36 @@
 # Verification
 
+## 공개 배포 이후 HTTP 자산 확인
+
+`Public demo HTTP` workflow는 main의 `CI` 성공 뒤 현재 공개 사이트를 검사한다.
+검사 코드 변경 PR과 수동 실행에서도 같은 검사를 수행한다. URL은
+`https://procure-delta-demo.onrender.com`으로 고정하며 인증 정보나 유료 API를 사용하지 않는다.
+
+```bash
+cd apps/web
+npm run test:public
+```
+
+- 랜딩·공고함·공고 상세·파이프라인·관심 공고·알림·프로필·평가의 **8개 경로**
+- 각 HTML의 제품 제목, HTTP 200, `text/html`, JS/CSS 참조 존재
+- HTML이 실제로 참조한 JS/CSS의 HTTP 200, 확장자에 맞는 content-type, 비어 있지 않은 본문
+- 리다이렉트와 HTML 오류 페이지를 자산 성공으로 오인하지 않는지 확인
+- 쿼리 문자열을 유지한 정확한 자산 URL, 중복 제거, 응답 크기와 SHA-256 기록
+
+무료 Render 인스턴스의 기동 안내 화면은 HTTP 200이어도 제품 준비 완료로 인정하지 않는다.
+첫 화면의 준비 대기에는 제한 시간이 있으며, 준비된 뒤 페이지·자산 검사 실패는 재시도로 숨기지 않는다.
+실패한 검사도 `procure-delta-public-http` artifact의 `http-assets.json`에 남긴다.
+로컬 standalone 검사도 같은 HTTP 검사 함수를 사용한다.
+검사기 자체의 회귀 9개는 로컬 HTTP 서버로 누락 자산·잘못된 MIME·빈 응답·리다이렉트·
+HTTP 200 오류 페이지·쿼리 문자열 보존을 확인한다.
+
+이 결과는 **검사 시점에 공개된 HTML과 그 참조 자산**의 응답 증거다. 브라우저에서 지연 로드하는
+모든 자산, UI 동작, API·DB·worker, 가동률을 대신 검증하지 않는다. 결과의 `verifier_revision`은
+검사 코드의 커밋이며 배포 커밋을 뜻하지 않는다. 배포 SHA는 Render의 실제 deploy 기록과
+별도로 대조한다. 2026-09-26 확인한 공개 배포는 `c3c0545`와 일치했고, 해당 main의
+[CI run 36166661881](https://github.com/sokldjs554/procure-delta/actions/runs/36166661881)은
+frontend·backend·release-contract 모두 통과했다.
+
 ## 2026-09-26 공개 데모 UI 검증 (KST)
 
 PR #32의 구현 커밋 `7b48242abb871e9f12314c50177f365ed704dc5e`에서 공개 데모와 동일한
