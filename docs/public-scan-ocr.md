@@ -183,8 +183,10 @@ reacquired both original PDFs and the same language models with matching frozen
 hashes. The existing adapter completed all eight pages; the first-page anchors
 remain 4/8 and trusted fields 0/6 under `explicit-labels-v4`. Full-document and
 scored-page text hashes, scores and rejection diagnostics match the September 25
-balanced run. Times were 19.27s and 20.32s. This artifact retains its actual
-`git_dirty: true` provenance and is a repeat on known development documents.
+balanced run. Times were 18.96s and 20.60s. The final rerun used clean code commit
+`a7629455c3a92698b7d53f52b80dfd42f6976235` and records `git_dirty: false`.
+It remains a repeat on known development documents. The evidence/documentation
+commit follows the code checkpoint used for execution.
 The [candidate diagnostic rerun](ocr-candidate-evaluation.md#2026-09-27-실패-진단과-원본-스캔-재확인)
 separately reports recognized anchors, proposed fields and trusted fields; it does
 not establish a fix for the previously failed candidate document.

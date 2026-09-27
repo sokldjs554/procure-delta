@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "measured_at": "2026-09-27T14:43:26.568254+00:00",
+  "measured_at": "2026-09-27T15:02:18.966038+00:00",
   "suite": "korean-ocr-candidate-v1",
   "groups": [
     {
@@ -54,9 +54,9 @@
       ],
       "provenance": {
         "dataset_sha256": "251804ff21e4cf8347873d147b5f77e2f9006c7c36c8bdf2d10d45006f073700",
-        "source_sha256": "a0989fadc2a5e7260dff361f987c94572e1a0b27bc183a29a9bd17caaa5d99a2",
-        "git_commit": "3d3846844d5efb0e70a8ba977aa2570ca7e60199",
-        "git_dirty": true,
+        "source_sha256": "219f6e3e38d13890225d99db03682b60b32e61747c8d19159b3e6bb4e454e5b4",
+        "git_commit": "a7629455c3a92698b7d53f52b80dfd42f6976235",
+        "git_dirty": false,
         "configuration": {
           "packages": {
             "rapidocr": "3.9.2",
@@ -121,7 +121,7 @@
             "status": "measured",
             "scored_page": 1,
             "text_sha256": "2128d9f8ca3f1c254dc0e9806cf84fa709fd77d57048728b6e51b6ce681bb482",
-            "peak_rss_kib": 721504,
+            "peak_rss_kib": 718756,
             "characters": 571,
             "anchors": {
               "correct": 4,
@@ -174,14 +174,14 @@
               "unexpected": [],
               "exact_match": false
             },
-            "elapsed_ms": 4115.2000600000065
+            "elapsed_ms": 4031.6487889999735
           },
           {
             "id": "nongshinbo-2020-digital",
             "status": "measured",
             "scored_page": 1,
             "text_sha256": "76ae1d56d6d6b5b6ac3ac4ebcb3d25c685ef2592a0891e4403563b4be467b2d6",
-            "peak_rss_kib": 721800,
+            "peak_rss_kib": 721212,
             "characters": 601,
             "anchors": {
               "correct": 4,
@@ -234,7 +234,7 @@
               "unexpected": [],
               "exact_match": false
             },
-            "elapsed_ms": 4656.385486999852
+            "elapsed_ms": 4370.145985999898
           }
         ]
       }
