@@ -1,0 +1,62 @@
+{
+  "id": "evt_synthetic_paid",
+  "object": "event",
+  "api_version": "2025-03-31.basil",
+  "created": 1780000000,
+  "livemode": false,
+  "type": "invoice.paid",
+  "data": {
+    "object": {
+      "id": "in_synthetic_cycle",
+      "object": "invoice",
+      "livemode": false,
+      "customer": "cus_synthetic",
+      "status": "paid",
+      "billing_reason": "subscription_cycle",
+      "currency": "usd",
+      "amount_paid": 1000,
+      "amount_remaining": 0,
+      "amount_due": 1000,
+      "total": 1000,
+      "subtotal": 1000,
+      "starting_balance": 0,
+      "ending_balance": 0,
+      "total_discount_amounts": [],
+      "total_taxes": [],
+      "pre_payment_credit_notes_amount": 0,
+      "post_payment_credit_notes_amount": 0,
+      "parent": {
+        "type": "subscription_details",
+        "subscription_details": {"subscription": "sub_synthetic"}
+      },
+      "lines": {
+        "object": "list",
+        "has_more": false,
+        "data": [{
+          "id": "il_synthetic",
+          "object": "line_item",
+          "livemode": false,
+          "amount": 1000,
+          "currency": "usd",
+          "quantity": 1,
+          "discount_amounts": [],
+          "taxes": [],
+          "period": {"start": 1780000000, "end": 1782678400},
+          "parent": {
+            "type": "subscription_item_details",
+            "subscription_item_details": {
+              "subscription": "sub_synthetic",
+              "subscription_item": "si_synthetic",
+              "proration": false
+            }
+          },
+          "pricing": {
+            "type": "price_details",
+            "price_details": {"price": "price_synthetic", "product": "prod_synthetic"},
+            "unit_amount_decimal": "1000"
+          }
+        }]
+      }
+    }
+  }
+}

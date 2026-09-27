@@ -23,6 +23,18 @@ KST = timezone(timedelta(hours=9))
 NORMALIZER = "koneps-services-v1"
 
 
+class KonepsApplicationError(ValueError):
+    """An application failure carrying only a safe, bounded result code."""
+
+    def __init__(self, code: object) -> None:
+        self.code = code if isinstance(code, str) and re.fullmatch(r"[0-9]{2}", code) else "unknown"
+        super().__init__(f"KONEPS API application error (code={self.code})")
+
+
+class KonepsTransientApplicationError(KonepsApplicationError):
+    """A documented transient application failure handled by the worker retry policy."""
+
+
 def _text(payload: Mapping[str, Any], field: str) -> str:
     value = payload.get(field)
     return str(value).strip() if value is not None else ""
@@ -132,9 +144,12 @@ class KonepsSourceAdapter:
         header = data.get("header")
         if not isinstance(header, dict) or "resultCode" not in header:
             raise ValueError("invalid KONEPS response header")
-        if str(header["resultCode"]) != "00":
+        code = header["resultCode"]
+        if code != "00":
             # Do not echo resultMsg: an upstream server may repeat credentials there.
-            raise ValueError("KONEPS API application error")
+            if isinstance(code, str) and code in {"01", "05", "23"}:
+                raise KonepsTransientApplicationError(code)
+            raise KonepsApplicationError(code)
         body = data.get("body")
         if not isinstance(body, dict):
             raise ValueError("invalid KONEPS response body")

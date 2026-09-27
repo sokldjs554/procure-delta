@@ -89,6 +89,72 @@ def test_all_hashes_checked_before_any_candidate_process(tmp_path, monkeypatch):
         ))
 
 
+@pytest.mark.parametrize(("stage", "code"), [
+    ("detection", "memory_allocation"),
+    ("recognition", "runtime_error"),
+    ("source", "invalid_input"),
+])
+def test_real_child_failure_retains_safe_diagnosis_and_denominators(
+    tmp_path, monkeypatch, stage, code,
+):
+    script = tmp_path / "scripts/rapid_ocr_candidate.py"
+    script.parent.mkdir()
+    payload = {"error": "candidate_failed", "stage": stage, "code": code}
+    script.write_text(f"print({json.dumps(payload)!r})\n")
+    monkeypatch.setattr(ocr_candidate, "ROOT", tmp_path)
+    result = asyncio.run(ocr_candidate.evaluate_candidate(
+        {"sources": [source(tmp_path, "original")]}, tmp_path,
+        Path(sys.executable), Path("models"),
+    ))
+    row = result["rows"][0]
+    assert row["status"] == "failed"
+    assert row["failure_stage"] == stage
+    assert row["failure_code"] == code
+    assert row["error_type"] == "CandidateFailure"
+    assert "field_metrics" not in row
+    assert "peak_rss_kib" not in row
+    assert result["summary"]["status"] == "incomplete"
+    assert result["summary"]["expected_fields"] == 3
+    assert result["summary"]["expected_anchors"] == 1
+    assert result["summary"]["trusted_field_accuracy"] is None
+
+
+@pytest.mark.parametrize("payload", [
+    {"error": "candidate_failed", "stage": PRIVATE, "code": "runtime_error"},
+    {"error": "candidate_failed", "stage": "detection", "code": PRIVATE},
+    {"error": "candidate_failed", "stage": "detection", "code": "runtime_error",
+     "message": PRIVATE},
+    {"error": "candidate_failed"},
+])
+def test_unknown_child_diagnosis_cannot_enter_published_evidence(tmp_path, monkeypatch, payload):
+    async def run(*args, **kwargs):
+        return json.dumps(payload).encode()
+
+    monkeypatch.setattr(ocr_candidate, "run_ocr_process", run)
+    result = asyncio.run(ocr_candidate.evaluate_candidate(
+        {"sources": [source(tmp_path, "original")]}, tmp_path,
+        Path(sys.executable), Path("models"),
+    ))
+    assert result["rows"][0]["status"] == "failed"
+    assert result["rows"][0]["failure_stage"] == "reply"
+    assert result["rows"][0]["failure_code"] == "invalid_reply"
+    assert PRIVATE not in json.dumps(result)
+
+
+def test_parent_timeout_is_not_reported_as_a_model_or_schema_failure(tmp_path, monkeypatch):
+    async def run(*args, **kwargs):
+        raise TimeoutError(PRIVATE)
+
+    monkeypatch.setattr(ocr_candidate, "run_ocr_process", run)
+    result = asyncio.run(ocr_candidate.evaluate_candidate(
+        {"sources": [source(tmp_path, "original")]}, tmp_path,
+        Path(sys.executable), Path("models"),
+    ))
+    assert result["rows"][0]["failure_stage"] == "process"
+    assert result["rows"][0]["failure_code"] == "timeout"
+    assert PRIVATE not in json.dumps(result)
+
+
 def test_real_child_preserves_the_selected_virtual_environment(tmp_path, monkeypatch):
     environment = tmp_path / "candidate-env"
     venv.EnvBuilder(with_pip=False, symlinks=True).create(environment)

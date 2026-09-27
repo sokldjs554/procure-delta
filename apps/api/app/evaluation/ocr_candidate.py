@@ -4,9 +4,9 @@ from __future__ import annotations
 import hashlib
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from app.documents.ocr_runtime import MAX_TEXT_CHARS, run_ocr_process
 
@@ -24,6 +24,19 @@ class CandidateReply(BaseModel):
     peak_rss_kib: int = Field(ge=0, le=1024 * 1024)
 
 
+class CandidateFailureReply(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    error: Literal["candidate_failed"]
+    stage: Literal["environment", "models", "source", "render", "initialization",
+                   "inference", "detection", "recognition", "output", "unknown"]
+    code: Literal["memory_allocation", "invalid_input", "dependency_unavailable", "runtime_error"]
+
+
+CANDIDATE_REPLY: TypeAdapter[CandidateReply | CandidateFailureReply] = TypeAdapter(
+    CandidateReply | CandidateFailureReply,
+)
+
+
 async def evaluate_candidate(
     manifest: dict[str, Any], directory: Path, python: Path, models: Path,
     *, probe_failed: bool = False,
@@ -38,6 +51,7 @@ async def evaluate_candidate(
             rows.append(row)
             continue
         started = time.perf_counter()
+        failure_stage = "process"
         try:
             raw = await run_ocr_process([
                 # Resolving the venv's interpreter symlink selects the base Python.
@@ -46,19 +60,28 @@ async def evaluate_candidate(
                 str((directory / source["filename"]).resolve()),
                 "--page", str(source["page"]), "--source-sha256", source["sha256"],
             ], timeout=40)
-            result = CandidateReply.model_validate_json(raw)
-            if (result.page_number != source["page"]
-                    or result.text_sha256 != hashlib.sha256(result.text.encode()).hexdigest()):
-                raise ValueError("candidate provenance mismatch")
-            row.update({
-                "status": "measured", "text_sha256": result.text_sha256,
-                "peak_rss_kib": result.peak_rss_kib, "characters": len(result.text),
-                "anchors": anchor_metrics(result.text, source["recognition_anchors"]),
-                **await score_text(result.text, source["expected_fields"]),
-            })
+            failure_stage = "reply"
+            result = CANDIDATE_REPLY.validate_json(raw)
+            if isinstance(result, CandidateFailureReply):
+                row.update(error_type="CandidateFailure", failure_stage=result.stage,
+                           failure_code=result.code)
+            else:
+                if (result.page_number != source["page"]
+                        or result.text_sha256 != hashlib.sha256(result.text.encode()).hexdigest()):
+                    raise ValueError("candidate provenance mismatch")
+                failure_stage = "scoring"
+                row.update({
+                    "status": "measured", "text_sha256": result.text_sha256,
+                    "peak_rss_kib": result.peak_rss_kib, "characters": len(result.text),
+                    "anchors": anchor_metrics(result.text, source["recognition_anchors"]),
+                    **await score_text(result.text, source["expected_fields"]),
+                })
         except (ValueError, OSError, RuntimeError, TimeoutError) as error:
             # No child output, OCR values or exception messages in published evidence.
-            row["error_type"] = type(error).__name__
+            code = ("timeout" if isinstance(error, TimeoutError) else
+                    "invalid_reply" if failure_stage == "reply" else "runtime_error")
+            row.update(error_type=type(error).__name__, failure_stage=failure_stage,
+                       failure_code=code)
         row["elapsed_ms"] = (time.perf_counter() - started) * 1000
         rows.append(row)
     aggregate = summary(rows)

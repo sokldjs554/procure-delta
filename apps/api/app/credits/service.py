@@ -17,6 +17,10 @@ class CreditError(ValueError):
     pass
 
 
+class CreditAccountKindError(CreditError):
+    pass
+
+
 class InsufficientCredits(CreditError):
     pass
 
@@ -41,19 +45,26 @@ class CreditMutation:
     applied: bool
 
 
-async def _locked_account(session: AsyncSession, owner_user_id: str) -> CreditAccount:
+async def _locked_account(
+    session: AsyncSession, owner_user_id: str,
+    expected_kind: Literal["internal_budget", "billing_sandbox"] = "internal_budget",
+) -> CreditAccount:
     await session.execute(
         pg_insert(CreditAccount)
-        .values(owner_user_id=owner_user_id, available_credits=0, reserved_credits=0)
+        .values(owner_user_id=owner_user_id, account_kind=expected_kind,
+                available_credits=0, reserved_credits=0)
         .on_conflict_do_nothing(index_elements=[CreditAccount.owner_user_id])
     )
     account = await session.scalar(
         select(CreditAccount)
         .where(CreditAccount.owner_user_id == owner_user_id)
         .with_for_update()
+        .execution_options(populate_existing=True)
     )
     if account is None:
         raise RuntimeError("credit account could not be created")
+    if account.account_kind != expected_kind:
+        raise CreditAccountKindError("credit account kind is incompatible with this operation")
     return account
 
 
@@ -91,7 +102,7 @@ async def _idempotent_result(
 
 
 def _require_amount(amount: int) -> None:
-    if isinstance(amount, bool) or amount < 1:
+    if type(amount) is not int or not 1 <= amount <= 2_147_483_647:
         raise CreditError("credit amount must be a positive integer")
 
 
@@ -129,9 +140,10 @@ async def grant_credits(
     reference_type: str,
     reference_key: str,
     metadata: dict[str, Any] | None = None,
+    expected_kind: Literal["internal_budget", "billing_sandbox"] = "internal_budget",
 ) -> CreditMutation:
     _require_amount(amount)
-    account = await _locked_account(session, owner_user_id)
+    account = await _locked_account(session, owner_user_id, expected_kind)
     duplicate = await _idempotent_result(
         session,
         account,
@@ -143,6 +155,8 @@ async def grant_credits(
     )
     if duplicate:
         return duplicate
+    if account.available_credits > 2_147_483_647 - amount:
+        raise CreditError("credit balance would exceed the supported integer range")
     account.available_credits += amount
     account.updated_at = datetime.now(UTC)
     ledger = _entry(

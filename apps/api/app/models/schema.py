@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     ARRAY,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -251,10 +252,16 @@ class CompanyProfile(UUIDPrimaryKey, Base):
 class CreditAccount(UUIDPrimaryKey, Base):
     __tablename__ = "credit_accounts"
     __table_args__ = (
+        CheckConstraint(
+            "account_kind IN ('internal_budget', 'billing_sandbox')", name="ck_credit_account_kind"
+        ),
         CheckConstraint("available_credits >= 0", name="ck_credit_account_available_nonnegative"),
         CheckConstraint("reserved_credits >= 0", name="ck_credit_account_reserved_nonnegative"),
     )
     owner_user_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    account_kind: Mapped[str] = mapped_column(
+        String(30), default="internal_budget", server_default="internal_budget"
+    )
     available_credits: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     reserved_credits: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -305,6 +312,73 @@ class CreditLedgerEntry(UUIDPrimaryKey, Base):
     available_after: Mapped[int] = mapped_column(Integer)
     reserved_after: Mapped[int] = mapped_column(Integer)
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BillingCustomerMapping(UUIDPrimaryKey, Base):
+    __tablename__ = "billing_customer_mappings"
+    __table_args__ = (
+        UniqueConstraint("scope", "customer_id", name="uq_billing_customer_scope"),
+        UniqueConstraint("account_id", name="uq_billing_customer_account"),
+    )
+    scope: Mapped[str] = mapped_column(String(64))
+    customer_id: Mapped[str] = mapped_column(String(200))
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("credit_accounts.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BillingPricePolicy(UUIDPrimaryKey, Base):
+    __tablename__ = "billing_price_policies"
+    __table_args__ = (
+        UniqueConstraint("scope", "price_id", name="uq_billing_price_scope"),
+        CheckConstraint("amount > 0 AND credit_units > 0", name="ck_billing_price_positive"),
+    )
+    scope: Mapped[str] = mapped_column(String(64))
+    price_id: Mapped[str] = mapped_column(String(200))
+    currency: Mapped[str] = mapped_column(String(3))
+    amount: Mapped[int] = mapped_column(Integer)
+    credit_units: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BillingInvoiceApplication(UUIDPrimaryKey, Base):
+    __tablename__ = "billing_invoice_applications"
+    __table_args__ = (
+        UniqueConstraint("scope", "invoice_id", name="uq_billing_invoice_scope"),
+        UniqueConstraint("ledger_entry_id", name="uq_billing_invoice_ledger"),
+        CheckConstraint("credit_units > 0", name="ck_billing_application_units"),
+    )
+    scope: Mapped[str] = mapped_column(String(64))
+    invoice_id: Mapped[str] = mapped_column(String(200))
+    invoice_digest: Mapped[str] = mapped_column(String(64))
+    account_id: Mapped[UUID] = mapped_column(ForeignKey("credit_accounts.id"))
+    policy_id: Mapped[UUID] = mapped_column(ForeignKey("billing_price_policies.id"))
+    credit_units: Mapped[int] = mapped_column(Integer)
+    ledger_entry_id: Mapped[UUID] = mapped_column(ForeignKey("credit_ledger_entries.id"))
+    facts_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BillingEventObservation(UUIDPrimaryKey, Base):
+    __tablename__ = "billing_event_observations"
+    __table_args__ = (
+        UniqueConstraint("scope", "event_id", name="uq_billing_event_scope"),
+        CheckConstraint("outcome IN ('applied','duplicate','observed','review')",
+                        name="ck_billing_event_outcome"),
+    )
+    scope: Mapped[str] = mapped_column(String(64))
+    event_id: Mapped[str] = mapped_column(String(200))
+    event_type: Mapped[str] = mapped_column(String(100))
+    event_created: Mapped[int] = mapped_column(BigInteger)
+    object_id: Mapped[str] = mapped_column(String(200))
+    customer_id: Mapped[str | None] = mapped_column(String(200))
+    event_digest: Mapped[str] = mapped_column(String(64))
+    facts_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    outcome: Mapped[str] = mapped_column(String(20))
+    review_reason: Mapped[str | None] = mapped_column(String(50))
+    application_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("billing_invoice_applications.id")
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

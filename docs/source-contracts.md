@@ -71,8 +71,40 @@ HWP 파싱과 실제 OCR 품질은 별도 미검증 범위이며 실패 상태�
 ## 오류와 민감정보
 
 HTTP 429/5xx 및 네트워크 오류는 기존 제한 재시도를 사용하고, 일반 4xx는 반복하지 않는다.
-HTTP 200 안에 들어 있는 API 오류 코드도 성공으로 간주하지 않는다. 그 오류는 현재
-안전한 일반 ValueError로 분류되므로 운영자가 인증/일일 할당량/호출 빈도를 확인해야 한다.
+429/5xx의 `Retry-After`는 [RFC 9110 §10.2.3](https://www.rfc-editor.org/rfc/rfc9110.html#name-retry-after)에 따라
+0 이상의 정수 초 또는 HTTP-date로 읽는다. 실제 대기 시간은 서버 지시와 기존 지수 backoff/jitter
+중 큰 값이다. 과거 날짜나 0은 backoff를 줄이지 않으며 잘못된 값은 기존 backoff를 사용한다.
+대기가 요청의 남은 전체 deadline에 들어가지 않으면 즉시 `TimeoutError`로 종료한다.
+서버 지시를 임의로 줄여 일찍 재요청하지 않으며 마지막 시도 뒤에는 추가 대기를 하지 않는다.
+
+deadline 예외는 `TimeoutError`의 하위 타입으로 안전한 UTC `retry_not_before`를 보존한다.
+마지막 HTTP 시도에서 발생한 오류도 같은 정보를 보존한다. source poll은 서버 시각과
+worker backoff 중 늦은 시각을 `JobFailure.next_retry_at`에 커밋하고, ARQ defer에도 같은
+시각을 사용한다. cron·재등록된 queue job이 먼저 도착해도 이 시각 전에는 원문 API를 호출하거나
+`IngestRun`을 새로 만들지 않는다. 성공하면 실패 시도 수와 cooldown을 함께 해제한다.
+서버 지시가 수신 시점부터 **24시간을 초과하거나 유한한 값으로 표현되지 않으면** 자동 재시도하지
+않고 명시적 manual review 사유를 가진 terminal/DLQ로 남긴다. 24시간으로 줄여 일찍 호출하지 않는다.
+운영자는 안내된 시간·할당량·서비스 상태를 확인한 뒤 기존 수동 재실행 절차를 사용한다.
+
+동일 source의 cron/worker 경합은 PostgreSQL `pg_try_advisory_lock`로 직렬화한다.
+잠금은 polling 전체에서 checkout한 동일 연결에 유지하고 `finally`에서 해제한다.
+이미 실행 중이면 `in_progress`로 건너뛰어 다른 source의 실행을 막지 않는다.
+해제할 수 없는 연결은 pool에 돌려보내지 않고 폐기한다. 재조정기는 이미 도래한 poll의
+`next_retry_at`을 다시 미래로 옮기지 않는다. 이 변경은 source poll 경계에 한정되며,
+다른 worker 작업 전체의 cooldown 정책을 변경한 것은 아니다.
+
+HTTP 200 안의 API 오류 코드도 성공으로 간주하지 않는다. [공식 오류 안내](https://www.data.go.kr/data/15129394/openapi.do)를
+2026-09-27 다시 확인하여 다음처럼 보수적으로 분류한다.
+
+| `resultCode` | 의미와 처리 |
+|---|---|
+| `01`, `05`, `23` | 내부 오류, 응답 시간 초과, 초당 호출 한도. `KonepsTransientApplicationError`로 기존 worker의 최대 3회 시도/backoff 정책에 전달 |
+| `22` | 일일 호출 한도. 즉시 재시도를 소진하지 않고 terminal 처리; 한도 초기화 또는 운영자 조치 후 재실행 |
+| 나머지 코드 | 인증·권한·요청 오류 및 미확인 코드. `KonepsApplicationError`로 terminal 처리 |
+
+adapter 안에는 API 오류용 추가 retry loop가 없다. 실패한 페이지의 완료 cursor를 반환하지 않으며,
+기존 durable worker retry/dead-letter 경로를 사용한다. 예외에는 두 자리 숫자 코드만 보존하고
+그 외 값은 `unknown`으로 대체한다. 이 분류는 합성 HTTP 응답 계약이며 실제 인증 호출 성공 증거가 아니다.
 요청 키가 들어갈 수 있는 서버 메시지 및 transport 예외 문자열을 출력하지 않는다.
 이 보호는 임의 외부 디버깅 프록시나 모든 third-party DEBUG 로그까지 보장하는 것은 아니다.
 

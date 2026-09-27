@@ -32,6 +32,22 @@ def resolved_environment(values: dict[str, str]) -> dict:
 
 
 class ComposeEnvironmentTests(unittest.TestCase):
+    def test_sandbox_billing_is_disabled_and_api_only(self) -> None:
+        defaults = resolved_environment({})
+        self.assertEqual(defaults["api"]["environment"].get("BILLING_SANDBOX_ENABLED"), "false")
+        self.assertEqual(defaults["api"]["environment"].get("BILLING_SANDBOX_SCOPE"), "")
+        self.assertEqual(defaults["api"]["environment"].get("BILLING_STRIPE_WEBHOOK_SECRET"), "")
+        configured = {
+            "BILLING_SANDBOX_ENABLED": "true",
+            "BILLING_SANDBOX_SCOPE": "synthetic-contract",
+            "BILLING_STRIPE_WEBHOOK_SECRET": "whsec_synthetic-$canary",
+        }
+        services = resolved_environment(configured)
+        for key, value in configured.items():
+            self.assertEqual(services["api"]["environment"].get(key), value.replace("$", "$$"))
+            for service in ("worker", "scheduler", "web"):
+                self.assertNotIn(key, services[service]["environment"])
+
     def test_defaults_disable_external_delivery_and_error_tracking(self) -> None:
         services = resolved_environment({})
         for service in SERVICES:

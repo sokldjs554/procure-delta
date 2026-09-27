@@ -2,15 +2,81 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import random
 import re
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
+MAX_AUTOMATIC_RETRY_AFTER_SECONDS = 24 * 60 * 60
+
+
+@dataclass(frozen=True)
+class RetryAfterPolicy:
+    """Safe scheduling facts only; never retain a raw header, URL, or response body."""
+
+    retry_not_before: datetime | None
+    requires_review: bool = False
+
+
+class RetryAfterDeadlineExceeded(TimeoutError):
+    def __init__(self, retry_policy: RetryAfterPolicy) -> None:
+        self.retry_policy = retry_policy
+        super().__init__("Upstream retry requires scheduling outside the request deadline")
+
+
+class RetryableHTTPStatusError(httpx.HTTPStatusError):
+    def __init__(self, response: httpx.Response, retry_policy: RetryAfterPolicy | None) -> None:
+        self.retry_policy = retry_policy
+        super().__init__(
+            f"Retryable upstream response: {response.status_code}",
+            request=response.request, response=response,
+        )
+
+
+def retry_policy_for_error(error: Exception) -> RetryAfterPolicy | None:
+    if isinstance(error, (RetryAfterDeadlineExceeded, RetryableHTTPStatusError)):
+        return error.retry_policy
+    return None
+
+
+@dataclass
+class _RetryState:
+    policy: RetryAfterPolicy | None = None
+
+
+def _retry_after_delay(value: str | None, *, observed_at: float) -> float | None:
+    if value is None:
+        return None
+    value = value.strip()
+    if re.fullmatch(r"[0-9]+", value):
+        # An enormous valid delay becomes infinity and cannot fit the deadline.
+        return float(value)
+    try:
+        retry_at = parsedate_to_datetime(value)
+        if retry_at.tzinfo is None:
+            # The obsolete asctime HTTP-date format still means UTC.
+            retry_at = retry_at.replace(tzinfo=UTC)
+        return max(0.0, retry_at.timestamp() - observed_at)
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def _retry_after_policy(value: str | None) -> RetryAfterPolicy | None:
+    observed_at = time.time()
+    delay = _retry_after_delay(value, observed_at=observed_at)
+    if delay is None:
+        return None
+    if not math.isfinite(delay) or delay > MAX_AUTOMATIC_RETRY_AFTER_SECONDS:
+        return RetryAfterPolicy(retry_not_before=None, requires_review=True)
+    return RetryAfterPolicy(retry_not_before=datetime.fromtimestamp(observed_at + delay, tz=UTC))
 
 
 class _SecretQueryFilter(logging.Filter):
@@ -66,26 +132,36 @@ class ResilientHttpClient:
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         """Send one request, retrying only retryable upstream failures."""
-        async with asyncio.timeout(self.total_timeout_seconds):
-            return await self._request_with_retries(method, url, **kwargs)
+        deadline = asyncio.get_running_loop().time() + self.total_timeout_seconds
+        state = _RetryState()
+        try:
+            async with asyncio.timeout_at(deadline):
+                return await self._request_with_retries(
+                    method, url, deadline=deadline, state=state, **kwargs
+                )
+        except TimeoutError as error:
+            if state.policy is not None and not isinstance(error, RetryAfterDeadlineExceeded):
+                # An overall timeout while waiting must not lose the outer worker's cooldown.
+                raise RetryAfterDeadlineExceeded(state.policy) from None
+            raise
 
     async def _request_with_retries(
-        self, method: str, url: str, **kwargs: Any
+        self, method: str, url: str, *, deadline: float, state: _RetryState, **kwargs: Any
     ) -> httpx.Response:
         for attempt in range(1, self.max_attempts + 1):
             started = time.perf_counter()
             try:
                 response = await self._client.request(method, url, **kwargs)
                 if response.status_code == 429 or response.status_code >= 500:
-                    error = httpx.HTTPStatusError(
-                        f"Retryable upstream response: {response.status_code}",
-                        request=response.request,
-                        response=response,
-                    )
+                    state.policy = _retry_after_policy(response.headers.get("retry-after"))
+                    error = RetryableHTTPStatusError(response, state.policy)
                     self._log_attempt(response, attempt, started, "retryable_error")
                     if attempt == self.max_attempts:
                         raise error
-                    await self._sleep_before_retry(attempt)
+                    await self._sleep_before_retry(
+                        attempt, deadline=deadline,
+                        retry_policy=state.policy,
+                    )
                     continue
 
                 if response.is_error:
@@ -102,13 +178,25 @@ class ResilientHttpClient:
                 self._log_exception(error, attempt, started)
                 if attempt == self.max_attempts:
                     raise
-                await self._sleep_before_retry(attempt)
+                await self._sleep_before_retry(attempt, deadline=deadline)
 
         raise RuntimeError("retry loop exhausted unexpectedly")
 
-    async def _sleep_before_retry(self, attempt: int) -> None:
+    async def _sleep_before_retry(
+        self, attempt: int, *, deadline: float, retry_policy: RetryAfterPolicy | None = None
+    ) -> None:
         delay = self.backoff_base_seconds * (2 ** (attempt - 1))
-        await self._sleeper(delay + self._jitter(delay))
+        delay += self._jitter(delay)
+        if retry_policy is not None:
+            if retry_policy.requires_review:
+                raise RetryAfterDeadlineExceeded(retry_policy)
+            if retry_policy.retry_not_before is not None:
+                delay = max(delay, retry_policy.retry_not_before.timestamp() - time.time())
+        if delay >= deadline - asyncio.get_running_loop().time():
+            if retry_policy is not None:
+                raise RetryAfterDeadlineExceeded(retry_policy)
+            raise TimeoutError("Upstream retry delay exceeds the request deadline")
+        await self._sleeper(delay)
 
     @staticmethod
     def _log_attempt(

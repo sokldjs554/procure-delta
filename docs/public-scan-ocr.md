@@ -178,6 +178,17 @@ artifacts are unchanged; this additive diagnostic appears in new evaluations.
 
 ## Reproduction and remaining limits
 
+A [September 27 rerun](../artifacts/evaluation/public-scan-gap-baseline-v4.json)
+reacquired both original PDFs and the same language models with matching frozen
+hashes. The existing adapter completed all eight pages; the first-page anchors
+remain 4/8 and trusted fields 0/6 under `explicit-labels-v4`. Full-document and
+scored-page text hashes, scores and rejection diagnostics match the September 25
+balanced run. Times were 19.27s and 20.32s. This artifact retains its actual
+`git_dirty: true` provenance and is a repeat on known development documents.
+The [candidate diagnostic rerun](ocr-candidate-evaluation.md#2026-09-27-실패-진단과-원본-스캔-재확인)
+separately reports recognized anchors, proposed fields and trusted fields; it does
+not establish a fix for the previously failed candidate document.
+
 Download complete source files to the manifest filenames and install the API
 with development dependencies and the recorded Korean/English language data.
 The evaluator performs no network I/O and refuses changed checksums. Use a new

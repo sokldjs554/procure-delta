@@ -1,23 +1,20 @@
 # Credit ledger
 
-ProcureDelta의 크레딧 도메인은 외부 결제사를 흉내 내지 않고, 사용량 차감에서 가장 문제가 되기 쉬운 **중복 차감·동시성·실패 복구**를 다루는 내부 원장으로 구현합니다.
+ProcureDelta의 크레딧 도메인은 **중복 차감·동시성·실패 복구**를 다루는 내부 원장입니다.
+일반 사용 예산은 `internal_budget`, 별도 [합성 결제 이벤트 계약](billing-sandbox.md)의
+테스트 잔액은 `billing_sandbox` 계정으로 구분합니다. 계정 종류는 변경할 수 없고
+일반 예산 지급·예약·정산 경로는 테스트 계정을 거절합니다.
 
 ## 상태 전이
-
-```text
-grant
-  ↓
-available
-  ├─ reserve → reserved ── commit → spent
-  └─ reserve → reserved ── refund ─→ available
-```
 
 - `grant`: 구매·프로모션·관리자 지급 등 상위 결제 시스템이 확정한 크레딧을 계정에 반영하는 경계입니다.
 - `reserve`: LLM/OCR처럼 비용이 발생할 작업을 시작하기 전에 크레딧을 잠급니다.
 - `commit`: 작업이 실제로 사용량을 발생시키면 예약분을 확정 차감합니다.
 - `refund`: provider 호출 전 실패하거나 과금하지 않아야 하는 실패면 예약분을 반환합니다.
 
-현재 프로젝트는 **외부 PG·정기결제 webhook·구독 갱신을 구현했다고 주장하지 않습니다.** 이 원장은 그런 상위 시스템이 확정한 결과를 안전하게 반영할 backend boundary입니다.
+별도 sandbox webhook은 합성 서명을 검증한 단일 고정 가격 invoice를 테스트 원장에
+원자적으로 반영합니다. 실제 PG 수신·구독 갱신 운영·고객 청구는 검증하지 않았습니다.
+이 문서의 `refund`는 사용량 예약 반환이며 현금 환불을 뜻하지 않습니다.
 
 ## 동시성과 중복 방지
 
