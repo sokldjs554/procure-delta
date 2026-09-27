@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import math
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -18,10 +19,10 @@ from arq import Retry
 from arq.connections import ArqRedis
 from pydantic import ValidationError
 from redis.exceptions import RedisError
-from sqlalchemy import SQLColumnExpression, String, cast, or_, select, update
+from sqlalchemy import SQLColumnExpression, String, cast, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError, OperationalError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.config import get_settings
 from app.db import SessionLocal
@@ -37,12 +38,20 @@ from app.repositories.opportunities import upsert_opportunity_version
 from app.services.ingest import ingest_raw_record
 from app.services.normalize import normalize_raw_record
 from app.sources.base import RawSourceRecord, SourceAdapter
-from app.sources.koneps import BASE_URL, DOCUMENT_HOST, SOURCE_CODE, KonepsSourceAdapter
+from app.sources.http import retry_policy_for_error
+from app.sources.koneps import (
+    BASE_URL,
+    DOCUMENT_HOST,
+    SOURCE_CODE,
+    KonepsSourceAdapter,
+    KonepsTransientApplicationError,
+)
 from app.sources.mock import MockSourceAdapter
 
 logger = logging.getLogger(__name__)
 MAX_ATTEMPTS = 3
 WORKER_QUEUE = "arq:procure-delta:worker"
+SOURCE_POLL_LOCK_NAMESPACE = 0x504F4C4C
 
 
 class MalformedJobError(ValueError):
@@ -51,6 +60,9 @@ class MalformedJobError(ValueError):
 
 def _safe_error_message(error: Exception) -> str:
     """Persist only bounded, non-secret failure facts for later operator review."""
+    policy = retry_policy_for_error(error)
+    if policy is not None and policy.requires_review:
+        return "Retry-After exceeds automatic scheduling limit; manual review required"
     if isinstance(error, httpx.HTTPStatusError):
         return f"HTTPStatusError(status={error.response.status_code})"
     return type(error).__name__
@@ -211,6 +223,9 @@ async def _record_failure(
 
 
 def _is_transient(error: Exception) -> bool:
+    policy = retry_policy_for_error(error)
+    if policy is not None and policy.requires_review:
+        return False
     if isinstance(error, httpx.HTTPStatusError):
         return error.response.status_code == 429 or error.response.status_code >= 500
     if isinstance(error, DBAPIError):
@@ -226,8 +241,21 @@ def _is_transient(error: Exception) -> bool:
             OSError,
             asyncio.TimeoutError,
             RedisError,
+            KonepsTransientApplicationError,
         ),
     )
+
+
+def _poll_retry_not_before(
+    error: Exception, *, attempts: int, now: datetime
+) -> datetime | None:
+    if not _is_transient(error) or attempts >= MAX_ATTEMPTS:
+        return None
+    retry_at = now + timedelta(seconds=2**attempts)
+    policy = retry_policy_for_error(error)
+    if policy is not None and policy.retry_not_before is not None:
+        retry_at = max(retry_at, policy.retry_not_before)
+    return retry_at
 
 
 async def ingest_record(
@@ -385,7 +413,68 @@ async def _pending_normalization_ids(
     return list(await session.scalars(statement))
 
 
+@asynccontextmanager
+async def _poll_connection(
+    ctx: dict[str, Any],
+) -> AsyncIterator[tuple[AsyncSession, AsyncConnection, bool]]:
+    """Pin the advisory lock connection across ORM commits; preserve borrowed transactions."""
+    async with _session_scope(ctx) as session:
+        bind = session.bind
+        if isinstance(bind, AsyncConnection):
+            yield session, bind, False
+        elif isinstance(bind, AsyncEngine):
+            async with bind.connect() as connection:
+                if ctx.get("session") is session:
+                    yield session, connection, True
+                else:
+                    factory = ctx.get("session_factory", SessionLocal)
+                    assert isinstance(factory, async_sessionmaker)
+                    async with factory(bind=connection) as pinned_session:
+                        yield pinned_session, connection, True
+        else:
+            raise TypeError("source polling requires a bound PostgreSQL connection")
+
+
 async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[str, str]:
+    lock_key = int.from_bytes(hashlib.sha256(source_code.encode()).digest()[:4], signed=True)
+    async with _poll_connection(ctx) as (session, connection, owned_connection):
+        preserve_transaction = not owned_connection and connection.in_transaction()
+        acquired: bool | None = None
+        try:
+            acquired = bool(await connection.scalar(
+                select(func.pg_try_advisory_lock(SOURCE_POLL_LOCK_NAMESPACE, lock_key))
+            ))
+            if not preserve_transaction:
+                # Otherwise Session.commit() would join the acquisition transaction and
+                # checkpoint/failure commits would disappear when the connection closes.
+                await connection.commit()
+            if not acquired:
+                return {"status": "in_progress", "source": source_code}
+            return await _poll_source({**ctx, "session": session}, source_code)
+        finally:
+            if acquired is None:
+                # Cancellation can make acquisition ownership unknown: never pool it.
+                await connection.invalidate()
+            elif acquired:
+                try:
+                    if not session.is_active:
+                        await session.rollback()
+                    had_transaction = connection.in_transaction()
+                    await connection.execute(
+                        select(func.pg_advisory_unlock(SOURCE_POLL_LOCK_NAMESPACE, lock_key))
+                    )
+                    if not had_transaction:
+                        # A borrowed connection may be reused for another poll. Do not
+                        # let unlock's implicit transaction masquerade as caller-owned.
+                        await connection.commit()
+                except BaseException:
+                    # Failed transactions, cancellation, or a lost socket must not leave
+                    # a session-level lock on a connection returned to the pool.
+                    await connection.invalidate()
+                    raise
+
+
+async def _poll_source(ctx: dict[str, Any], source_code: str) -> dict[str, str]:
     started = time.perf_counter()
     adapter = source_adapters().get(source_code)
     if adapter is None:
@@ -413,6 +502,14 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
             assert source is not None
             if not source.enabled:
                 return {"status": "disabled", "source": source_code}
+            failure = await session.scalar(select(JobFailure).where(
+                JobFailure.job_type == "poll_source", JobFailure.job_key == stable_key
+            ))
+            if failure is not None:
+                if failure.dead_lettered or failure.attempts >= MAX_ATTEMPTS:
+                    return {"status": "dead_lettered", "job_key": stable_key}
+                if failure.next_retry_at is not None and failure.next_retry_at > datetime.now(UTC):
+                    return {"status": "deferred", "job_key": stable_key}
             await session.commit()
             latest = await session.scalar(
                 select(IngestRun)
@@ -465,6 +562,7 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
                         capture_tracked_exception(error)
     except Exception as error:
         async with _session_scope(ctx) as failure_session:
+            await failure_session.rollback()
             source = await failure_session.scalar(
                 select(SourceRegistry).where(SourceRegistry.code == source_code)
             )
@@ -485,13 +583,15 @@ async def poll_source(ctx: dict[str, Any], source_code: str = "mock") -> dict[st
                 error=error,
                 dead_lettered=not _is_transient(error),
             )
-            terminal = failure.attempts >= MAX_ATTEMPTS
-            if terminal:
-                failure.dead_lettered = True
-                failure.next_retry_at = None
+            retry_at = _poll_retry_not_before(
+                error, attempts=failure.attempts, now=datetime.now(UTC)
+            )
+            failure.dead_lettered = retry_at is None
+            failure.next_retry_at = retry_at
             await failure_session.commit()
-        if _is_transient(error) and not terminal:
-            raise Retry(defer=2**failure.attempts) from error
+        if retry_at is not None:
+            remaining_ms = math.ceil((retry_at - datetime.now(UTC)).total_seconds() * 1000)
+            raise Retry(defer=max(0, remaining_ms) / 1000) from error
         capture_tracked_exception(error)
         return {"status": "dead_lettered", "job_key": stable_key}
     logger.info(
@@ -545,7 +645,8 @@ async def reconcile_failed_jobs(ctx: dict[str, Any]) -> dict[str, int]:
             else:
                 continue
             if enqueued is not None:
-                failure.next_retry_at = now + timedelta(seconds=2**failure.attempts)
+                if failure.job_type != "poll_source":
+                    failure.next_retry_at = now + timedelta(seconds=2**failure.attempts)
                 requeued += 1
         await session.commit()
     return {"requeued": requeued}

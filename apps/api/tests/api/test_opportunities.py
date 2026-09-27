@@ -245,7 +245,7 @@ async def test_eligible_scan_continuation_never_repeats_or_loses_late_matches(
     await session.flush()
     matches = {row.id for row in rows[200:]}
 
-    async def summary(session, row, owner, profile):
+    async def summary(session, row, owner, profile, **kwargs):
         result = OpportunitySummary.model_validate(row)
         result.eligibility = Eligibility(
             id=uuid4(),

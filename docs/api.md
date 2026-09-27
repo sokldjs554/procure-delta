@@ -15,11 +15,21 @@ back to the browser. Do not cache personalized API responses. Server-side reques
 the incoming user's cookie rather than sharing a process-wide cookie jar.
 
 `CORS_ORIGINS` is a JSON array with `http://localhost:3000` as the local default. Credentials
-are enabled only for those explicit origins. Writes reject a supplied Origin outside this
+are enabled only for those explicit origins. Browser resource writes reject a supplied Origin outside this
 list and require the session CSRF token. Tools without an Origin still need the token. The
 demo-login bootstrap accepts JSON and checks a supplied Origin; it cannot select an owner.
 Use a same-origin reverse proxy and `SESSION_COOKIE_SECURE=true` with HTTPS in hosted demos.
 The localhost HTTP default is `false`; the cookie remains HttpOnly, SameSite=Lax, Path=/.
+
+## Sandbox webhook boundary
+
+`POST /api/v1/billing/stripe` is disabled by default (404). Its independent authentication
+is a timestamped signature over the bounded raw request body, not a demo cookie or CSRF
+token. Only the pinned Stripe sandbox snapshot contract is accepted. It never obtains an
+owner or credit policy from a browser session or event metadata. Customer/price bindings
+are operator CLI operations; no public binding or funding endpoint exists.
+See [billing-sandbox.md](billing-sandbox.md) for supported invoices, immutable replay
+fences, transaction/isolation rules, and synthetic-versus-provider evidence boundaries.
 
 ## Login and roles
 

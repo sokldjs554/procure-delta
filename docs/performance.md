@@ -90,6 +90,25 @@ API는 저장소 checkout에서는 원본 artifact를 우선 읽고, Docker 이�
 
 이 지연은 **client-observed local container measurement**다. 인터넷 RTT, 실제 나라장터, 외부 LLM, 실제 사용자 동시성은 포함하지 않는다.
 
+## 공고함 메타데이터 배치 조회
+
+`tests/api/test_inbox_batch_queries.py`는 실제 PostgreSQL에서 목록 route를 호출하고
+실행된 SELECT 및 저장된 판단 행을 확인한다. 변경 전 **GitHub Actions run 36326433272**에서
+프로필 없는 합성 목록의 1건 페이지는 6회, 20건 페이지는 44회 SELECT를 실행했으며,
+다음 페이지 존재를 확인하는 예고용 행에도 eligibility/ranking을 생성하는 회귀 테스트가 실패했다.
+
+목록은 이제 조회한 행의 관심 여부를 사용자별 한 번, `current` 전환 시각의 최댓값을
+`GROUP BY`로 한 번 읽는다. 프로필 없는 비어 있지 않은 일반 페이지의 SELECT 예산은
+페이지 크기에 관계없이 최대 4회(프로필·목록·관심 여부·변경 시각)로 검증한다.
+일반 목록의 예고용 행은 판단을 계산하지 않고 다음 페이지에서 반환될 때 계산한다.
+`eligible_only`는 기존처럼 실제 참여 조건을 재검증한 뒤 페이지 포함 여부를 결정하며,
+100건 스캔 배치마다 메타데이터만 묶어 읽는다. 기업 프로필이 있는 공고의 eligibility/ranking
+재검증 비용은 이 4회 예산에 포함되지 않으며, 캐시로 건너뛰지 않는다.
+
+이 변경은 위의 공개 HTTP 지연 snapshot을 갱신하거나 새 처리량 개선률을 입증하지 않는다.
+관심 여부의 사용자 격리, 최신 `current` 전환만 선택하는 규칙, 변경 시각이 없는 경우의
+`null`, 페이지 cursor의 연속성은 실제 DB 회귀 테스트로 함께 확인한다.
+
 ## PostgreSQL query-plan experiment
 
 `artifacts/performance/query-plans.json`:

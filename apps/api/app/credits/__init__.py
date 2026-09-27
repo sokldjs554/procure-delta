@@ -1,4 +1,5 @@
 from app.credits.service import (
+    CreditAccountKindError,
     CreditError,
     CreditIdempotencyConflict,
     CreditMutation,
@@ -12,6 +13,7 @@ from app.credits.service import (
 )
 
 __all__ = [
+    "CreditAccountKindError",
     "CreditError",
     "CreditIdempotencyConflict",
     "CreditMutation",

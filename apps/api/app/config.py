@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     extraction_credits_enabled: bool = False
     extraction_credit_account: str | None = Field(default=None, max_length=255)
     extraction_credit_units: int = Field(default=1, ge=1, le=1_000_000)
+    billing_sandbox_enabled: bool = False
+    billing_sandbox_scope: str | None = None
+    billing_stripe_webhook_secret: SecretStr | None = None
     notification_external_enabled: bool = False
     notification_webhook_destinations: dict[str, SecretStr] = Field(default_factory=dict)
     notification_webhook_formats: dict[str, Literal["generic", "slack"]] = Field(
@@ -103,6 +106,26 @@ class Settings(BaseSettings):
             self.extraction_mode != "hosted" or not self.extraction_credit_account
         ):
             raise ValueError("extraction credits require hosted mode and an explicit account")
+        return self
+
+    @field_validator("billing_sandbox_scope")
+    @classmethod
+    def normalize_billing_scope(cls, value: str | None) -> str | None:
+        from app.billing.contract import require_scope
+
+        return require_scope(value.strip()) if value and value.strip() else None
+
+    @field_validator("billing_stripe_webhook_secret")
+    @classmethod
+    def optional_billing_secret(cls, value: SecretStr | None) -> SecretStr | None:
+        return value if value is not None and value.get_secret_value().strip() else None
+
+    @model_validator(mode="after")
+    def require_billing_sandbox_configuration(self) -> Self:
+        if self.billing_sandbox_enabled and (
+            not self.billing_sandbox_scope or self.billing_stripe_webhook_secret is None
+        ):
+            raise ValueError("sandbox billing requires explicit scope and signing secret")
         return self
 
     @field_validator("database_url", mode="before")

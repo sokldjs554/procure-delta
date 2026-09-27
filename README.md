@@ -290,6 +290,7 @@ GCP/AWS 운영과 실제 공개 데이터 규모의 미완료 범위를 함께 �
 - **Quality**: pytest, Ruff, strict mypy, ESLint, TypeScript, Playwright
 - **Infra**: Docker Compose, GitHub Actions, Render reference Blueprint, local/S3-compatible attachment storage
 - **Notifications**: PostgreSQL outbox, ARQ delivery, local receipt, HTTPS webhook, bounded SMTP email transport
+- **Billing contract**: disabled Stripe sandbox webhook, signed synthetic events, atomic invoice deduplication and an isolated PostgreSQL test ledger
 - **Observability**: structured JSON logs, readiness/admin diagnostics, optional privacy-scrubbed Sentry SDK integration
 - **Development**: AI-assisted implementation with branch/PR review, static checks, regression tests, repeated release gates, and explicit measured/not_run evidence boundaries
 
@@ -306,7 +307,8 @@ GCP/AWS 운영과 실제 공개 데이터 규모의 미완료 범위를 함께 �
 - ranking은 deterministic baseline이며 수주확률 모델이 아닙니다.
 - performance snapshot은 격리 합성 실행이며 production capacity가 아닙니다.
 - 공개 Render web은 static/read-only synthetic demo입니다. full backend용 Render Blueprint와 S3-compatible shared storage 경계는 구현했지만, 해당 stack을 실제 cloud 운영했다는 증거는 아닙니다.
-- 내부 크레딧 원장과 [hosted 추출 워커의 선택적 예산 연결](docs/extraction-credits.md)을 구현했습니다. 호출 전 예약, 결과·차감의 원자적 저장, 불명확한 실행의 자동 재호출 차단을 제공합니다. 공유 파이프라인 예산이며 실제 provider 비용이나 고객별 결제는 아닙니다. 외부 PG·정기구독 연동, 운영용 인증/기관 격리, 무중단 운영은 별도 운영화 과제입니다.
+- 내부 크레딧 원장과 [hosted 추출 워커의 선택적 예산 연결](docs/extraction-credits.md)을 구현했습니다. 호출 전 예약, 결과·차감의 원자적 저장, 불명확한 실행의 자동 재호출 차단을 제공합니다. 공유 파이프라인 예산이며 실제 provider 비용이나 고객별 결제는 아닙니다.
+- [결제 sandbox 계약](docs/billing-sandbox.md)은 서명된 합성 Stripe snapshot 이벤트를 별도 PostgreSQL 원장에 연결합니다. 같은 invoice의 중복 지급을 막고 테스트 잔액으로 hosted AI 예산을 충전할 수 없도록 분리합니다. 실제 Stripe 수신·checkout·구독 생성/해지·현금 환불·고객 인증은 아직 검증하지 않았으며 공개 데모에서는 비활성입니다.
 - SMTP email은 CI loopback 서버로 실제 TCP 전송까지 검증했습니다. 실제 Gmail/SES/SendGrid 등 public provider 전송 성공을 주장하지 않습니다.
 - Sentry SDK 경계와 redaction은 CI에서 검증하지만 실제 Sentry DSN으로 외부 이벤트 전송을 운영했다는 증거는 아닙니다.
 
@@ -322,6 +324,7 @@ GCP/AWS 운영과 실제 공개 데이터 규모의 미완료 범위를 함께 �
 - [Ranking](docs/RANKING.md)
 - [Notifications](docs/notifications.md)
 - [Credit ledger](docs/credits.md)
+- [Sandbox billing contract](docs/billing-sandbox.md)
 - [Evaluation](docs/evaluation.md)
 - [Performance](docs/performance.md)
 - [Operations](docs/operations.md)

@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.api import (
     admin,
     auth,
+    billing,
     demo,
     evidence,
     health,
@@ -38,6 +39,7 @@ app.include_router(company_profiles_router)
 app.include_router(evaluation_router)
 for router in (
     auth.router,
+    billing.router,
     demo.router,
     evidence.router,
     health.router,

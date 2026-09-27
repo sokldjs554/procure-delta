@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
@@ -47,6 +48,39 @@ router = APIRouter(prefix="/api/v1", tags=["opportunities"])
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 
+@dataclass(frozen=True)
+class SummaryMetadata:
+    watched_ids: frozenset[UUID]
+    changed_at: dict[UUID, datetime | None]
+
+
+async def summary_metadata(
+    session: AsyncSession, rows: list[Opportunity], owner: str
+) -> SummaryMetadata:
+    identifiers = [row.id for row in rows]
+    if not identifiers:
+        return SummaryMetadata(frozenset(), {})
+    watched_ids = frozenset(
+        await session.scalars(
+            select(Watchlist.opportunity_id).where(
+                Watchlist.user_id == owner,
+                Watchlist.opportunity_id.in_(identifiers),
+            )
+        )
+    )
+    transitions = await session.execute(
+        select(OpportunityVersion.opportunity_id, func.max(OpportunityVersion.transition_at))
+        .where(
+            OpportunityVersion.opportunity_id.in_(identifiers),
+            OpportunityVersion.transition_kind == "current",
+        )
+        .group_by(OpportunityVersion.opportunity_id)
+    )
+    return SummaryMetadata(
+        watched_ids, {identifier: changed for identifier, changed in transitions}
+    )
+
+
 async def owned_profile(session: AsyncSession, owner: str) -> CompanyProfile | None:
     return (
         await session.scalars(select(CompanyProfile).where(CompanyProfile.owner_user_id == owner))
@@ -70,23 +104,29 @@ async def summarize(
     row: Opportunity,
     owner: str,
     profile: CompanyProfile | None,
+    *,
+    metadata: SummaryMetadata | None = None,
 ) -> OpportunitySummary:
     result = OpportunitySummary.model_validate(row)
-    result.watched = (
-        await session.scalar(
-            select(Watchlist.id).where(
-                Watchlist.user_id == owner,
-                Watchlist.opportunity_id == row.id,
+    if metadata is not None:
+        result.watched = row.id in metadata.watched_ids
+        result.changed_at = metadata.changed_at.get(row.id)
+    else:
+        result.watched = (
+            await session.scalar(
+                select(Watchlist.id).where(
+                    Watchlist.user_id == owner,
+                    Watchlist.opportunity_id == row.id,
+                )
+            )
+            is not None
+        )
+        result.changed_at = await session.scalar(
+            select(func.max(OpportunityVersion.transition_at)).where(
+                OpportunityVersion.opportunity_id == row.id,
+                OpportunityVersion.transition_kind == "current",
             )
         )
-        is not None
-    )
-    result.changed_at = await session.scalar(
-        select(func.max(OpportunityVersion.transition_at)).where(
-            OpportunityVersion.opportunity_id == row.id,
-            OpportunityVersion.transition_kind == "current",
-        )
-    )
     if row.current_version_id is None:
         result.decision_status = "missing_version"
     if profile is not None and row.current_version_id is not None:
@@ -241,8 +281,14 @@ async def list_opportunities(
     # Scan bounded batches; continuation can be present on a short eligible-only page.
     for batch in range(10):
         rows = list(await session.scalars(statement.limit(100 if eligible_only else limit + 1)))
+        metadata = await summary_metadata(session, rows if eligible_only else rows[:limit], owner)
         for row in rows:
-            item = await summarize(session, row, owner, profile)
+            # A plain inbox only needs the extra row to prove that another page exists.
+            # Eligible-only scans must still evaluate that row before deciding continuation.
+            if not eligible_only and len(items) == limit:
+                next_cursor = encode_cursor(selected[-1], fingerprint)
+                break
+            item = await summarize(session, row, owner, profile, metadata=metadata)
             if eligible_only and (
                 item.eligibility is None
                 or not item.eligibility.eligible
